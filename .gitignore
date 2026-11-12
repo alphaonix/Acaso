@@ -1,0 +1,25 @@
+# Base bruta completa (3 GB): nao versionar; a semente em data/seed/ e que vai para o GitHub
+data/raw/
+# Exportacoes locais para Power BI (algumas contem trechos de texto de conversas)
+exports/
+# Segredos e ambiente
+.env
+# Python / Node
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+
+# Artefatos de build e de ferramentas
+*.tsbuildinfo
+.pytest_cache/
+.terraform/
+*.tfstate
+*.tfstate.*
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+*.log

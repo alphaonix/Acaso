@@ -1,0 +1,2 @@
+-- Resumo por pais para os cartoes da Visao geral: turnos da 1a conversa (media e mediana) e participacao do GPT-4 nas 1as conversas.
+ALTER TABLE gold.pais ADD COLUMN turnos_medios numeric, ADD COLUMN turnos_mediana numeric, ADD COLUMN pct_gpt4 numeric;

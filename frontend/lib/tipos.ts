@@ -1,0 +1,46 @@
+export type Pais = {
+  pais: string; nome_exibicao: string; iso2: string | null; fuso: string; fuso_aproximado: boolean; idioma_padrao: string;
+  tem_texto: boolean; usuarios: number; usuarios_elegiveis: number; conversas: number;
+  primeira_data: string | null; ultima_data: string | null;
+};
+export type Indicador = {
+  indicador_id: string; nome: string; pergunta: string; unidade: string; denominador: string;
+  formula: string; sql_referencia: string; fonte: string; periodo_referencia: string; amostra_minima: number;
+};
+export type Resumo = {
+  novos: number; elegiveis: number; voltaram_7d: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null;
+  primeira_semana: string | null; ultima_semana: string | null;
+  conversas: number; turnos_medios: number; turnos_mediana: number; pct_gpt4: number;
+  recusa_usuarios: number | null; recusa_elegiveis: number | null; recusa_taxa: number | null; recusa_ic_lo: number | null; recusa_ic_hi: number | null;
+};
+export type Coorte = {
+  semana: string; novos: number; elegiveis: number; voltaram_7d: number;
+  taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean;
+};
+export type Efeito = {
+  pais: string; fator: string; contraste: string; tipo: "alavanca" | "perfil";
+  n: number; n_tratados: number; n_controle: number; taxa_controle: number;
+  efeito_bruto_pp: number; bruto_ic_lo: number; bruto_ic_hi: number;
+  efeito_pp: number; ic_lo: number; ic_hi: number; sobreposicao: number;
+  e_value: number; e_value_ic: number; metodo: string; ajustado_por: string;
+};
+export type Qualidade = {
+  execucao: { id: number; status: string; iniciado_em: string; finalizado_em: string | null; versao_codigo: string | null;
+              linhas_lidas: number | null; linhas_carregadas: number | null } | null;
+  verificacoes: { verificacao: string; esperado: string; obtido: string; passou: boolean }[];
+  lotes: { arquivo: string; sha256: string; linhas: number }[];
+  problemas: { codigo: string; escopo: "todos" | "brasil"; afetadas: number; total: number }[];
+};
+export type Usuario = { email: string; nome: string };
+
+export type FatorNivel = { fator: string; nivel: string; elegiveis: number; voltaram_7d: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
+export type Uso = { dia: string; conversas: number; usuarios_ativos: number };
+export type Decomposicao = {
+  disponivel: boolean; fator: string; meses: { mes: string; elegiveis: number; taxa: number }[];
+  de?: string; para?: string; n_de?: number; n_para?: number; taxa_de?: number; taxa_para?: number; delta_pp?: number;
+  componentes_pp?: { mix: number; taxa: number; interacao: number }; soma_confere?: boolean;
+  niveis?: { nivel: string; peso_de: number; peso_para: number; taxa_de: number | null; taxa_para: number | null; n_de: number; n_para: number }[];
+};
+export type LinhaComparacao = { elegiveis: number; voltaram_7d: number; taxa: number; ic_lo: number; ic_hi: number };
+export type Comparacao = { paises: (LinhaComparacao & { pais: string })[]; geral: LinhaComparacao };
+

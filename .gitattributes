@@ -1,0 +1,5 @@
+# texto sempre com LF (os containers rodam em Linux); os binarios da semente nao sao tocados
+* text=auto eol=lf
+*.parquet binary
+*.webp binary
+*.png binary

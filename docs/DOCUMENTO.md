@@ -1,0 +1,69 @@
+# O que faz quem experimentou o assistente voltar em até 7 dias? Achados e decisões
+
+Desafio técnico Acaso · base WildChat-1M, conversas com `country = 'Brazil'` · período 08/04/2023 a 29/04/2024.
+Os detalhes ficam nos ADRs e BDRs (`docs/`); este documento é o resumo.
+
+## 1. Resposta em poucas linhas
+De 2.530 pessoas que experimentaram o assistente no Brasil, **23,7% voltam em até 7 dias** (IC 95%: 22,0% a 25,5%; 2.234 elegíveis). O que mais se associa a voltar
+é **como a pessoa abre a conversa**: quem começa só com uma saudação volta cerca de 8 pontos percentuais (pp) menos, e quem recebe uma recusa na primeira resposta, cerca de 10 pp
+menos. **Trocar de modelo ou alongar a resposta não mostra ganho.** Isto é **associação ajustada**, não prova de causa: só um teste A/B separa causa de seleção.
+
+## 2. Como medi (definições e premissas)
+- **Pessoa:** não há ID de usuário; uso IP (anonimizado) + família do navegador e sistema, sem versão. **Sessão:** conversas com menos de 30 min entre uma e outra.
+  **Retorno:** nova sessão em até 7 dias depois da 1ª conversa. **Elegível:** 1ª vez 30 dias depois do início dos dados e 7 dias antes do fim (evita "novos" falsos e janelas abertas).
+  **Início da conversa:** a 1ª resposta do assistente (as falas do usuário não têm horário). **Dia e semana:** fuso de São Paulo.
+- **Cada premissa tem um custo medido** (`docs/SENSIBILIDADE.md`): o **gap da sessão é a que mais pesa** (15 min: 26,3%; 60 min: 21,3%; 120 min: 19,6%); janela de 3 ou 14 dias dá 20,8% ou 25,3%;
+  o user-agent completo (com a versão) infla para 26,2%; já a lavagem, o início da conversa e retirar os 10 usuários mais ativos mexem menos de 1,2 pp. **O 23,7% deve ser lido como "retorno com sessões de 30 min".**
+- **Problemas de qualidade** (11 tratados, na tela "Glossário e qualidade"): 1.060 conversas sem país (mantidas como "Desconhecido"), 17 cópias exatas (excluídas), 13.201 com hash repetido em linhas
+  diferentes (mantidas: são conversas distintas), 24.192 sem navegador, 163.178 sem estado, e 826.368 sem texto fora do Brasil.
+
+## 3. O que os dados mostram (exploração)
+- **O uso é raso:** 56% das conversas têm 1 turno e 60% das pessoas elegíveis têm uma única conversa. O retorno cresce com o engajamento: 20,2% (1 turno), 24,3% (2 a 3), 25,4% (4 a 6) e **43,0% (7 ou mais)**.
+- **Concentração:** o usuário mais ativo tem 1.556 conversas (13,4% do total) e os 10 mais ativos somam 32,3%; tirá-los muda o retorno em só 0,3 pp.
+- **O modelo muda com o calendário:** GPT-4 é 13 a 16% das conversas em abr a jun/2023, **zero de jul a out**, volta em nov e passa de 90% de jan a abr/2024. Por isso "GPT-4 contra GPT-3.5" mistura modelo com época (confusão que tratei).
+- **Idioma:** 75,7% em português e 16,1% em inglês, mesmo no Brasil.
+- **Por tema do primeiro pedido:** saudação 14,8% de retorno (17% das pessoas), ficção/criação 37,4%, conhecimento/pergunta 25,6%.
+
+## 4. Os três achados e a decisão de cada um
+Efeito ajustado (AIPW, comparando pessoas parecidas), em pp de retorno, IC 95%, ordenado pelo tamanho:
+
+| Fator | Efeito [IC 95%] | Resiste à correção de 16 testes? |
+|---|---|---|
+| Recusa na 1ª resposta (com x sem) | **−9,6 [−17,3; −1,9]** | não (indício) |
+| Saudação x pergunta de conhecimento | **−8,1 [−14,3; −1,8]** | não (indício) |
+| Turnos (2 ou mais x 1) | +8,7 [+3,3; +14,1] | sim (perfil) |
+| Pedido longo x curto | +6,3 [+2,2; +10,5] | sim (perfil) |
+| Modelo (GPT-4 x GPT-3.5) | −0,6 [−5,0; +3,9] | sem efeito detectável |
+| Resposta longa x curta | +0,1 [−5,3; +5,5] | sem efeito detectável |
+
+1. **A saudação afasta.** 17% das pessoas abrem com "oi" e voltam ~8 pp menos. **Decisão:** responder à saudação com exemplos do que o assistente faz (onboarding dentro da conversa) e **testar por A/B**.
+2. **A recusa na primeira resposta afasta.** ~10 pp a menos, e é algo que o produto controla. **Decisão:** auditar recusas e desculpas, reduzir as falsas e testar respostas alternativas.
+3. **Modelo maior ou resposta mais longa não trazem retorno.** **Decisão:** não justificar o custo do GPT-4 por retenção; usar turnos e pedido longo como **sinal precoce** de engajamento, não como alavanca (são comportamento de quem já está engajado).
+
+**Por que mudou o retorno (mix ou taxa):** de set. a out./2023 o retorno foi de 31,2% para 20,3% (−10,9 pp): o perfil de quem chegou quase não mudou (mix +1,4 pp) e a queda veio da taxa dentro dos perfis (−10,4 pp).
+Uso mês e não semana porque uma semana tem só 40 a 90 elegíveis; mesmo o mês tem 125 a 138, então parte do movimento é ruído (o painel avisa).
+
+**O que a análise prova e o que não prova.** Prova associação ajustada por calendário, dispositivo, região, tema, pedido, idioma e modelo. **Não prova causa:** o engajamento prévio da pessoa não é medido (o E-value de 1,4 a 1,6 mostra que um confundidor moderado anularia os efeitos).
+**Ressalva:** tema e recusa vêm de regras de palavras e **ainda dependem da conferência manual** da amostra (`exports/`), de que os achados 1 e 2 dependem.
+**O que os dados não permitem medir e o que falta:** avaliação da resposta pela própria pessoa, custo e latência, identidade estável e o motivo de não voltar.
+
+## 5. Sugestões
+- **Para o assistente:** onboarding na saudação, revisar recusas na primeira resposta e oferecer perguntas de continuação (sem tratar turnos como causa).
+- **Para o dashboard (vieram dos dados):** acompanhar a **parcela de aberturas só com saudação** e a **taxa de recusa na 1ª resposta** como indicadores de entrada; mostrar a decomposição **mix x taxa** a cada mudança de retorno; e acrescentar a **avaliação da resposta** quando existir.
+
+## 6. O dashboard e a arquitetura
+Cinco telas para pessoas de negócio, cada uma com a pergunta que responde, cada número com definição e fórmula (botão "i") e cada efeito com intervalo: Visão geral, O que faz voltar, Coortes, Glossário e qualidade e Como ler.
+Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação do país com os maiores e a média geral (Brasil 23,7% contra 21,5%).
+**O painel mostra:** contagens e taxas agregadas, com intervalo, e efeitos. **Nunca mostra:** texto das conversas, IP (nem com hash), user-agent, identificador de usuário, nem grupos com menos de 30 pessoas.
+**Fluxo:** semente do bruto → ETL (bronze, silver e gold no Postgres, numa só transação) → API somente leitura (lê só a gold) → Next.js. Sobe com `docker compose up --build` (diagrama e endpoints em `docs/arquitetura.md`; implantação na AWS em `infra/README.md`).
+**AWS:** CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário como tarefa agendada, RDS PostgreSQL na base analítica, S3 para o bruto e Secrets Manager; região de São Paulo (LGPD). **Custo estimado: ≈ US$ 136 por mês** (≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade), com RDS, Fargate e ALB somando 98%; **não há LLM** (tema e recusa por regras). Os preços unitários vêm das listas oficiais da AWS, menos o RDS (fonte secundária); o esboço em Terraform passa em `validate`, mas não foi aplicado.
+
+## 7. Sustentação
+76 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 36 conferências a cada carga reverte a publicação se algo divergir
+(`docs/TESTES.md`). **Incidente:** o "retorno caiu de 31% para 18%" é um erro de medição (o `usuario_id` usa o user-agent bruto e uma atualização de navegador fez ~860 pessoas virarem "novas"); causa, consulta de confirmação, correção e prevenção em `docs/INCIDENTE.md`.
+**Riscos e decisões em aberto** (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS): `docs/RISCOS.md`.
+
+## 8. Uso de IA
+Usei o Claude (Claude Code) como assistente ao longo de **todo** o trabalho: discovery e leitura do enunciado, análise estatística (desenho do ajuste AIPW, sensibilidade), código do ETL, da API, do front e dos testes, e a redação dos documentos.
+**O que conferi, corrigi ou descartei:** refiz à mão, em Power BI e DBeaver, os números principais (usuários, elegíveis, retorno, recusa, estados) e só os adotei depois de bater; corrigi uma versão em que o efeito mudava a cada carga (a validação cruzada dependia da ordem das linhas) e rebaixei duas conclusões que não resistiram à correção para múltiplos testes;
+descartei uma nuvem de palavras-chave, e números ilustrativos de um protótipo, por não ter como garantir a precisão. O que **ainda falta conferir**: a precisão de tema e recusa na amostra manual. Dediquei cerca de **[__ horas — preencher]** ao desafio.

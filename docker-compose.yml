@@ -1,0 +1,73 @@
+# Sobe tudo do zero:  docker compose up --build
+# Fluxo: db -> etl (migra, carrega, estima, confere) -> api -> web.   Tela: http://localhost:3000
+# Acesso (README): sem .env, a conta generica de avaliacao recebe uma senha aleatoria, mostrada uma vez em `docker compose logs etl`. Para definir as suas: .env (DASH_USERS, DASH_PASSWORD).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-retencao}
+      POSTGRES_USER: ${POSTGRES_USER:-etl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-etl}
+    ports:
+      - "127.0.0.1:5433:5432"   # so a sua maquina acessa (DBeaver etc.); 5433 evita conflito com um Postgres local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-etl} -d ${POSTGRES_DB:-retencao}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  etl:                       # tarefa unica (na AWS: ECS Fargate agendada). Termina quando a carga acaba.
+    build: ./etl
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-etl}:${POSTGRES_PASSWORD:-etl}@db:5432/${POSTGRES_DB:-retencao}
+      DASH_USERS: "${DASH_USERS:-}"
+      DASH_PASSWORD: "${DASH_PASSWORD:-}"
+    volumes:
+      - ./data/seed:/data/seed:ro
+      - ./db/migrations:/migrations:ro
+    restart: "no"
+
+  api:                       # FastAPI; usuario somente leitura; so le gold e ops
+    build: ./backend
+    depends_on:
+      etl: { condition: service_completed_successfully }
+    environment:
+      DATABASE_URL: postgresql://${API_DB_USER:-api_ro}:${API_DB_PASSWORD:-api_ro}@db:5432/${POSTGRES_DB:-retencao}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-troque-em-producao}
+      COOKIE_SECURE: ${COOKIE_SECURE:-0}
+    ports:
+      - "8000:8000"
+
+  web:                       # Next.js; fala com a API pelo mesmo dominio (/api/*), sem CORS
+    build:
+      context: ./frontend
+      args:
+        API_URL: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+  # ---- testes automatizados (nao sobem com `docker compose up`; rode com o perfil "test") ----
+  testes-etl:                # definicoes (sessao, retorno, elegibilidade, tema, recusa), limpeza e gold, num banco descartavel
+    profiles: ["test"]
+    build: ./etl
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-etl}:${POSTGRES_PASSWORD:-etl}@db:5432/${POSTGRES_DB:-retencao}
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./db/migrations:/migrations:ro
+    command: ["python", "-m", "pytest", "-q", "tests"]
+
+  testes-api:                # decomposicao mix x taxa (funcao pura)
+    profiles: ["test"]
+    build: ./backend
+    command: ["python", "-m", "pytest", "-q", "tests"]
+volumes:
+  pgdata:

@@ -1,0 +1,1 @@
+COMMENT ON COLUMN bronze.wildchat.primeira_resposta_ts IS 'Horario da 1a resposta do assistente (mensagem 2 da conversa), extraido ao gerar a semente (make_seed.py). Igual para todos os paises; e o inicio da conversa.';
