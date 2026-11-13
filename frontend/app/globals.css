@@ -434,3 +434,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .painel-rodape { margin-top: auto; }
 .hora-mapa { flex: 1; grid-template-rows: auto repeat(7, minmax(14px, 1fr)); }
 .hora-celula { aspect-ratio: auto; height: 100%; }
+.tabela-compacta { width: 100%; font-size: 0.76rem; }
+.tabela-compacta th { font-size: 0.6rem; letter-spacing: 0; padding: 0.3rem 0.2rem; }
+.tabela-compacta td { padding: 0.4rem 0.2rem; }
+.tabela-compacta .n-menor { display: block; font-size: 0.64rem; color: var(--texto-mudo); }

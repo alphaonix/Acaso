@@ -254,7 +254,7 @@ export function Decomposicao({ pais }: { pais: string }) {
             <p><strong>{t(dentro ? "co.decLeituraTaxa" : "co.decLeituraMix")}</strong></p>
             <p className="dica"><R texto={t("co.decExplica", { delta: pp(d.delta_pp!) })} /></p>
             {Math.min(d.n_de ?? 0, d.n_para ?? 0) < 300 && <p className="aviso alerta">{t("co.decAmostra", { a: num(d.n_de), b: num(d.n_para) })}</p>}
-            <details>
+            <details open>
               <summary>{t("co.decNiveis")}</summary>
               <div className="tabela-rolagem">
               <table className="tabela tabela-compacta">
@@ -262,7 +262,7 @@ export function Decomposicao({ pais }: { pais: string }) {
                 <tbody>
                   {d.niveis!.map((n) => (
                     <tr key={n.nivel}><td>{tNivel(n.nivel, idioma)}</td><td className="num">{pct(n.peso_de)}</td><td className="num">{pct(n.peso_para)}</td>
-                      <td className="num">{n.n_de ? `${pct(n.taxa_de)} (n=${num(n.n_de)})` : "—"}</td><td className="num">{n.n_para ? `${pct(n.taxa_para)} (n=${num(n.n_para)})` : "—"}</td></tr>
+                      <td className="num">{n.n_de ? <>{pct(n.taxa_de)}<small className="n-menor">n={num(n.n_de)}</small></> : "—"}</td><td className="num">{n.n_para ? <>{pct(n.taxa_para)}<small className="n-menor">n={num(n.n_para)}</small></> : "—"}</td></tr>
                   ))}
                 </tbody>
               </table>
