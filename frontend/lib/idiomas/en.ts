@@ -169,7 +169,7 @@ export const en: Record<Chave, string> = {
   "co.decExplica": "**Mix:** who arrived changed. **Rate:** the return within each profile changed. **Interaction:** both at once. The three add up exactly to the change ({delta}).",
   "co.decAmostra": "Note: {a} and {b} eligible users in the two months. With small samples, part of the change is noise (see the weekly confidence interval on the Overview).",
   "co.decIndisp": "Unavailable: needs at least two months with 30 or more eligible users and, for theme, a country with text.",
-  "co.decNiveis": "See the detail per profile", "co.decPeso": "Weight {m}", "co.decRet": "Return {m}",
+  "co.decNiveis": "Detail per profile", "co.decPeso": "Weight {m}", "co.decRet": "Return {m}",
   "co.calorTitulo": "Heat map of 7-day return", "co.calorPergunta": "The stronger the colour, the higher the return. Weeks with a small sample have no colour.",
   "co.pequena": "small sample", "co.calorN": "n={n}",
   "fa.turnosTitulo": "Turns in the 1st conversation × return", "fa.turnosPergunta": "Bars: % of eligible users; line: return rate. Turns reflect engagement (profile), not a lever.",

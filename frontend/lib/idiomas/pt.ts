@@ -167,7 +167,7 @@ export const pt = {
   "co.decExplica": "**Mix:** mudou quem chegou. **Taxa:** mudou o retorno dentro de cada perfil. **Interação:** as duas coisas ao mesmo tempo. As três somam exatamente a variação ({delta}).",
   "co.decAmostra": "Atenção: {a} e {b} usuários elegíveis nos dois meses. Com amostra pequena, parte da variação é ruído (veja o intervalo de confiança semanal na Visão geral).",
   "co.decIndisp": "Indisponível: é preciso ao menos dois meses com 30 ou mais usuários elegíveis e, para o tema, um país com texto.",
-  "co.decNiveis": "Ver o detalhe por perfil", "co.decPeso": "Peso {m}", "co.decRet": "Retorno {m}",
+  "co.decNiveis": "Detalhe por perfil", "co.decPeso": "Peso {m}", "co.decRet": "Retorno {m}",
   "co.calorTitulo": "Mapa de calor do retorno em 7 dias", "co.calorPergunta": "Quanto mais forte a cor, maior o retorno. Semanas com amostra pequena ficam sem cor.",
   "co.pequena": "amostra pequena", "co.calorN": "n={n}",
   "fa.turnosTitulo": "Turnos na 1ª conversa × retorno", "fa.turnosPergunta": "Barras: % dos usuários elegíveis; linha: taxa de retorno. Turnos refletem engajamento (perfil), não alavanca.",
