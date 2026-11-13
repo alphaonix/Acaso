@@ -92,7 +92,7 @@ export default function VisaoGeral() {
             <CartoesModelos familias={modTempo.dados.familias} />
             <div className="grade2">
               <div><h3 className="sub-titulo">{t("vg.modRetornoTitulo")}</h3><BarrasVersoes versoes={modTempo.dados.versoes} campo="retorno" /></div>
-              <div><h3 className="sub-titulo">{t("vg.modRecusaTitulo")}</h3>{modTempo.dados.versoes.some((v) => v.recusa_possivel) ? <BarrasVersoes versoes={modTempo.dados.versoes} campo="recusa" /> : <p className="vazio">{t("vg.modSemTexto")}</p>}</div>
+              <div><h3 className="sub-titulo">{t("vg.modRecusaTitulo")}</h3>{modTempo.dados.versoes.some((v) => v.recusa_possivel) ? <BarrasVersoes versoes={modTempo.dados.versoes} campo="recusa" /> : <p className="vazio"><R texto={t("vg.modSemTexto")} /></p>}</div>
             </div>
             {modTempo.dados.versoes.length > 0 && <VersoesModelo dados={modTempo.dados.versoes} />}
             <p className="dica" style={{ marginTop: "0.8rem" }}><R texto={t("vg.modNota")} /></p>
@@ -114,7 +114,7 @@ export default function VisaoGeral() {
           {uso.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (uso.dados?.length ? <AreaUso dados={uso.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
         </Painel>
         <Painel titulo={t("vg.temaTitulo")} pergunta={t("vg.temaPergunta")}>
-          {temas.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (temas.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={temas.dados} /> : <p className="vazio">{t("vg.temaSemTexto")}</p>)}
+          {temas.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (temas.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={temas.dados} /> : <p className="vazio"><R texto={t("vg.temaSemTexto")} /></p>)}
         </Painel>
       </div>
 
