@@ -19,8 +19,8 @@ export function CurvaRetorno({ curva }: { curva: Curva }) {
   const v7 = curva.voltou_7d, v30 = curva.voltou_30d;
   return (
     <div>
-      <div role="img" className="graf-flex" style={{ minHeight: 280 }} aria-label={t("co.curvaAria")}>
-        <ResponsiveContainer width="100%" height="100%" minHeight={280}>
+      <div role="img" aria-label={t("co.curvaAria")}>
+        <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={pts} margin={{ top: 18, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--borda)" vertical={false} />
             <XAxis dataKey="dias" type="number" domain={[0, 30]} ticks={[0, 1, 3, 7, 14, 21, 30]} tick={EIXO} stroke="var(--borda)" tickLine={false} />
@@ -131,8 +131,8 @@ export function ModeloTempo({ dados }: { dados: ModelosTempo["meses"] }) {
   const linhas = dados.map((m) => ({ mes: m.mes, conversas: m.conversas, g: m.conversas_gpt4, p: m.conversas ? (m.conversas_gpt4 / m.conversas) * 100 : 0 }));
   return (
     <div>
-      <div role="img" className="graf-flex" style={{ minHeight: 260 }} aria-label={t("ex.modAria")}>
-        <ResponsiveContainer width="100%" height="100%" minHeight={260}>
+      <div role="img" aria-label={t("ex.modAria")}>
+        <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={linhas} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--borda)" vertical={false} />
             <XAxis dataKey="mes" tickFormatter={mesAno} tick={EIXO} stroke="var(--borda)" tickLine={false} minTickGap={16} />
@@ -183,8 +183,8 @@ export function BarrasVersoes({ versoes, campo }: { versoes: VersaoModelo[]; cam
   const topo = Math.ceil((Math.max(...linhas.map((l) => l.taxa + l.erro[1])) + 2) / 5) * 5;
   return (
     <div>
-      <div role="img" className="graf-flex" style={{ minHeight: linhas.length * 40 + 50 }} aria-label={linhas.map((l) => `${l.modelo} ${l.taxa.toFixed(1)}%`).join("; ")}>
-        <ResponsiveContainer width="100%" height="100%" minHeight={linhas.length * 40 + 50}>
+      <div role="img" aria-label={linhas.map((l) => `${l.modelo} ${l.taxa.toFixed(1)}%`).join("; ")}>
+        <ResponsiveContainer width="100%" height={linhas.length * 40 + 50}>
           <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />
             <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, topo]} ticks={marcas(topo)} />
@@ -248,8 +248,8 @@ export function ConcentracaoUso({ dados }: { dados: Concentracao }) {
     <div>
       {dados.top10_pct >= LIMITE_CONCENTRACAO && <p className="aviso">{t("ex.conAlerta", { x: pct(dados.top10_pct), lim: pct(LIMITE_CONCENTRACAO) })}</p>}
       <p><R texto={t("ex.conResumo", { a: pct(dados.pessoas_1_conversa_pct), b: pct(dados.top10_pct), c: pct(dados.maior_pct) })} /></p>
-      <div role="img" className="graf-flex" style={{ minHeight: 250 }} aria-label={t("ex.conAria")}>
-        <ResponsiveContainer width="100%" height="100%" minHeight={250}>
+      <div role="img" aria-label={t("ex.conAria")}>
+        <ResponsiveContainer width="100%" height={250}>
           <BarChart data={linhas} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--borda)" vertical={false} />
             <XAxis dataKey="faixa" tick={EIXO} stroke="var(--borda)" tickLine={false} />

@@ -420,14 +420,5 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .sub-titulo { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--texto-forte); }
 .comp-rolagem { max-height: 560px; overflow-y: auto; padding-right: 4px; }
 
-
-
-/* cartoes do mesmo par tem a mesma altura e o grafico cresce para ocupar o espaco (a altura do grafico e o minimo) */
-.cartao.painel { display: flex; flex-direction: column; }
-.painel-corpo { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.painel-corpo > div:not(.aviso):not(.pilulas) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.painel-corpo .graf-flex { flex: 1; position: relative; }
-.painel-rodape { margin-top: auto; }
-.hora-mapa { flex: 1; grid-template-rows: auto repeat(7, minmax(14px, 1fr)); }
-.hora-celula { aspect-ratio: auto; height: 100%; }
-.grade3.topo { align-items: stretch; }
+/* cartoes lado a lado ficam com a altura do proprio conteudo (sem espaco vazio embaixo do mais curto) */
+.grade2, .grade3 { align-items: start; }

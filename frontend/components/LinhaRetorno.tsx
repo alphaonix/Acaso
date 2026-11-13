@@ -31,8 +31,8 @@ export function LinhaRetorno({ coortes, mensal = false }: { coortes: Coorte[]; m
     faixa: c.taxa == null ? null : [(c.ic_lo ?? 0) * 100, (c.ic_hi ?? 0) * 100],
   }));
   return (
-    <div role="img" className="graf-flex" style={{ minHeight: 280 }} aria-label={t("grafico.aria")}>
-      <ResponsiveContainer width="100%" height="100%" minHeight={280}>
+    <div role="img" aria-label={t("grafico.aria")}>
+      <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={dados} margin={{ top: 10, right: 16, bottom: 4, left: 0 }}>
           <defs><linearGradient id="bandaIC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--graf-1)" stopOpacity={0.35} /><stop offset="100%" stopColor="var(--graf-1)" stopOpacity={0.05} /></linearGradient></defs>
           <CartesianGrid stroke="var(--borda)" vertical={false} />
