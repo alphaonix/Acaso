@@ -442,3 +442,6 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .dec-detalhe-titulo { font-weight: 700; color: var(--acento-texto); margin: 0 0 0.4rem; }
 .avatar { padding: 0; overflow: hidden; }
 .avatar-foto { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.seletor select { color: transparent; max-width: none; }
+.seletor option { color: var(--texto); background: var(--superficie); }
+.seletor-nome { position: absolute; left: 2.1rem; right: 2rem; font-size: 0.88rem; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
