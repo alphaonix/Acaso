@@ -22,10 +22,10 @@ export function Painel({ titulo, pergunta, nota, tipo = "info", className = "", 
 }) {
   const { t } = useI18n();
   return (
-    <section className={`cartao ${className}`}>
+    <section className={`cartao painel ${className}`}>
       <header className="painel-cab"><h2>{titulo}</h2>{pergunta && <p>{pergunta}</p>}</header>
       {nota && <div className="aviso"><R texto={t(nota)} /></div>}
-      {children}
+      <div className="painel-corpo">{children}</div>
       <p className="painel-rodape"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg><span>{t("graf.fonte")}</span></p>
     </section>
   );
@@ -41,8 +41,8 @@ export function RoscaModelo({ dados }: { dados: FatorNivel[] }) {
   const fatias = dados.map((d) => ({ nome: d.nivel, valor: d.elegiveis, p: total ? d.elegiveis / total : 0 }));
   return (
     <div>
-      <div role="img" aria-label={fatias.map((f) => `${f.nome} ${pct(f.p)}`).join(", ")}>
-        <ResponsiveContainer width="100%" height={210}>
+      <div role="img" className="graf-flex" style={{ minHeight: 210 }} aria-label={fatias.map((f) => `${f.nome} ${pct(f.p)}`).join(", ")}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={210}>
           <PieChart>
             <Pie data={fatias} dataKey="valor" nameKey="nome" innerRadius={60} outerRadius={90} paddingAngle={3} stroke="none">
               {fatias.map((_, i) => <Cell key={i} fill={cores[i % cores.length]} />)}
@@ -66,8 +66,8 @@ export function BarrasTema({ dados }: { dados: FatorNivel[] }) {
     .map((d) => ({ nome: tNivel(d.nivel, idioma), taxa: d.taxa! * 100, erro: [(d.taxa! - (d.ic_lo ?? 0)) * 100, ((d.ic_hi ?? 0) - d.taxa!) * 100], n: d.elegiveis, v: d.voltaram_7d, lo: d.ic_lo, hi: d.ic_hi }))
     .sort((a, b) => b.taxa - a.taxa);
   return (
-    <div role="img" aria-label={linhas.map((l) => `${l.nome} ${l.taxa.toFixed(1)}%`).join("; ")}>
-      <ResponsiveContainer width="100%" height={Math.max(220, linhas.length * 34 + 40)}>
+    <div role="img" className="graf-flex" style={{ minHeight: Math.max(220, linhas.length * 34 + 40) }} aria-label={linhas.map((l) => `${l.nome} ${l.taxa.toFixed(1)}%`).join("; ")}>
+      <ResponsiveContainer width="100%" height="100%" minHeight={Math.max(220, linhas.length * 34 + 40)}>
         <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
           <CartesianGrid stroke="var(--borda)" horizontal={false} />
           <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, topoTema]} ticks={marcas(topoTema)} />
@@ -98,8 +98,8 @@ export function AreaUso({ dados }: { dados: Uso[] }) {
       <div className="pilulas" role="group" aria-label={t("graf.periodo")}>
         {ops.map(([k, r]) => <button key={k} type="button" className="pilula" aria-pressed={janela === k} onClick={() => setJanela(k)}>{r}</button>)}
       </div>
-      <div role="img" aria-label={t("graf.usoAria")}>
-        <ResponsiveContainer width="100%" height={250}>
+      <div role="img" className="graf-flex" style={{ minHeight: 250 }} aria-label={t("graf.usoAria")}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={250}>
           <AreaChart data={vis} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <defs><linearGradient id="gUso" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--graf-1)" stopOpacity={0.45} /><stop offset="100%" stopColor="var(--graf-1)" stopOpacity={0.02} /></linearGradient></defs>
             <CartesianGrid stroke="var(--borda)" vertical={false} />
@@ -130,8 +130,8 @@ export function TurnosRetorno({ dados }: { dados: FatorNivel[] }) {
     .map((d) => ({ faixa: tNivel(d.nivel, idioma), pct: total ? (d.elegiveis / total) * 100 : 0, retorno: d.taxa == null ? null : d.taxa * 100, n: d.elegiveis, d }));
   return (
     <div>
-      <div role="img" aria-label={t("graf.turnosAria")}>
-        <ResponsiveContainer width="100%" height={260}>
+      <div role="img" className="graf-flex" style={{ minHeight: 260 }} aria-label={t("graf.turnosAria")}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={260}>
           <ComposedChart data={linhas} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--borda)" vertical={false} />
             <XAxis dataKey="faixa" tick={EIXO} stroke="var(--borda)" tickLine={false} />
@@ -157,8 +157,8 @@ export function BarrasNovos({ coortes }: { coortes: Coorte[] }) {
   const { t } = useI18n();
   return (
     <div>
-      <div role="img" aria-label={t("graf.novosAria")}>
-        <ResponsiveContainer width="100%" height={260}>
+      <div role="img" className="graf-flex" style={{ minHeight: 260 }} aria-label={t("graf.novosAria")}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={260}>
           <BarChart data={coortes} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--borda)" vertical={false} />
             <XAxis dataKey="semana" tickFormatter={dataCurta} tick={EIXO} stroke="var(--borda)" tickLine={false} minTickGap={28} />
@@ -327,8 +327,8 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
       )}
       {!sel && <p className="aviso alerta">{t("comp.semAmostra")}</p>}
       <div className="comp-rolagem" ref={rolagem}>
-      <div role="img" aria-label={t("comp.aria")}>
-        <ResponsiveContainer width="100%" height={linhas.length * 30 + 56}>
+      <div role="img" className="graf-flex" style={{ minHeight: linhas.length * 30 + 56 }} aria-label={t("comp.aria")}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={linhas.length * 30 + 56}>
           <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />
             <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, Math.ceil((max + 2) / 5) * 5]} ticks={marcas(Math.ceil((max + 2) / 5) * 5)} />
