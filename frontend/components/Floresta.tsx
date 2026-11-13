@@ -1,6 +1,7 @@
 "use client";
 import { dec, num, pp } from "@/lib/formato";
 import { useI18n } from "@/lib/i18n";
+import { resisteACorrecao } from "@/lib/estatistica";
 import { tAjustado, tContraste, tFator, tMetodo } from "@/lib/traducao-dados";
 import type { Efeito } from "@/lib/tipos";
 
@@ -11,7 +12,7 @@ const sinal = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${dec(Math.abs(
  * Efeito de cada fator no retorno, no desenho do projeto de referencia: nome + n, trilho com a barra do IC 95% e o ponto do efeito,
  * valor em pp e o selo da conclusao. A escala e simetrica e ajustada ao maior intervalo.
  */
-export function Floresta({ efeitos }: { efeitos: Efeito[] }) {
+export function Floresta({ efeitos, total }: { efeitos: Efeito[]; total: number }) {
   const { t, idioma } = useI18n();
   const maximo = Math.max(...efeitos.flatMap((e) => [Math.abs(e.ic_lo), Math.abs(e.ic_hi), Math.abs(e.efeito_pp)]));
   const lim = Math.max(5, Math.ceil(maximo / 5) * 5);
@@ -21,10 +22,11 @@ export function Floresta({ efeitos }: { efeitos: Efeito[] }) {
       {efeitos.map((e) => {
         const neg = e.efeito_pp < 0;
         const conclusivo = e.ic_lo > 0 || e.ic_hi < 0;
+        const resiste = conclusivo && resisteACorrecao(e, total);   // distinguivel de zero mesmo contando os `total` fatores testados
         const fator = tFator(e.fator, idioma);
         const contraste = tContraste(e.contraste, idioma);
         const ic = `${pp(e.ic_lo)} ${t("fl.a")} ${pp(e.ic_hi)}`;
-        const resumo = t("fl.resumo", { fator, contraste, efeito: pp(e.efeito_pp), lo: pp(e.ic_lo), hi: pp(e.ic_hi), conclusao: conclusivo ? t("fl.sig") : t("fl.nsig") });
+        const resumo = t("fl.resumo", { fator, contraste, efeito: pp(e.efeito_pp), lo: pp(e.ic_lo), hi: pp(e.ic_hi), conclusao: resiste ? t("fl.sigResiste") : conclusivo ? t("fl.sigIndicio") : t("fl.nsig") });
         return (
           <div key={`${e.fator}|${e.contraste}`} className="fl2-linha" role="group" aria-label={resumo}>
             <div className="fl2-nome">
@@ -37,7 +39,7 @@ export function Floresta({ efeitos }: { efeitos: Efeito[] }) {
               <i className={`fl2-ponto ${neg ? "neg" : "pos"}`} style={{ left: `${pos(e.efeito_pp)}%` }} />
             </div>
             <div className={`fl2-val ${neg ? "neg" : "pos"}`}>{sinal(e.efeito_pp)}</div>
-            <div className="fl2-sel"><span className={`fl2-selo ${conclusivo ? "ok" : "mudo"}`}>{conclusivo ? t("fl.detectavel") : t("fl.inconclusivo")}</span></div>
+            <div className="fl2-sel"><span className={`fl2-selo ${resiste ? "ok" : conclusivo ? "indicio" : "mudo"}`} title={conclusivo && !resiste ? t("fl.indicioDica", { n: total }) : undefined}>{resiste ? t("fl.resiste") : conclusivo ? t("fl.indicio") : t("fl.inconclusivo")}</span></div>
             <details className="detalhe-efeito fl2-det">
               <summary>{t("fl.detalhes")}</summary>
               <dl>

@@ -195,6 +195,7 @@ def uso_diario(pais: str = Depends(pais_valido)) -> list[dict]:
 
 FATORES_DECOMPOSICAO = ("modelo", "turnos_da_primeira_conversa", "periodo_do_dia", "tema")
 AMOSTRA_MINIMA_MES = 30   # mesmo minimo do resto do dashboard (definicoes.py do ETL)
+AMOSTRA_BOA_MES = 150     # um mes com 150+ elegiveis entra no par padrao da decomposicao
 
 
 @app.get("/api/retencao/decomposicao", dependencies=[Depends(usuario_atual)])
@@ -217,9 +218,15 @@ def decomposicao(pais: str = Depends(pais_valido), fator: str = "modelo", de: st
     meses = [{"mes": m, "elegiveis": tot[m][0], "taxa": tot[m][1] / tot[m][0]} for m in ok]
     if len(ok) < 2:
         return {"disponivel": False, "fator": fator, "meses": meses}
-    if de is None or para is None:        # padrao: o par de meses consecutivos com a maior variacao
-        i = max(range(1, len(ok)), key=lambda k: abs(tot[ok[k]][1] / tot[ok[k]][0] - tot[ok[k - 1]][1] / tot[ok[k - 1]][0]))
-        de, para = ok[i - 1], ok[i]
+    if de is None or para is None:
+        # padrao: o primeiro e o ultimo mes com amostra boa (comeco x fim do periodo). Escolher o par de maior variacao puxaria
+        # o resultado para o ruido; so sem dois meses bons cai no par consecutivo de maior variacao.
+        bons = [m for m in ok if tot[m][0] >= AMOSTRA_BOA_MES]
+        if len(bons) >= 2:
+            de, para = bons[0], bons[-1]
+        else:
+            i = max(range(1, len(ok)), key=lambda k: abs(tot[ok[k]][1] / tot[ok[k]][0] - tot[ok[k - 1]][1] / tot[ok[k - 1]][0]))
+            de, para = ok[i - 1], ok[i]
     if de not in ok or para not in ok or de == para:
         raise HTTPException(400, "periodos invalidos ou com amostra pequena")
     return {"disponivel": True, "fator": fator, "de": de, "para": para, "meses": meses, **decompor(por_mes, de, para)}

@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BotaoTema, MenuUsuario, SeletorIdioma, SeletorPais } from "@/components/Controles";
-import { api } from "@/lib/api";
-import { AppProvider } from "@/lib/contexto";
+import { api, useApi } from "@/lib/api";
+import { AppProvider, useApp } from "@/lib/contexto";
+import { dataLonga } from "@/lib/formato";
 import { useI18n } from "@/lib/i18n";
 
 const LINKS = [
@@ -55,11 +56,28 @@ function Topo() {
   );
 }
 
+/** Periodo dos dados do pais selecionado e data da ultima carga: o cliente sabe o quao atual e o que esta vendo. */
+function RodapeApp() {
+  const { t, idioma } = useI18n();
+  const { paisAtual } = useApp();
+  const saude = useApi<{ ultima_execucao_etl: { finalizado_em: string } | null }>("/saude");
+  const carga = saude.dados?.ultima_execucao_etl?.finalizado_em;
+  if (!paisAtual?.primeira_data || !paisAtual.ultima_data) return null;
+  const d = (iso: string) => dataLonga(iso);
+  return (
+    <footer className="rodape-app">
+      {t("rodape.base", { a: d(paisAtual.primeira_data), b: d(paisAtual.ultima_data) })}
+      {carga ? ` ${t("rodape.carga", { c: new Date(carga).toLocaleDateString(idioma === "en" ? "en-US" : "pt-BR") })}` : ""}
+    </footer>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppProvider>
       <Topo />
       <main className="conteudo">{children}</main>
+      <RodapeApp />
     </AppProvider>
   );
 }

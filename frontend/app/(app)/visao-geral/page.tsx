@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { resisteACorrecao } from "@/lib/estatistica";
 import { tendencia } from "@/lib/tendencia";
 import { BarrasVersoes, CartoesModelos, ConcentracaoUso, CurvaRetorno, MapaHora, ModeloTempo, VersoesModelo, faixasHora, LIMITE_CONCENTRACAO } from "@/components/AnaliseAmpliada";
 import { AreaUso, BarrasTema, CabecalhoPagina, ComparacaoPaises, Kpi, Painel } from "@/components/Graficos";
@@ -30,6 +31,7 @@ export default function VisaoGeral() {
   const c24 = curva.dados?.voltou_24h, c7 = curva.dados?.voltou_7d, c30 = curva.dados?.voltou_30d;
   const ef = (fator: string, inicio?: string) => efeitos.dados?.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta");
+  const nEfeitos = efeitos.dados?.length ?? 0;
   const cn = conc.dados;
   const f35 = modTempo.dados?.familias.find((f) => f.familia === "GPT-3.5"), f4 = modTempo.dados?.familias.find((f) => f.familia === "GPT-4");
   const rets = (modTempo.dados?.versoes ?? []).filter((v) => v.retorno.taxa != null).map((v) => v.retorno.taxa as number);
@@ -78,8 +80,8 @@ export default function VisaoGeral() {
         <ul className="destaques">
           {tendTxt && <li><R texto={tendTxt} /></li>}
           {r?.voltou_24h?.taxa != null && r.taxa != null && c7 && c30 && c30.voltaram > 0 && <li><R texto={t("vg.dest1", { a: pct(r.voltou_24h.taxa), b: pct(r.taxa), c: pct(c7.voltaram / c30.voltaram) })} /></li>}
-          {sa && <li><R texto={t("vg.dest2", { e: pp(sa.efeito_pp), lo: pp(sa.ic_lo), hi: pp(sa.ic_hi) })} /></li>}
-          {re && <li><R texto={t("vg.dest3", { e: pp(re.efeito_pp), lo: pp(re.ic_lo), hi: pp(re.ic_hi) })} /></li>}
+          {sa && <li><R texto={t("vg.dest2", { e: pp(sa.efeito_pp), lo: pp(sa.ic_lo), hi: pp(sa.ic_hi), nota: t(resisteACorrecao(sa, nEfeitos) ? "fa.nResiste" : "fa.nIndicio") })} /></li>}
+          {re && <li><R texto={t("vg.dest3", { e: pp(re.efeito_pp), lo: pp(re.ic_lo), hi: pp(re.ic_hi), nota: t(resisteACorrecao(re, nEfeitos) ? "fa.nResiste" : "fa.nIndicio") })} /></li>}
           {cn?.top10_pct != null && <li><R texto={t(cn.top10_pct >= LIMITE_CONCENTRACAO ? "vg.dest4" : "vg.dest4b", { a: pct(cn.top10_pct), b: pct(cn.pessoas_1_conversa_pct) })} /></li>}
           {f4?.retorno.taxa != null && f35?.retorno.taxa != null && f4.recusa?.taxa != null && f35.recusa?.taxa != null && recs.length > 1 && rets.length > 1 && <li><R texto={t("vg.dest6", { a: pct(f4.retorno.taxa), b: pct(f35.retorno.taxa), d: pp((f4.retorno.taxa - f35.retorno.taxa) * 100), c: pct(f4.recusa.taxa), e: pct(f35.recusa.taxa), v1: pct(Math.min(...rets)), v2: pct(Math.max(...rets)), r1: pct(Math.min(...recs)), r2: pct(Math.max(...recs)) })} /></li>}
           {impacto && <li><R texto={t("vg.dest7", { t: impacto.t, lo: impacto.lo, hi: impacto.hi })} /></li>}

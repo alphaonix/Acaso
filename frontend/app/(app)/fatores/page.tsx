@@ -7,6 +7,7 @@ import { useApi } from "@/lib/api";
 import { useApp } from "@/lib/contexto";
 import { R, useI18n } from "@/lib/i18n";
 import { nomePais } from "@/lib/pais";
+import { resisteACorrecao } from "@/lib/estatistica";
 import { dec, pct, pp } from "@/lib/formato";
 import type { Efeito, Estrato, FatorNivel } from "@/lib/tipos";
 
@@ -27,7 +28,9 @@ export default function Fatores() {
   const idi = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=idioma_x_navegador`);
   const rotulo: Record<Grupo, string> = { dispositivo: t("ex.dispDispositivo"), sistema: t("ex.dispSistema"), navegador: t("ex.dispNavegador") };
   const todos = efeitos.dados ?? [];
-  const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro);
+  // resistentes a correcao primeiro, depois indicios, depois inconclusivos; em cada grupo, pelo tamanho do efeito
+  const rank = (e: Efeito) => (resisteACorrecao(e, todos.length) ? 0 : e.ic_lo > 0 || e.ic_hi < 0 ? 1 : 2);
+  const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro).sort((a, b) => rank(a) - rank(b) || Math.abs(b.efeito_pp) - Math.abs(a.efeito_pp));
   const ef = (fator: string, inicio?: string) => todos.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta"), mo = ef("Modelo"), lo = ef("Tamanho da primeira resposta");
   // impacto = parcela de pessoas com o fator x efeito (em pp); vale so se o efeito for causal
@@ -57,7 +60,7 @@ export default function Fatores() {
           <div className="pilulas" role="group" aria-label={t("fa.filtroAria")}>
             {opcoes.map(([k, texto]) => <button key={k} type="button" className="pilula" aria-pressed={filtro === k} onClick={() => setFiltro(k)}>{texto}</button>)}
           </div>
-          {efeitos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : <Floresta efeitos={lista} />}
+          {efeitos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : <Floresta efeitos={lista} total={todos.length} />}
         </Painel>
       )}
 
@@ -68,8 +71,8 @@ export default function Fatores() {
           </Painel>
           <Painel nota="nt.achados" titulo={t("fa.achadosTitulo")} pergunta={t("fa.achadosPergunta")}>
             <ol className="achados">
-              {sa && imp(sa) && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p>{t("fa.a1d", { ...ic(sa)!, ...imp(sa)! })}</p></div></li>}
-              {re && imp(re) && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p>{t("fa.a2d", { ...ic(re)!, ...imp(re)! })}</p></div></li>}
+              {sa && imp(sa) && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p>{t("fa.a1d", { ...ic(sa)!, ...imp(sa)!, nota: t(resisteACorrecao(sa, todos.length) ? "fa.nResiste" : "fa.nIndicio") })}</p></div></li>}
+              {re && imp(re) && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p>{t("fa.a2d", { ...ic(re)!, ...imp(re)!, nota: t(resisteACorrecao(re, todos.length) ? "fa.nResiste" : "fa.nIndicio") })}</p></div></li>}
               {mo && lo && <li><span className="num-achado">3</span><div><b>{t("fa.a3t")}</b><p>{t("fa.a3d", { e1: ic(mo)!.e, lo1: ic(mo)!.lo, hi1: ic(mo)!.hi, e2: ic(lo)!.e })}</p></div></li>}
               {s35 != null && s4 != null && r35 != null && r4 != null && <li><span className="num-achado">4</span><div><b>{t("fa.a4t")}</b><p>{t("fa.a4d", { s35: pp(s35), s4: pp(s4), r35: pp(r35), r4: pp(r4) })}</p></div></li>}
             </ol>

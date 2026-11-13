@@ -481,3 +481,5 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .comp-trilho .ic { position: absolute; top: 4px; height: 2px; background: var(--texto-suave); }
 .comp-trilho .media { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px dashed var(--graf-3); }
 .comp-divisa { text-align: center; font-size: 0.78rem; color: var(--texto-suave); border-top: 1.5px dashed var(--texto-mudo); padding-top: 0.5rem !important; margin-top: 0.4rem; }
+.fl2-selo.indicio { background: color-mix(in srgb, var(--graf-3) 22%, transparent); color: var(--graf-3); border-color: color-mix(in srgb, var(--graf-3) 55%, transparent); }
+.rodape-app { max-width: 1280px; margin: 0 auto; padding: 0.5rem 1.25rem 2rem; color: var(--texto-mudo); font-size: 0.8rem; }

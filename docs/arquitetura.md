@@ -55,7 +55,7 @@ Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, fa
 | `GET /api/explorar/uso-hora` | pais | conversas por dia da semana e hora (fuso do pais), % no expediente e na madrugada |
 | `GET /api/explorar/modelos` | pais | comparacao entre modelos: por familia (GPT-4 e GPT-3.5) e por versao, **retorno em 7 dias** (elegiveis) e **recusa na 1a resposta** com IC95, tamanho medio da resposta e GPT-4 por mes. Alimenta a Visao geral |
 | `GET /api/uso/diario` | pais | por dia (fuso do pais): conversas e usuarios ativos |
-| `GET /api/retencao/decomposicao` | pais, fator (tema, turnos, modelo, periodo do dia), de, para (meses) | variacao do retorno entre dois meses = mix + taxa + interacao (soma confere), com o detalhe por nivel; padrao: o par de meses com maior variacao |
+| `GET /api/retencao/decomposicao` | pais, fator (tema, turnos, modelo, periodo do dia), de, para (meses) | variacao do retorno entre dois meses = mix + taxa + interacao (soma confere), com o detalhe por nivel; padrao: o primeiro e o ultimo mes com 150+ elegiveis (comecar x fim do periodo; sem escolher o par de maior variacao, que puxaria para o ruido) |
 | `GET /api/efeitos` | pais | por fator: efeito (pp), IC95, n, metodo, ajustado_por; ordenado por tamanho |
 | `GET /api/qualidade` | - | execução da última carga, conferências do portão e problemas de qualidade da base (contagens) |
 | `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` | e-mail e senha | cookie de sessão HttpOnly (JWT); login com limite de tentativas |
