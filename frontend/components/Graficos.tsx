@@ -185,23 +185,24 @@ export function BarrasNovos({ coortes }: { coortes: Coorte[] }) {
 }
 
 /* ---------------- Mapa de calor do retorno por semana ---------------- */
-export function MapaCalor({ coortes }: { coortes: Coorte[] }) {
+export function MapaCalor({ coortes, mensal = false }: { coortes: Coorte[]; mensal?: boolean }) {
   const { t } = useI18n();
   const taxas = coortes.filter((c) => c.taxa != null).map((c) => c.taxa as number);
   const min = Math.min(...taxas), max = Math.max(...taxas);
   const forca = (v: number) => (max === min ? 0.5 : (v - min) / (max - min));
+  const rotulo = (s: string) => (mensal ? mesAno(s) : dataCurta(s));
   return (
     <div className="calor" role="list">
       {coortes.map((c) => {
         if (c.taxa == null) {
           return <div key={c.semana} role="listitem" className="calor-celula" title={t("co.pequena")} style={{ background: "var(--borda-suave)", color: "var(--texto-mudo)" }}>
-            <small>{dataCurta(c.semana)}</small><b>—</b><small>n={num(c.elegiveis)}</small></div>;
+            <small>{rotulo(c.semana)}</small><b>—</b><small>n={num(c.elegiveis)}</small></div>;
         }
         const f = forca(c.taxa);
         return (
-          <div key={c.semana} role="listitem" className="calor-celula" title={`${pct(c.taxa)} · IC ${pct(c.ic_lo)} – ${pct(c.ic_hi)}`}
+          <div key={c.semana} role="listitem" className="calor-celula" title={`${pct(c.taxa)} · ${t("grafico.ic", { lo: pct(c.ic_lo), hi: pct(c.ic_hi) })}`}
             style={{ background: `color-mix(in srgb, var(--roxo) ${Math.round(12 + f * 78)}%, var(--superficie))`, color: f > 0.5 ? "#fff" : "var(--texto-forte)" }}>
-            <small>{dataCurta(c.semana)}</small><b>{pct(c.taxa)}</b><small>{t("co.calorN", { n: num(c.elegiveis) })}</small>
+            <small>{rotulo(c.semana)}</small><b>{pct(c.taxa)}</b><small>{t("co.calorN", { n: num(c.elegiveis) })}</small>
           </div>
         );
       })}
