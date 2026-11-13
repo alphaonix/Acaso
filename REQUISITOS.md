@@ -31,7 +31,7 @@ Prazo: 16/11/2026, 23h59.
 |---|---|---|
 | Efeito de cada fator com IC, **ordenado pelo tamanho** | ✔ | Tela "O que faz voltar"; [`BDR-004`](docs/bdr/BDR-004-analise-de-efeitos.md) (AIPW, E-value, correção para 16 testes) |
 | Fatores de confusão, grupos semelhantes, o que prova e o que não prova | ✔ | BDR-004 e `docs/DOCUMENTO.md` §4 |
-| Uma semana que mudou: perfil ou taxa (mix × taxa) | ◐ | Feito por **mês** (set. → out./2023: mix +1,4 pp, taxa −10,4 pp); a semana tem só 40 a 90 elegíveis. Tela "Coortes semanais" |
+| Uma semana que mudou: perfil ou taxa (mix × taxa) | ◐ | Feito por **mês** (padrão: mai./2023 → abr./2024, de 22,3% para 21,1%: mix +2,2 pp, taxa −2,0 pp, interação −1,5 pp, sem diferença além do ruído); a semana tem só 40 a 90 elegíveis. Tela "Coortes semanais" |
 | Três achados com a decisão de cada um | ◐ | `docs/DOCUMENTO.md` §4; os achados 1 e 2 dependem da validação de tema e recusa |
 
 ## 3.3 Dashboard (documentação)
