@@ -239,6 +239,7 @@ export const en: Record<Chave, string> = {
   "gl.d.elegivel.t": "Eligible", "gl.d.elegivel.d": "A person who already had a full 7 days to come back (and who started at least 30 days after the data begins). Only these count in the return rate.",
   "gl.d.inicio.t": "Start of the conversation", "gl.d.inicio.d": "The time of the assistant's 1st response (the person's messages have no timestamp in the data).",
   "gl.d.fuso.t": "Day and week", "gl.d.fuso.d": "Counted in the country's local time (approximate where there is more than one time zone).",
+  "gl.protTitulo": "How we protect it", "gl.p1": "The internet address already arrives anonymised from WildChat.", "gl.p2": "The analysis base keeps only derived numbers, without the conversation text.", "gl.p3": "The dashboard reads only summed tables, never individual rows.", "gl.p4": "Groups with fewer than 30 people never appear, so no one can be identified.", "gl.p5": "Access requires an account and a password.",
   "gl.privTitulo": "Privacy", "gl.mostra": "Shows", "gl.nunca": "Never shows",
   "gl.m1": "Aggregated counts", "gl.m2": "Rates with confidence intervals", "gl.m3": "Classified themes (only where there is text)", "gl.m4": "Estimated effects, with the uncertainty",
   "gl.n1": "Conversation text", "gl.n2": "IP, even hashed", "gl.n3": "Browser (user-agent) and user identifier", "gl.n4": "Groups with fewer than 30 people",

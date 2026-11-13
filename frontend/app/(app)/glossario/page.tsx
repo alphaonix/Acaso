@@ -34,6 +34,8 @@ export default function Glossario() {
               <ul>{(["gl.n1", "gl.n2", "gl.n3", "gl.n4"] as const).map((k) => <li key={k}>{t(k)}</li>)}</ul>
             </div>
           </div>
+          <p className="priv-tit" style={{ marginTop: "1.1rem" }}>{t("gl.protTitulo")}</p>
+          <ul className="lista-dados">{(["gl.p1", "gl.p2", "gl.p3", "gl.p4", "gl.p5"] as const).map((k) => <li key={k}>{t(k)}</li>)}</ul>
         </Painel>
       </div>
 

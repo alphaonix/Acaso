@@ -237,6 +237,7 @@ export const pt = {
   "gl.d.elegivel.t": "Elegível", "gl.d.elegivel.d": "Pessoa que já teve 7 dias completos para voltar (e que começou pelo menos 30 dias depois do início dos dados). Só essas entram na taxa de retorno.",
   "gl.d.inicio.t": "Início da conversa", "gl.d.inicio.d": "O horário da 1ª resposta do assistente (as mensagens da pessoa não têm horário na base).",
   "gl.d.fuso.t": "Dia e semana", "gl.d.fuso.d": "Contados no horário local do país (aproximado onde há mais de um fuso).",
+  "gl.protTitulo": "Como protegemos", "gl.p1": "O endereço de internet já chega anonimizado do WildChat.", "gl.p2": "A base de análise guarda só números derivados, sem o texto das conversas.", "gl.p3": "O painel lê apenas tabelas somadas, nunca linhas individuais.", "gl.p4": "Grupos com menos de 30 pessoas nunca aparecem, para ninguém ser identificado.", "gl.p5": "O acesso exige conta e senha.",
   "gl.privTitulo": "Privacidade", "gl.mostra": "Mostra", "gl.nunca": "Nunca mostra",
   "gl.m1": "Contagens agregadas", "gl.m2": "Taxas com intervalo de confiança", "gl.m3": "Temas classificados (só onde há texto)", "gl.m4": "Efeitos estimados, com a incerteza",
   "gl.n1": "Texto das conversas", "gl.n2": "IP, mesmo com hash", "gl.n3": "Navegador (user-agent) e identificador individual", "gl.n4": "Grupos com menos de 30 pessoas",
