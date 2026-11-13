@@ -59,7 +59,7 @@ export const en: Record<Chave, string> = {
   "vg.elegiveisSub": "With a full 7-day window to measure return",
   "vg.periodo": "Weeks from {a} to {b}",
   "nav.coortes": "Weekly cohorts",
-  "nav.explorar": "Explore",
+
   "co.kpi24": "Returned within 24 hours", "co.kpi7": "Returned within 7 days (30-day base)", "co.kpi30": "Returned within 30 days",
   "co.kpiSub": "CI {lo} to {hi} · {v} of {n}", "co.kpiDica": "Among people with a full 30-day window.",
   "co.kpi7Dica": "Same 30-day base as the curve, so it differs slightly from the Overview indicator (7-day window).",
@@ -111,7 +111,7 @@ export const en: Record<Chave, string> = {
   "vg.dest4": "**Usage is shallow and concentrated.** The 10 most active people make {a} of conversations and {b} of people have a single conversation. That is why conversation volume misleads and \"active people\" is the steadier measure.",
   "vg.dest5": "**When use happens.** Office hours (Monday to Friday, 9 am to 6 pm): {a} of conversations, {ja} ({ea} if use were the same at every hour). Overnight: {b} ({jb}). Weekend: {c} ({jc}). Peak around {pico}h. See the map below.",
   "vg.curvaTitulo": "How long does it take to come back?", "vg.horaTitulo": "When they use it", "vg.modTitulo2": "The model changed with the calendar", "vg.conTitulo2": "A few people make much of the volume",
-  "vg.maisExplorar": "More cuts (device, language, refusal by version) on the Explore screen.",  "vg.modComparTitulo": "Model comparison", "vg.modComparPergunta": "7-day return and refusal in the 1st response, by family (GPT-4 and GPT-3.5) and by model version.",
+  "vg.maisExplorar": "More cuts (device and request language) at the end of \"What brings people back\".",  "vg.modComparTitulo": "Model comparison", "vg.modComparPergunta": "7-day return and refusal in the 1st response, by family (GPT-4 and GPT-3.5) and by model version.",
   "vg.modRetornoTitulo": "7-day return by model version", "vg.modRecusaTitulo": "Refusal in the 1st response by model version",
   "vg.modRetorno": "7-day return", "vg.modRecusa": "Refusal in the 1st response (per conversation)",
   "vg.modCardSub": "CI {lo} to {hi} · {v} of {n} people", "vg.modCardSubConv": "CI {lo} to {hi} · {v} of {n} conversations",

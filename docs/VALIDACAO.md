@@ -177,7 +177,7 @@ SELECT round(100 * avg((modelo LIKE 'gpt-4%')::int), 1) AS pct_gpt4_todos,
 FROM silver.fato_usuario WHERE pais = 'Brazil';
 ```
 
-## Rodada 9: métricas ampliadas (Coortes, O que faz voltar e Explorar; conferir no DBeaver; valores do Brasil)
+## Rodada 9: métricas ampliadas (Visão geral, Coortes e O que faz voltar; conferir no DBeaver; valores do Brasil)
 Vêm de `silver.fato_usuario` e `silver.fato_conversa`; a gold só agrupa. **Ainda não estão no portão de qualidade** (os números validados só entram lá depois de você conferir). As consistências entre camadas (somas, curva que não decresce, 24 h ⊂ 7 dias) já rodam a cada carga.
 ```sql
 -- 9.1 Curva de retorno: base com 30 dias de janela completa (esperado 2.039), voltou em 24 h (326 = 16,0%), 7 dias (489 = 24,0%), 30 dias (533 = 26,1%)

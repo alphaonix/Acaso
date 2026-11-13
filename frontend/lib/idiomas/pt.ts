@@ -57,7 +57,7 @@ export const pt = {
   "vg.elegiveisSub": "Com janela completa de 7 dias para medir o retorno",
   "vg.periodo": "Semanas de {a} a {b}",
   "nav.coortes": "Coortes semanais",
-  "nav.explorar": "Explorar",
+
   "co.kpi24": "Voltou em 24 horas", "co.kpi7": "Voltou em 7 dias (base de 30 dias)", "co.kpi30": "Voltou em 30 dias",
   "co.kpiSub": "IC {lo} a {hi} · {v} de {n}", "co.kpiDica": "Entre quem tem 30 dias de janela completa.",
   "co.kpi7Dica": "Mesma base de 30 dias da curva; por isso difere um pouco do indicador da Visão geral (janela de 7 dias).",
@@ -109,7 +109,7 @@ export const pt = {
   "vg.dest4": "**O uso é raso e concentrado.** As 10 pessoas mais ativas fazem {a} das conversas e {b} das pessoas têm uma só conversa. Por isso o volume de conversas engana e \"pessoas ativas\" é a medida mais estável.",
   "vg.dest5": "**Quando o uso acontece.** Expediente (segunda a sexta, 9h às 18h): {a} das conversas, {ja} ({ea} se o uso fosse igual em todas as horas). Madrugada: {b} ({jb}). Fim de semana: {c} ({jc}). Pico por volta das {pico}h. Veja o mapa abaixo.",
   "vg.curvaTitulo": "Quanto tempo leva para voltar?", "vg.horaTitulo": "Quando usam", "vg.modTitulo2": "O modelo mudou com o calendário", "vg.conTitulo2": "Poucas pessoas fazem muito do volume",
-  "vg.maisExplorar": "Mais recortes (dispositivo, idioma, recusa por versão) na tela Explorar.",  "vg.modComparTitulo": "Comparação entre modelos", "vg.modComparPergunta": "Retorno em 7 dias e recusa na 1ª resposta, por família (GPT-4 e GPT-3.5) e por versão do modelo.",
+  "vg.maisExplorar": "Mais recortes (dispositivo e idioma do pedido) no fim de \"O que faz voltar\".",  "vg.modComparTitulo": "Comparação entre modelos", "vg.modComparPergunta": "Retorno em 7 dias e recusa na 1ª resposta, por família (GPT-4 e GPT-3.5) e por versão do modelo.",
   "vg.modRetornoTitulo": "Retorno em 7 dias por versão do modelo", "vg.modRecusaTitulo": "Recusa na 1ª resposta por versão do modelo",
   "vg.modRetorno": "Retorno em 7 dias", "vg.modRecusa": "Recusa na 1ª resposta (por conversa)",
   "vg.modCardSub": "IC {lo} a {hi} · {v} de {n} pessoas", "vg.modCardSubConv": "IC {lo} a {hi} · {v} de {n} conversas",

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Floresta } from "@/components/Floresta";
 import { EstratosModelo } from "@/components/AnaliseAmpliada";
-import { CabecalhoPagina, Painel, TurnosRetorno } from "@/components/Graficos";
+import { BarrasTema, CabecalhoPagina, Painel, TurnosRetorno } from "@/components/Graficos";
 import { useApi } from "@/lib/api";
 import { useApp } from "@/lib/contexto";
 import { R, useI18n } from "@/lib/i18n";
@@ -11,6 +11,8 @@ import { dec, pct, pp } from "@/lib/formato";
 import type { Efeito, Estrato, FatorNivel } from "@/lib/tipos";
 
 type Filtro = "todos" | "alavanca" | "perfil";
+const GRUPOS = ["dispositivo", "sistema", "navegador"] as const;
+type Grupo = (typeof GRUPOS)[number];
 
 export default function Fatores() {
   const { pais, paisAtual } = useApp();
@@ -20,6 +22,10 @@ export default function Fatores() {
   const resumo = useApi<{ elegiveis: number }>(`/retencao/resumo?pais=${encodeURIComponent(pais)}`);
   const estratos = useApi<Estrato[]>(`/retencao/estratos?pais=${encodeURIComponent(pais)}`);
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [grupo, setGrupo] = useState<Grupo>("dispositivo");
+  const disp = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=${grupo}`);
+  const idi = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=idioma_x_navegador`);
+  const rotulo: Record<Grupo, string> = { dispositivo: t("ex.dispDispositivo"), sistema: t("ex.dispSistema"), navegador: t("ex.dispNavegador") };
   const todos = efeitos.dados ?? [];
   const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro);
   const ef = (fator: string, inicio?: string) => todos.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
@@ -76,6 +82,18 @@ export default function Fatores() {
           {estratos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : estratos.dados ? <EstratosModelo dados={estratos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
         </Painel>
       )}
+
+      <div className="grade2">
+        <Painel nota="ex.dispAviso" titulo={t("ex.dispTitulo")} pergunta={t("ex.dispPergunta")}>
+          <div className="pilulas" role="group" aria-label={t("ex.dispGrupo")}>
+            {GRUPOS.map((g) => <button key={g} type="button" className="pilula" aria-pressed={grupo === g} onClick={() => setGrupo(g)}>{rotulo[g]}</button>)}
+          </div>
+          {disp.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : disp.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={disp.dados} /> : <p className="vazio">{t("ex.semDados")}</p>}
+        </Painel>
+        <Painel nota="ex.idiAviso" titulo={t("ex.idiTitulo")} pergunta={t("ex.idiPergunta")}>
+          {idi.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : idi.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={idi.dados} /> : <p className="vazio">{t("ex.semDados")}</p>}
+        </Painel>
+      </div>
     </>
   );
 }
