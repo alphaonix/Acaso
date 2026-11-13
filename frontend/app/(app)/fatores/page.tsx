@@ -24,6 +24,8 @@ export default function Fatores() {
   const ef = (fator: string, inicio?: string) => todos.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta"), mo = ef("Modelo"), lo = ef("Tamanho da primeira resposta");
   const ic = (e?: Efeito) => (e ? { e: pp(e.efeito_pp), lo: pp(e.ic_lo), hi: pp(e.ic_hi) } : null);
+  const dif = (fator: string, fam: string) => estratos.dados?.find((e) => e.fator === fator && e.familia === fam)?.diferenca?.pp;
+  const [s35, s4, r35, r4] = [dif("saudacao", "GPT-3.5"), dif("saudacao", "GPT-4"), dif("recusa", "GPT-3.5"), dif("recusa", "GPT-4")];
   const opcoes: [Filtro, string][] = [["todos", t("fa.todos")], ["alavanca", t("fa.alavancas")], ["perfil", t("fa.perfil")]];
 
   return (
@@ -54,11 +56,12 @@ export default function Fatores() {
           <Painel nota="nt.turnos" titulo={t("fa.turnosTitulo")} pergunta={t("fa.turnosPergunta")}>
             {turnos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : turnos.dados?.length ? <TurnosRetorno dados={turnos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
           </Painel>
-          <Painel titulo={t("fa.achadosTitulo")} pergunta={t("fa.achadosPergunta")}>
+          <Painel nota="nt.achados" titulo={t("fa.achadosTitulo")} pergunta={t("fa.achadosPergunta")}>
             <ol className="achados">
               {sa && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p>{t("fa.a1d", { ...ic(sa)! })}</p></div></li>}
               {re && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p>{t("fa.a2d", { ...ic(re)! })}</p></div></li>}
               {mo && lo && <li><span className="num-achado">3</span><div><b>{t("fa.a3t")}</b><p>{t("fa.a3d", { e1: ic(mo)!.e, lo1: ic(mo)!.lo, hi1: ic(mo)!.hi, e2: ic(lo)!.e })}</p></div></li>}
+              {s35 != null && s4 != null && r35 != null && r4 != null && <li><span className="num-achado">4</span><div><b>{t("fa.a4t")}</b><p>{t("fa.a4d", { s35: pp(s35), s4: pp(s4), r35: pp(r35), r4: pp(r4) })}</p></div></li>}
             </ol>
           </Painel>
         </div>
