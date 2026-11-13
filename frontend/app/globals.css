@@ -397,7 +397,11 @@ body { background-image: var(--hero); background-attachment: fixed; }
 @media (min-width: 640px) { .kpis3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .kpis3 .kpi:nth-child(2n) .popover { left: 0; right: auto; }
 .kpis3 .kpi:last-child .popover { left: auto; right: 0; }
-.tabela-rolagem { overflow-x: auto; }
+.tabela-rolagem { overflow-x: auto; max-width: 100%; }
+.tabela-compacta { font-size: 0.8rem; table-layout: auto; }
+.tabela-compacta th { font-size: 0.66rem; padding: 0.35rem 0.3rem; }
+.tabela-compacta td { padding: 0.4rem 0.3rem; }
+.painel-corpo > div:not([class]) details { min-width: 0; max-width: 100%; }
 .est-dif { display: grid; gap: 0.3rem; min-width: 190px; }
 .est-dif small { color: var(--texto-mudo); }
 .est-trilho { position: relative; height: 12px; background: var(--borda-suave); border-radius: 6px; }

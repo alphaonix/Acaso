@@ -256,7 +256,8 @@ export function Decomposicao({ pais }: { pais: string }) {
             {Math.min(d.n_de ?? 0, d.n_para ?? 0) < 300 && <p className="aviso alerta">{t("co.decAmostra", { a: num(d.n_de), b: num(d.n_para) })}</p>}
             <details>
               <summary>{t("co.decNiveis")}</summary>
-              <table className="tabela">
+              <div className="tabela-rolagem">
+              <table className="tabela tabela-compacta">
                 <thead><tr><th>{t("co.decPerfil")}</th><th className="num">{t("co.decPeso", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decPeso", { m: mesAno(d.para!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.para!) })}</th></tr></thead>
                 <tbody>
                   {d.niveis!.map((n) => (
@@ -265,6 +266,7 @@ export function Decomposicao({ pais }: { pais: string }) {
                   ))}
                 </tbody>
               </table>
+              </div>
             </details>
           </>
         );
