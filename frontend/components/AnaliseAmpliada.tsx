@@ -284,6 +284,9 @@ export function ConcentracaoUso({ dados }: { dados: Concentracao }) {
         <span><i style={{ background: "var(--graf-2)" }} />{t("ex.conPessoas")}</span>
         <span><i style={{ background: "var(--graf-1)" }} />{t("ex.conConversas")}</span>
       </div>
+      {dados.retorno_com?.taxa != null && dados.retorno_sem_top10?.taxa != null && (
+        <p style={{ marginTop: "0.6rem" }}><R texto={t("ex.conRetorno", { a: pct(dados.retorno_com.taxa), va: num(dados.retorno_com.voltaram), ea: num(dados.retorno_com.elegiveis), b: pct(dados.retorno_sem_top10.taxa), vb: num(dados.retorno_sem_top10.voltaram), eb: num(dados.retorno_sem_top10.elegiveis), d: pp((dados.retorno_sem_top10.taxa - dados.retorno_com.taxa) * 100) })} /></p>
+      )}
       <p className="dica" style={{ marginTop: "0.6rem" }}>{t("ex.conNota")}</p>
     </div>
   );

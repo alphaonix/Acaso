@@ -177,6 +177,17 @@ UPDATE gold.pais g SET top10_pct = t.top10::numeric / t.total, maior_pct = t.mai
 FROM t WHERE t.pais = g.pais
 """
 
+SQL_RETORNO_SEM_TOP10 = """
+WITH u AS (SELECT pais, usuario_id, count(*) AS n FROM silver.fato_conversa GROUP BY 1, 2),
+r AS (SELECT pais, usuario_id, row_number() OVER (PARTITION BY pais ORDER BY n DESC, usuario_id) AS rk FROM u),
+e AS (SELECT f.pais, count(*) FILTER (WHERE f.elegivel AND f.voltou_7d) AS v_tot,
+             count(*) FILTER (WHERE f.elegivel AND coalesce(r.rk, 99) > 10) AS el_sem,
+             count(*) FILTER (WHERE f.elegivel AND f.voltou_7d AND coalesce(r.rk, 99) > 10) AS v_sem
+      FROM silver.fato_usuario f LEFT JOIN r ON r.pais = f.pais AND r.usuario_id = f.usuario_id GROUP BY 1)
+UPDATE gold.pais g SET voltaram_7d = e.v_tot, elegiveis_sem_top10 = e.el_sem, voltaram_sem_top10 = e.v_sem
+FROM e WHERE e.pais = g.pais
+"""
+
 SQL_USO_HORA = """
 INSERT INTO gold.agg_uso_hora (pais, dia_semana, hora, conversas)
 SELECT f.pais, extract(isodow FROM timezone(d.fuso, f.inicio_utc))::smallint, extract(hour FROM timezone(d.fuso, f.inicio_utc))::smallint, count(*)
@@ -197,7 +208,7 @@ def construir(dw) -> None:
         cur.execute(SQL_USO_DIA)
         cur.execute(SQL_RETORNO_MES_FATOR)
         cur.execute(SQL_PROBLEMAS)
-        for sql in (SQL_CURVA, SQL_ESTRATO, SQL_RECUSA_MODELO, SQL_CONCENTRACAO, SQL_CONCENTRACAO_PAIS, SQL_USO_HORA, SQL_MODELO_MES):
+        for sql in (SQL_CURVA, SQL_ESTRATO, SQL_RECUSA_MODELO, SQL_CONCENTRACAO, SQL_CONCENTRACAO_PAIS, SQL_RETORNO_SEM_TOP10, SQL_USO_HORA, SQL_MODELO_MES):
             cur.execute(sql)
         cur.executemany(
             """INSERT INTO gold.catalogo_indicador (indicador_id, nome, pergunta, unidade, denominador, formula,

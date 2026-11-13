@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { BarrasVersoes, CartoesModelos, ConcentracaoUso, CurvaRetorno, MapaHora, ModeloTempo, VersoesModelo, faixasHora } from "@/components/AnaliseAmpliada";
 import { AreaUso, BarrasTema, CabecalhoPagina, ComparacaoPaises, Kpi, Painel } from "@/components/Graficos";
 import { LinhaRetorno } from "@/components/LinhaRetorno";
@@ -36,7 +37,9 @@ export default function VisaoGeral() {
   const semanas = coortes.dados ?? [];
   const pequenas = semanas.filter((c) => c.amostra_pequena).length;
   const mesesOk = (meses.dados ?? []).filter((m) => m.taxa != null).length;
+  const [visao, setVisao] = useState<"mensal" | "semanal">("mensal");
   const usarMeses = semanas.length > 0 && semanas.length - pequenas < 8 && mesesOk >= 3;   // paises pequenos: nenhuma semana alcanca 30 elegiveis
+  const porMes = usarMeses || (visao === "mensal" && mesesOk >= 3);   // por padrao o mes: poucas semanas somem do grafico
 
   return (
     <>
@@ -75,10 +78,16 @@ export default function VisaoGeral() {
         <p className="dica" style={{ marginTop: "0.8rem" }}>{t("vg.maisExplorar")}</p>
       </Painel>
 
-      <Painel nota="nt.semanal" className="bloco" titulo={t("vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
-          {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length === 0 ? <p className="vazio">{t("vg.semDados")}</p> : <LinhaRetorno coortes={usarMeses ? (meses.dados ?? []) : semanas} mensal={usarMeses} />}
-          {usarMeses ? <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("vg.mensalAviso", { n: (meses.dados?.length ?? 0) - mesesOk, total: meses.dados?.length ?? 0 })} /></p>
-            : pequenas > 0 && <p className="dica" style={{ marginTop: "0.6rem" }}>{t("vg.pequenas", { n: pequenas, total: semanas.length })}</p>}
+      <Painel nota="nt.semanal" className="bloco" titulo={t(porMes ? "vg.graficoTituloMes" : "vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
+        {!usarMeses && mesesOk >= 3 && (
+          <div className="pilulas" role="group" aria-label={t("vg.visaoAria")}>
+            {(["mensal", "semanal"] as const).map((k) => <button key={k} type="button" className="pilula" aria-pressed={visao === k} onClick={() => setVisao(k)}>{t(k === "mensal" ? "vg.porMes" : "vg.porSemana")}</button>)}
+          </div>
+        )}
+        {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length === 0 ? <p className="vazio">{t("vg.semDados")}</p> : <LinhaRetorno coortes={porMes ? (meses.dados ?? []) : semanas} mensal={porMes} />}
+        {usarMeses ? <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("vg.mensalAviso", { n: (meses.dados?.length ?? 0) - mesesOk, total: meses.dados?.length ?? 0 })} /></p>
+          : porMes ? <p className="dica" style={{ marginTop: "0.6rem" }}>{t(mesesOk === (meses.dados?.length ?? 0) ? "vg.mesesNota0" : "vg.mesesNota", { n: (meses.dados?.length ?? 0) - mesesOk, total: meses.dados?.length ?? 0, sem: pequenas, sw: semanas.length })}</p>
+          : pequenas > 0 && <p className="dica" style={{ marginTop: "0.6rem" }}>{t("vg.pequenas", { n: pequenas, total: semanas.length })}</p>}
       </Painel>
 
       <Painel nota="vg.modNota" className="bloco" titulo={t("vg.modComparTitulo")} pergunta={t("vg.modComparPergunta")}>

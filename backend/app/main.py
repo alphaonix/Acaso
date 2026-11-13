@@ -267,9 +267,12 @@ def concentracao(pais: str = Depends(pais_valido)) -> dict:
     tu, tc = sum(f["usuarios"] for f in faixas), sum(f["conversas"] for f in faixas)
     for f in faixas:
         f["pct_pessoas"], f["pct_conversas"] = f["usuarios"] / tu, f["conversas"] / tc
-    p = consulta("SELECT usuarios, top10_pct, maior_pct, pessoas_1_conversa_pct FROM gold.pais WHERE pais = %s", (pais,))[0]
+    p = consulta("SELECT usuarios, usuarios_elegiveis, voltaram_7d, elegiveis_sem_top10, voltaram_sem_top10, top10_pct, maior_pct, pessoas_1_conversa_pct FROM gold.pais WHERE pais = %s", (pais,))[0]
     ok = p["usuarios"] >= AMOSTRA_MINIMA_MES
+    com = _com_taxa({"voltaram": p["voltaram_7d"], "elegiveis": p["usuarios_elegiveis"]}, "voltaram", "elegiveis")
+    sem = _com_taxa({"voltaram": p["voltaram_sem_top10"], "elegiveis": p["elegiveis_sem_top10"]}, "voltaram", "elegiveis")
     return {"faixas": faixas if ok else [], "usuarios": tu, "conversas": tc,
+            "retorno_com": com if ok else None, "retorno_sem_top10": sem if ok else None,
             "top10_pct": p["top10_pct"] if ok else None, "maior_pct": p["maior_pct"] if ok else None,
             "pessoas_1_conversa_pct": p["pessoas_1_conversa_pct"] if ok else None}
 

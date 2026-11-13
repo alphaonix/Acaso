@@ -93,3 +93,14 @@ def test_modelo_por_versao_vale_para_pais_sem_texto(dw):
     rodar(dw, [C("fa", t("2023-01-01 10:00"), pais="France"), C("fb", t("2023-12-31 10:00"), pais="France"),   # a elegibilidade usa o periodo de cada pais
                C("f1", BASE, pais="France", modelo="gpt-4-0314"), C("f1", BASE + timedelta(days=1), pais="France", modelo="gpt-4-0314"), C("f2", BASE, pais="France", modelo="gpt-4-0314")], com_gold=True)
     assert linhas(dw, "SELECT conversas, conversas_texto, elegiveis, voltaram_7d FROM gold.agg_recusa_modelo WHERE pais = 'France' AND modelo = 'gpt-4-0314'") == [(3, 0, 2, 1)]
+
+
+def test_retorno_com_e_sem_as_10_pessoas_mais_ativas(dw):
+    convs = []
+    for i in range(10):                                                    # 10 pessoas "pesadas": 2 conversas com 2 dias de distancia (voltam)
+        convs += [C(f"h{i}", BASE), C(f"h{i}", BASE + timedelta(days=2))]
+    convs += [C(f"l{i}", BASE) for i in range(5)]                          # 5 leves: 1 conversa, nao voltam
+    rodar(dw, convs, com_gold=True)
+    v, el_sem, v_sem, el = linhas(dw, "SELECT voltaram_7d, elegiveis_sem_top10, voltaram_sem_top10, usuarios_elegiveis FROM gold.pais WHERE pais = 'Brazil'")[0]
+    assert (el, v) == (15, 10)                                             # as 2 ancoras de datas nao sao elegiveis
+    assert (el_sem, v_sem) == (5, 0)                                       # tirando as 10 mais ativas sobram as 5 leves, nenhuma voltou

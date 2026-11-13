@@ -51,6 +51,8 @@ export type TaxaGrupo = { nivel: string; elegiveis: number; voltaram: number; ta
 export type Estrato = { fator: "recusa" | "saudacao"; familia: "GPT-4" | "GPT-3.5"; tratado: TaxaGrupo | null; comparacao: TaxaGrupo | null; diferenca: { pp: number; ic_lo: number; ic_hi: number } | null };
 export type Concentracao = {
   faixas: { faixa: string; usuarios: number; conversas: number; pct_pessoas: number; pct_conversas: number }[];
+  retorno_com?: { voltaram: number; elegiveis: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null } | null;
+  retorno_sem_top10?: { voltaram: number; elegiveis: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null } | null;
   usuarios: number; conversas: number; top10_pct: number | null; maior_pct: number | null; pessoas_1_conversa_pct: number | null;
 };
 export type UsoHora = { celulas: { dia_semana: number; hora: number; conversas: number }[]; total: number; pct_expediente: number | null; pct_madrugada: number | null; fuso: string; fuso_aproximado: boolean };

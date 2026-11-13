@@ -305,7 +305,10 @@ export function CabecalhoPagina({ eyebrow, titulo, destaque, desc }: { eyebrow: 
 /* ---------------- Comparacao entre paises: o pais selecionado frente aos maiores e a media geral ---------------- */
 
 /** Rotulo do eixo: posicao (ranking pela estimativa), nome e bandeira do pais; o selecionado vai em destaque. */
-function TickPais({ x, y, nome, linhas, pais }: { x: number; y: number; nome: string; linhas: { pais: string; nome: string; iso2: string | null }[]; pais: string }) {
+/** Abaixo disso o intervalo e largo demais para dar posicao: o pais aparece na lista, sem numero. */
+const MIN_POSICAO = 300;
+
+function TickPais({ x, y, nome, linhas, pais }: { x: number; y: number; nome: string; linhas: { pais: string; nome: string; iso2: string | null; robusto: boolean }[]; pais: string }) {
   const i = linhas.findIndex((l) => l.nome === nome);
   const l = linhas[i];
   const B = bandeiraDe(l?.iso2);
@@ -313,7 +316,7 @@ function TickPais({ x, y, nome, linhas, pais }: { x: number; y: number; nome: st
   const cor = sel ? "var(--texto)" : "var(--texto-suave)";
   return (
     <g>
-      <text x={x - 192} y={y} dy={4} textAnchor="start" fontSize={11} fill="var(--texto-mudo)" style={{ fontVariantNumeric: "tabular-nums" }}>{i + 1}º</text>
+      <text x={x - 192} y={y} dy={4} textAnchor="start" fontSize={11} fill="var(--texto-mudo)" style={{ fontVariantNumeric: "tabular-nums" }}>{l?.robusto ? `${i + 1}º` : "·"}</text>
       <text x={x - 30} y={y} dy={4} textAnchor="end" fontSize={11} fontWeight={sel ? 700 : 400} fill={cor}>{nome}</text>
       {B ? <B x={x - 24} y={y - 7} width={20} height={14} /> : null}
     </g>
@@ -330,8 +333,8 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   const lista = dados.paises.filter((p) => p.pais !== "Desconhecido");
   const sel = lista.find((p) => p.pais === pais);
   const linhas = lista.map((p) => ({
-    pais: p.pais, iso2: info.get(p.pais)?.iso2 ?? null, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi,
-  })).sort((a, b) => b.taxa - a.taxa);
+    pais: p.pais, iso2: info.get(p.pais)?.iso2 ?? null, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi, robusto: p.elegiveis >= MIN_POSICAO,
+  })).sort((a, b) => Number(b.robusto) - Number(a.robusto) || b.taxa - a.taxa);   // primeiro quem tem amostra para ter posicao; depois os demais, sem posicao
   const atual = linhas.find((l) => l.pais === pais);
   const dif = atual ? atual.taxa - geral.taxa * 100 : null;
   const max = Math.max(...linhas.map((l) => l.taxa + l.erro[1]), geral.taxa * 100);
@@ -364,7 +367,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
             <ReferenceLine x={geral.taxa * 100} stroke="var(--graf-3)" strokeDasharray="5 4" strokeWidth={2}
               label={{ value: t("comp.geral", { v: pct(geral.taxa) }), position: "top", fill: "var(--texto-suave)", fontSize: 11 }} />
             <Bar dataKey="taxa" radius={[0, 6, 6, 0]}>
-              {linhas.map((l) => <Cell key={l.pais} fill={l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : "color-mix(in srgb, var(--roxo) 32%, var(--superficie))"} />)}
+              {linhas.map((l) => <Cell key={l.pais} fill={l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : l.robusto ? "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" : "color-mix(in srgb, var(--roxo) 16%, var(--superficie))"} />)}
               <ErrorBar dataKey="erro" direction="x" stroke="var(--texto-suave)" strokeWidth={1.5} width={5} />
             </Bar>
           </BarChart>
@@ -375,9 +378,10 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
         <span><i style={{ background: "var(--graf-1)" }} />{t("comp.selecionado")}</span>
         {pais !== "Brazil" && <span><i style={{ background: "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" }} />{t("comp.brasil")}</span>}
         <span><i style={{ background: "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" }} />{t("comp.outros")}</span>
+        <span><i style={{ background: "color-mix(in srgb, var(--roxo) 16%, var(--superficie))" }} />{t("comp.semPosicao", { n: MIN_POSICAO })}</span>
         <span><i style={{ background: "var(--graf-3)", borderRadius: 2, height: "0.2rem", width: "0.9rem" }} />{t("comp.mediaGeral")}</span>
       </div>
-      <p className="dica" style={{ marginTop: "0.6rem" }}>{t("comp.nota", { top: linhas.length, n: num(geral.elegiveis), v: num(geral.voltaram_7d) })}</p>
+      <p className="dica" style={{ marginTop: "0.6rem" }}>{t("comp.nota", { top: linhas.length, rank: linhas.filter((l) => l.robusto).length, n: num(geral.elegiveis), v: num(geral.voltaram_7d) })}</p>
     </div>
   );
 }
