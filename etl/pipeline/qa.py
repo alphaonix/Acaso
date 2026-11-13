@@ -106,6 +106,8 @@ VERIFICACOES = [
      "SELECT (SELECT sum(usuarios) FROM gold.agg_concentracao) - (SELECT count(DISTINCT usuario_id) FROM silver.fato_conversa)"),
     ("silver_gold", "Retorno sem os 10 mais ativos: nunca excede o total (paises com mais retornados fora do top 10 do que no total)", "0",
      "SELECT count(*) FROM gold.pais WHERE voltaram_sem_top10 > voltaram_7d OR elegiveis_sem_top10 > usuarios_elegiveis"),
+    ("silver_gold", "Voltou em 24 h (gold.pais) = silver entre os elegiveis, e nunca passa do retorno em 7 dias (diferenca)", "0",
+     "SELECT abs((SELECT sum(voltaram_24h) FROM gold.pais) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND voltou_24h)) + (SELECT count(*) FROM gold.pais WHERE voltaram_24h > voltaram_7d)"),
     ("silver_gold", "Retornaram em 7 dias (gold.pais) = retorno da silver, todos os paises (diferenca)", "0",
      "SELECT (SELECT sum(voltaram_7d) FROM gold.pais) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND voltou_7d)"),
     ("silver_gold", "Uso por hora: conversas somam as conversas da silver, todos os paises", "0",

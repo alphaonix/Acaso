@@ -1,10 +1,10 @@
 # Testes automatizados
 
 Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** Os testes fixam cada regra de borda da
-definição (BDR-001) e reproduzem o incidente do PDF (seção 4.2). São 92 testes, rodam em segundos e **não tocam o banco real**.
+definição (BDR-001) e reproduzem o incidente do PDF (seção 4.2). São 93 testes, rodam em segundos e **não tocam o banco real**.
 
 ```bash
-docker compose --profile test run --rm --build testes-etl     # 63 testes: sessão, retorno, elegibilidade, limpeza, tema, recusa, gold, catálogo, incidente, análise ampliada
+docker compose --profile test run --rm --build testes-etl     # 64 testes: sessão, retorno, elegibilidade, limpeza, tema, recusa, gold, catálogo, incidente, análise ampliada
 docker compose --profile test run --rm --build testes-api     # 29 testes: decomposição mix x taxa
 ```
 O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um banco descartável (`retencao_teste`) no mesmo servidor,
@@ -38,11 +38,11 @@ Alterei a definição de propósito e rodei a suíte; cada alteração foi **det
 
 ## Duas camadas de proteção
 1. **Estes testes** (código): a regra não muda sem quebrar um teste.
-2. **O portão do ETL** (dados): a cada carga, 52 conferências comparam a base com os números validados (Power BI e DBeaver) e entre as camadas;
+2. **O portão do ETL** (dados): a cada carga, 53 conferências comparam a base com os números validados (Power BI e DBeaver) e entre as camadas;
    se algo falhar, a carga é revertida e o dashboard continua no estado anterior.
 
 ## Como uma mudança chega à produção (desenho)
-1. **Pull request:** roda os 92 testes (`docker compose --profile test run ...`) e o `tsc` do frontend. Sem testes verdes, não faz merge.
+1. **Pull request:** roda os 93 testes (`docker compose --profile test run ...`) e o `tsc` do frontend. Sem testes verdes, não faz merge.
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem pelo ETL e registrados em `public.schema_migrations`; migração já aplicada nunca é editada (cria-se uma nova).
 3. **Ambientes:** `dev` (local, compose), `staging` (cópia na AWS com a mesma semente) e `prod`. A mudança de definição passa por `staging`, onde o portão do ETL compara os números novos com os antigos antes de promover.
 4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.

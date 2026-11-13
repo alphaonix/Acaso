@@ -32,7 +32,7 @@ export default function Sobre() {
       <section className="cartao largo">
         <h2>{t("so.indicadores")}</h2>
         <ul className="lista-sobre">
-          {catalogo.map((c) => { const i = tIndicador(c, idioma); return <li key={i.indicador_id}><strong>{i.nome}</strong> ({i.unidade}): {i.pergunta}</li>; })}
+          {catalogo.filter((c) => !["turnos_medios", "uso_gpt4"].includes(c.indicador_id)).map((c) => { const i = tIndicador(c, idioma); return <li key={i.indicador_id}><strong>{i.nome}</strong> ({i.unidade}): {i.pergunta}</li>; })}
         </ul>
         <p className="dica"><R texto={t("so.indicadoresDica")} /></p>
       </section>

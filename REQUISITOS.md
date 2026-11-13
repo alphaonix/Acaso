@@ -46,7 +46,7 @@ Prazo: 16/11/2026, 23h59.
 ## 4 Sustentação
 | Exigência | | Onde |
 |---|---|---|
-| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (92 testes, 52 conferências por carga, prova por mutação, fluxo de mudança), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
+| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (93 testes, 53 conferências por carga, prova por mutação, fluxo de mudança), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
 | 4.2 Incidente (as 5 respostas) | ✔ | [`docs/INCIDENTE.md`](docs/INCIDENTE.md); o teste dourado está em `etl/tests/test_incidente.py` |
 | 4.3 Riscos e decisões em aberto | ✔ | [`docs/RISCOS.md`](docs/RISCOS.md) |
 

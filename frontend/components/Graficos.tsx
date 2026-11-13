@@ -60,12 +60,15 @@ export function RoscaModelo({ dados }: { dados: FatorNivel[] }) {
 }
 
 /* ---------------- Retorno por tema (barras horizontais com IC) ---------------- */
+/** Niveis que sobram da classificacao (nao sao temas de verdade): vao para o fim e em cinza. */
+const RESIDUAIS = ["Outro", "Vazio"];
+
 export function BarrasTema({ dados }: { dados: FatorNivel[] }) {
   const { t, idioma } = useI18n();
   const topoTema = Math.ceil((Math.max(0, ...dados.filter((d) => d.taxa != null).map((d) => (d.ic_hi ?? d.taxa!) * 100)) + 2) / 5) * 5;
   const linhas = dados.filter((d) => d.taxa != null)
-    .map((d) => ({ nome: tNivel(d.nivel, idioma), taxa: d.taxa! * 100, erro: [(d.taxa! - (d.ic_lo ?? 0)) * 100, ((d.ic_hi ?? 0) - d.taxa!) * 100], n: d.elegiveis, v: d.voltaram_7d, lo: d.ic_lo, hi: d.ic_hi }))
-    .sort((a, b) => b.taxa - a.taxa);
+    .map((d) => ({ nome: tNivel(d.nivel, idioma), residual: RESIDUAIS.includes(d.nivel), taxa: d.taxa! * 100, erro: [(d.taxa! - (d.ic_lo ?? 0)) * 100, ((d.ic_hi ?? 0) - d.taxa!) * 100], n: d.elegiveis, v: d.voltaram_7d, lo: d.ic_lo, hi: d.ic_hi }))
+    .sort((a, b) => Number(a.residual) - Number(b.residual) || b.taxa - a.taxa);   // "Outro" e "Vazio" por ultimo e em cinza: nao sao temas
   return (
     <div role="img" className="graf-flex" style={{ minHeight: Math.max(220, linhas.length * 34 + 40) }} aria-label={linhas.map((l) => `${l.nome} ${l.taxa.toFixed(1)}%`).join("; ")}>
       <ResponsiveContainer width="100%" height="100%" minHeight={Math.max(220, linhas.length * 34 + 40)}>
@@ -79,6 +82,7 @@ export function BarrasTema({ dados }: { dados: FatorNivel[] }) {
             return <Dica linhas={<><strong>{l.nome}</strong><br />{t("grafico.retorno")} <b>{pct(l.taxa / 100)}</b><br />{t("grafico.ic", { lo: pct(l.lo), hi: pct(l.hi) })}<br />{t("grafico.voltaram", { v: num(l.v), n: num(l.n) })}</>} />;
           }} />
           <Bar dataKey="taxa" fill="var(--graf-1)" radius={[0, 6, 6, 0]}>
+            {linhas.map((l) => <Cell key={l.nome} fill={l.residual ? "var(--graf-neutro)" : "var(--graf-1)"} />)}
             <ErrorBar dataKey="erro" direction="x" stroke="var(--texto-suave)" strokeWidth={1.5} width={5} />
           </Bar>
         </BarChart>
@@ -357,7 +361,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
       )}
       {!sel && <p className="aviso alerta">{t("comp.semAmostra")}</p>}
       <div className="comp-rolagem" ref={rolagem}>
-      <div role="img" className="graf-flex" style={{ minHeight: dadosGraf.length * 30 + 56 }} aria-label={t("comp.aria")}>
+      <div role="img" className="graf-flex" style={{ minHeight: dadosGraf.length * 30 + 56, minWidth: 560 }} aria-label={t("comp.aria")}>
         <ResponsiveContainer width="100%" height="100%" minHeight={dadosGraf.length * 30 + 56}>
           <BarChart data={dadosGraf} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />

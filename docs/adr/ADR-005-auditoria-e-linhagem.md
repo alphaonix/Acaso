@@ -25,7 +25,7 @@ Opção 2.
   `camadas` (visão: conversas em bronze, silver e gold, com as excluídas e a conferência), `fluxo_pais` (o funil bronze → excluídas → silver → gold, por país e total),
   `nulos` (vazios antes e depois, com a ação: preenchido, mantido, excluído, derivado, não usado), `registro_excluido` (as linhas
   excluídas, com o motivo e a linha que ficou no lugar) e `antes_depois` (exemplos em `campo=valor`, sem texto e sem IP).
-- **Conferências por transição:** cada uma das 52 verificações de `ops.qa_resultado` diz qual passagem protege (bronze x arquivos,
+- **Conferências por transição:** cada uma das 53 verificações de `ops.qa_resultado` diz qual passagem protege (bronze x arquivos,
   bronze → silver, silver interna, silver → gold, efeitos, números validados). A principal é a lei de conservação:
   **linhas da bronze = conversas da silver + linhas excluídas**.
 - **Sem tela no dashboard (decisão de 12/11):** a primeira versão tinha uma tela "Linhagem dos dados" (e o endpoint `/api/linhagem`). Foi removida: o dashboard é para o cliente, que não precisa dela. A auditoria continua no schema `auditoria` (consulta no DBeaver, `docs/VALIDACAO.md`, rodada 7) e nas conferências do ETL (`ops.qa_resultado`, mostradas na tela "Glossário e qualidade"). A API não lê mais o schema `auditoria`.

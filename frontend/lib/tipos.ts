@@ -10,6 +10,7 @@ export type Indicador = {
 export type Resumo = {
   novos: number; elegiveis: number; voltaram_7d: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null;
   primeira_semana: string | null; ultima_semana: string | null;
+  voltou_24h?: { voltaram: number; elegiveis: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null };
   conversas: number; turnos_medios: number; turnos_mediana: number; pct_gpt4: number;
   recusa_usuarios: number | null; recusa_elegiveis: number | null; recusa_taxa: number | null; recusa_ic_lo: number | null; recusa_ic_hi: number | null;
 };

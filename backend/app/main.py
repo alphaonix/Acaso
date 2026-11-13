@@ -119,7 +119,13 @@ def resumo(pais: str = Depends(pais_valido)) -> dict:
          CASE WHEN sum(elegiveis) >= 30 THEN gold.wilson_hi(sum(voltaram_7d), sum(elegiveis)) END AS ic_hi,
          (SELECT min(semana) FROM gold.agg_retorno_semana WHERE pais = %s) AS primeira_semana,
          (SELECT max(semana) FROM gold.agg_retorno_semana WHERE pais = %s) AS ultima_semana
-       FROM gold.agg_retorno_semana WHERE pais = %s""", (pais, pais, pais))[0] | _resumo_pais(pais) | _recusa(pais)
+       FROM gold.agg_retorno_semana WHERE pais = %s""", (pais, pais, pais))[0] | _resumo_pais(pais) | _recusa(pais) | _voltou_24h(pais)
+
+
+def _voltou_24h(pais: str) -> dict:
+    """Voltou em 24 h sobre os elegiveis (a mesma base do retorno em 7 dias), com IC de Wilson."""
+    r = consulta("SELECT voltaram_24h AS voltaram, usuarios_elegiveis AS elegiveis FROM gold.pais WHERE pais = %s", (pais,))[0]
+    return {"voltou_24h": _com_taxa(r, "voltaram", "elegiveis")}
 
 
 def _resumo_pais(pais: str) -> dict:
@@ -321,7 +327,7 @@ def modelos(pais: str = Depends(pais_valido)) -> dict:
 
 @app.get("/api/efeitos", dependencies=[Depends(usuario_atual)])
 def efeitos(pais: str = Depends(pais_valido)) -> list[dict]:
-    return consulta("SELECT * FROM gold.efeito_fator WHERE pais = %s ORDER BY abs(efeito_pp) DESC", (pais,))
+    return consulta("SELECT * FROM gold.efeito_fator WHERE pais = %s ORDER BY (ic_lo > 0 OR ic_hi < 0) DESC, abs(efeito_pp) DESC", (pais,))   # detectaveis primeiro; depois os inconclusivos, cada grupo pelo tamanho
 
 
 @app.get("/api/qualidade", dependencies=[Depends(usuario_atual)])

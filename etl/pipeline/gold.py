@@ -181,10 +181,11 @@ SQL_RETORNO_SEM_TOP10 = """
 WITH u AS (SELECT pais, usuario_id, count(*) AS n FROM silver.fato_conversa GROUP BY 1, 2),
 r AS (SELECT pais, usuario_id, row_number() OVER (PARTITION BY pais ORDER BY n DESC, usuario_id) AS rk FROM u),
 e AS (SELECT f.pais, count(*) FILTER (WHERE f.elegivel AND f.voltou_7d) AS v_tot,
+             count(*) FILTER (WHERE f.elegivel AND f.voltou_24h) AS v24,
              count(*) FILTER (WHERE f.elegivel AND coalesce(r.rk, 99) > 10) AS el_sem,
              count(*) FILTER (WHERE f.elegivel AND f.voltou_7d AND coalesce(r.rk, 99) > 10) AS v_sem
       FROM silver.fato_usuario f LEFT JOIN r ON r.pais = f.pais AND r.usuario_id = f.usuario_id GROUP BY 1)
-UPDATE gold.pais g SET voltaram_7d = e.v_tot, elegiveis_sem_top10 = e.el_sem, voltaram_sem_top10 = e.v_sem
+UPDATE gold.pais g SET voltaram_24h = e.v24, voltaram_7d = e.v_tot, elegiveis_sem_top10 = e.el_sem, voltaram_sem_top10 = e.v_sem
 FROM e WHERE e.pais = g.pais
 """
 

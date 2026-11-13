@@ -153,6 +153,14 @@ const INDICADORES: Record<string, Partial<Record<keyof Indicador, string>>> = {
     formula: "eligible users whose first response matches the refusal pattern ÷ eligible users",
     periodo_referencia: "Entire data period of the country",
   },
+  voltou_24h_elegivel: {
+    nome: "Returned within 24 hours (7-day return base)",
+    pergunta: "Of every 100 eligible people, how many come back within 24 hours of the start of the 1st conversation?",
+    unidade: "user",
+    denominador: "Eligible users (first use more than 30 days after the start and 7 days before the end of the data): the same base as 7-day return",
+    formula: "eligible users with a new session started within 24 hours of the start of the 1st conversation ÷ eligible users",
+    periodo_referencia: "Entire data period of the country",
+  },
   voltou_24h: {
     nome: "Returned within 24 hours",
     pergunta: "Of every 100 people, how many come back within 24 hours of the start of the 1st conversation?",

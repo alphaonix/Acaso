@@ -115,6 +115,20 @@ SELECT count(*) FILTER (WHERE recusa)::numeric / count(*) FROM silver.fato_usuar
 SELECT count(*) FILTER (WHERE voltou_24h)::numeric / count(*) FROM silver.fato_usuario WHERE janela_30d AND pais = :pais
 ```
 
+## Voltou em 24 horas (base do retorno em 7 dias) (`voltou_24h_elegivel`)
+
+- **Pergunta:** De cada 100 pessoas elegíveis, quantas voltam em até 24 horas depois do início da 1ª conversa?
+- **Fórmula:** usuários elegíveis com nova sessão iniciada em até 24 horas após o início da 1ª conversa ÷ usuários elegíveis
+- **Denominador:** Usuários elegíveis (1ª vez há mais de 30 dias do início e 7 dias antes do fim dos dados): a mesma base do retorno em 7 dias
+- **Unidade:** usuário
+- **Período de referência:** Todo o período dos dados do país
+- **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
+- **Fonte no banco:** gold.pais (voltaram_24h, usuarios_elegiveis)
+
+```sql
+SELECT count(*) FILTER (WHERE voltou_24h)::numeric / count(*) FROM silver.fato_usuario WHERE elegivel AND pais = :pais
+```
+
 ## Voltou em 30 dias (`voltou_30d`)
 
 - **Pergunta:** De cada 100 pessoas, quantas voltam em até 30 dias depois do início da 1ª conversa?

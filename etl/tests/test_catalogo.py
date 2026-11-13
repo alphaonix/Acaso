@@ -31,7 +31,7 @@ def um_valor(dw, indicador):
 
 def test_catalogo_cobre_os_indicadores_do_dashboard():
     assert set(SQLS) == {"retorno_7d", "usuarios_novos", "usuarios_elegiveis", "conversas", "turnos_medios", "uso_gpt4", "recusa_primeira_conversa",
-                          "voltou_24h", "voltou_30d", "concentracao_top10", "recusa_por_versao"}
+                          "voltou_24h", "voltou_24h_elegivel", "voltou_30d", "concentracao_top10", "recusa_por_versao"}
 
 
 def test_retorno_7d_do_sql_de_referencia_igual_ao_da_gold(cenario):

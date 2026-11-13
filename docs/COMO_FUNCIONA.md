@@ -2,7 +2,7 @@
 
 Leia na ordem. Cada etapa tem: **a regra em uma frase**, **uma consulta para você conferir no DBeaver** (`localhost:5433`, banco
 `retencao`, usuário `etl`) e **o resultado esperado** (números do Brasil, salvo quando dito). Nada aqui pede confiança: tudo se confere.
-As mesmas conferências rodam sozinhas a cada carga (52 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
+As mesmas conferências rodam sozinhas a cada carga (53 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
 
 ```
 arquivos (semente)  →  BRONZE (cópia)  →  SILVER (limpa, 1 linha por conversa e por usuário)  →  GOLD (resumos)  →  tela
@@ -90,7 +90,7 @@ Resumos prontos por país, semana e fator (`gold.agg_retorno_semana`, `gold.agg_
 (`gold.efeito_fator`). A gold tem as mesmas 837.972 conversas da silver, só agrupadas. Cada taxa vem com intervalo de confiança de
 95% (Wilson) e é escondida quando a amostra é menor que 30.
 
-## 12. As 52 conferências do portão (transição → o que protege)
+## 12. As 53 conferências do portão (transição → o que protege)
 | transição | n | exemplo |
 |---|---|---|
 | bronze_arquivos | 5 | linhas da bronze = linhas dos arquivos de origem |

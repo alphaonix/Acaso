@@ -104,3 +104,11 @@ def test_retorno_com_e_sem_as_10_pessoas_mais_ativas(dw):
     v, el_sem, v_sem, el = linhas(dw, "SELECT voltaram_7d, elegiveis_sem_top10, voltaram_sem_top10, usuarios_elegiveis FROM gold.pais WHERE pais = 'Brazil'")[0]
     assert (el, v) == (15, 10)                                             # as 2 ancoras de datas nao sao elegiveis
     assert (el_sem, v_sem) == (5, 0)                                       # tirando as 10 mais ativas sobram as 5 leves, nenhuma voltou
+
+
+def test_voltou_24h_sobre_a_base_de_elegiveis(dw):
+    rodar(dw, [C("rapido", BASE), C("rapido", BASE + timedelta(hours=12)),          # volta em 12 h: conta em 24 h e em 7 dias
+               C("lento", BASE), C("lento", BASE + timedelta(days=3)),               # volta em 3 dias: so em 7 dias
+               C("nunca", BASE)], com_gold=True)
+    el, v7, v24 = linhas(dw, "SELECT usuarios_elegiveis, voltaram_7d, voltaram_24h FROM gold.pais WHERE pais = 'Brazil'")[0]
+    assert (el, v7, v24) == (3, 2, 1)
