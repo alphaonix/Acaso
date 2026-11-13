@@ -59,10 +59,11 @@ export function MenuUsuario({ onSair }: { onSair: () => void }) {
     document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc); };
   }, [aberto]);
+  const [fotoFalhou, setFotoFalhou] = useState(false);
   const iniciais = (usuario?.nome ?? "?").split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   return (
     <div className="menu-usuario" ref={ref}>
-      <button type="button" className="avatar" aria-haspopup="menu" aria-expanded={aberto} aria-label={`${t("topo.conta")}: ${usuario?.nome ?? ""}`} onClick={() => setAberto(!aberto)}>{iniciais}</button>
+      <button type="button" className="avatar" aria-haspopup="menu" aria-expanded={aberto} aria-label={`${t("topo.conta")}: ${usuario?.nome ?? ""}`} onClick={() => setAberto(!aberto)}>{usuario?.foto && !fotoFalhou ? <img src={usuario.foto} alt="" referrerPolicy="no-referrer" className="avatar-foto" onError={() => setFotoFalhou(true)} /> : iniciais}</button>
       {aberto && (
         <div className="menu-painel" role="menu">
           <div className="menu-id"><b>{usuario?.nome}</b><span>{usuario?.email}</span></div>

@@ -31,7 +31,7 @@ export type Qualidade = {
   lotes: { arquivo: string; sha256: string; linhas: number }[];
   problemas: { codigo: string; escopo: "todos" | "brasil"; afetadas: number; total: number }[];
 };
-export type Usuario = { email: string; nome: string };
+export type Usuario = { email: string; nome: string; foto?: string | null };
 
 export type FatorNivel = { fator: string; nivel: string; elegiveis: number; voltaram_7d: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
 export type Uso = { dia: string; conversas: number; usuarios_ativos: number };

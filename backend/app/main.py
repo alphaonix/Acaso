@@ -73,7 +73,7 @@ def login(c: Credenciais, request: Request, resposta: Response) -> dict:
     if limite.bloqueado(chave):
         evento(evento="login_bloqueado", email=email)
         raise HTTPException(429, "Muitas tentativas. Aguarde alguns minutos.")
-    linha = consulta("SELECT email, nome, senha_hash FROM ops.usuario_dashboard WHERE lower(email) = %s", (email,))
+    linha = consulta("SELECT email, nome, foto_url, senha_hash FROM ops.usuario_dashboard WHERE lower(email) = %s", (email,))
     ok = seguranca.verificar_senha(c.senha, linha[0]["senha_hash"] if linha else None)
     if not ok:
         limite.registrar_falha(chave)
@@ -83,7 +83,7 @@ def login(c: Credenciais, request: Request, resposta: Response) -> dict:
     resposta.set_cookie(seguranca.COOKIE, seguranca.criar_token(linha[0]["email"], linha[0]["nome"]),
                         max_age=seguranca.EXPIRA_S, httponly=True, samesite="lax", secure=seguranca.COOKIE_SEGURO, path="/")
     evento(evento="login_ok", email=email)
-    return {"email": linha[0]["email"], "nome": linha[0]["nome"]}
+    return {"email": linha[0]["email"], "nome": linha[0]["nome"], "foto": linha[0]["foto_url"]}
 
 
 @app.post("/api/auth/logout")
@@ -95,7 +95,8 @@ def logout(resposta: Response) -> dict:
 # ---- protegido --------------------------------------------------------------------------------------
 @app.get("/api/auth/me")
 def eu(u: dict = Depends(usuario_atual)) -> dict:
-    return {"email": u["sub"], "nome": u["nome"]}
+    linha = consulta("SELECT foto_url FROM ops.usuario_dashboard WHERE lower(email) = %s", (u["sub"].lower(),))
+    return {"email": u["sub"], "nome": u["nome"], "foto": linha[0]["foto_url"] if linha else None}
 
 
 @app.get("/api/paises", dependencies=[Depends(usuario_atual)])

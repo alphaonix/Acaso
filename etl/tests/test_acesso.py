@@ -37,3 +37,10 @@ def test_com_env_a_senha_definida_vale_e_contas_fora_da_lista_saem(dw, monkeypat
     monkeypatch.setenv("DASH_USERS", "a@exemplo.com|Ana")
     main.garantir_conta_avaliacao(dw)
     assert {r[0] for r in dw.execute("SELECT email FROM ops.usuario_dashboard")} == {"a@exemplo.com"}
+
+def test_foto_e_opcional_e_so_aceita_https(dw, monkeypatch):
+    monkeypatch.setenv("DASH_USERS", "a@exemplo.com|Ana|https://exemplo.com/a.jpg;b@exemplo.com|Beto;c@exemplo.com|Cris|http://inseguro/c.jpg")
+    monkeypatch.setenv("DASH_PASSWORD", "senha-do-env")
+    main.garantir_conta_avaliacao(dw)
+    fotos = dict(dw.execute("SELECT email, foto_url FROM ops.usuario_dashboard").fetchall())
+    assert fotos == {"a@exemplo.com": "https://exemplo.com/a.jpg", "b@exemplo.com": None, "c@exemplo.com": None}
