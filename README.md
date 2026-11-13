@@ -36,7 +36,7 @@ docker compose logs etl | grep SENHA          # Linux e macOS
 ```
 Para usar o seu e-mail e a sua senha, copie `.env.example` para `.env` e preencha `DASH_USERS` (`email|Nome;email|Nome`) e `DASH_PASSWORD`; depois `docker compose up --build`.
 Se perder a senha gerada: `docker compose down -v` e suba de novo (ou defina `DASH_PASSWORD`).
-**O que você vai ver (6 telas):** Visão geral (retorno por semana com intervalo, modelo, uso diário, tema e comparação do país com os maiores e a média geral) ·
+**O que você vai ver (6 telas):** Visão geral (8 cartões, destaques em texto, retorno por semana com intervalo, curva de retorno, quando usam, modelo no tempo, concentração do uso, uso diário, tema e comparação do país com os maiores e a média geral) ·
 O que faz voltar (efeitos ordenados, com intervalo, e os 3 achados) · Coortes semanais (voltou em 24 h, 7 e 30 dias, curva de retorno, novos, decomposição mix × taxa, mapa de calor) · **Explorar** (quando usam, modelo e recusa por versão, concentração do uso, dispositivo e idioma × navegador, **exploratório**) · Glossário e qualidade · Como ler.
 Seletor de país, idioma (PT/EN) e tema (claro/escuro) no cabeçalho; o botão "i" de cada indicador mostra a definição e a fórmula.
 
