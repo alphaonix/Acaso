@@ -459,7 +459,8 @@ body { background-image: var(--hero); background-attachment: fixed; }
 @media (max-width: 860px) {
   .hamb { display: grid; place-items: center; margin-left: auto; width: 40px; height: 40px; border: 1px solid var(--borda); border-radius: 12px; background: var(--superficie-2); color: var(--texto); cursor: pointer; }
   .hamb:hover { border-color: var(--acento-borda); color: var(--acento-texto); }
-  .topo-painel { display: none; width: 100%; flex-direction: column; gap: 0.8rem; padding: 0.4rem 0 0.3rem; }
+  /* o painel sobrepoe o conteudo (nao empurra a pagina): fica preso a base do cabecalho */
+  .topo-painel { display: none; position: absolute; left: 0; right: 0; top: 100%; flex-direction: column; gap: 0.8rem; padding: 0.9rem 1.25rem 1.1rem; background: var(--superficie); border-bottom: 1px solid var(--borda); box-shadow: var(--sombra-forte); }
   .topo-painel[data-aberto="true"] { display: flex; }
   .topo-painel .nav { order: 0; flex-direction: column; width: 100%; overflow: visible; border-radius: 14px; }
   .topo-painel .nav a { padding: 0.7rem 1rem; }
