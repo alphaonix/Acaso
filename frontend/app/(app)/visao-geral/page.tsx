@@ -84,7 +84,7 @@ export default function VisaoGeral() {
           {r && paisAtual?.primeira_data && paisAtual.ultima_data && <li><R texto={t("vg.dadosPais", { pais: nomePais(paisAtual, idioma, t("pais.desconhecido")), conv: num(r.conversas), pessoas: num(r.novos), a: dataLonga(paisAtual.primeira_data), b: dataLonga(paisAtual.ultima_data), total: num(totalConversas) })} /></li>}
           <li><R texto={t("vg.dadosPessoa")} /></li>
         </ul>
-        <p style={{ marginTop: "0.6rem" }}><Link href="/glossario"><R texto={t("vg.dadosMais")} /></Link></p>
+        <p style={{ marginTop: "0.6rem" }}><Link href="/ajuda"><R texto={t("vg.dadosMais")} /></Link></p>
       </Painel>
 
       <div className="kpis kpis3">

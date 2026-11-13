@@ -27,9 +27,7 @@ export default function Login() {
     setErro(""); setEnviando(true);
     try {
       await api("/auth/login", { method: "POST", body: JSON.stringify({ email, senha }) });
-      let visto = false;
-      try { visto = localStorage.getItem("visto_sobre") === "1"; } catch { /* sem storage */ }
-      router.replace(visto ? "/visao-geral" : "/sobre");
+      router.replace("/visao-geral");
     } catch (err) {
       const s = err instanceof ErroApi ? err.status : 0;
       setErro(s === 429 ? t("login.erro429") : s === 401 ? t("login.erro401") : t("login.erroGeral"));

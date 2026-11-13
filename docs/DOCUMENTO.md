@@ -14,7 +14,7 @@ menos (sobretudo no GPT-4). **Trocar de modelo ou alongar a resposta não mostra
   **Início da conversa:** a 1ª resposta do assistente (as falas do usuário não têm horário). **Dia e semana:** fuso de São Paulo.
 - **Cada premissa tem um custo medido** (`docs/SENSIBILIDADE.md`): o **gap da sessão é a que mais pesa** (15 min: 26,3%; 60 min: 21,3%; 120 min: 19,6%); janela de 3 ou 14 dias dá 20,8% ou 25,3%;
   o user-agent completo (com a versão) infla para 26,2%; já a lavagem, o início da conversa e retirar os 10 usuários mais ativos mexem menos de 1,2 pp. **O 23,7% deve ser lido como "retorno com sessões de 30 min".**
-- **Problemas de qualidade** (11 tratados, na tela "Glossário e qualidade"): 1.060 conversas sem país (mantidas como "Desconhecido"), 17 cópias exatas (excluídas), 13.201 com hash repetido em linhas
+- **Problemas de qualidade** (11 tratados, na tela "Ajuda"): 1.060 conversas sem país (mantidas como "Desconhecido"), 17 cópias exatas (excluídas), 13.201 com hash repetido em linhas
   diferentes (mantidas: são conversas distintas), 24.192 sem navegador, 163.178 sem estado, e 826.368 sem texto fora do Brasil.
 
 ## 3. O que os dados mostram (exploração)
@@ -57,7 +57,7 @@ Uso mês e não semana porque uma semana tem só 40 a 90 elegíveis; o mês tem 
 - **Para o dashboard (indicadores e telas pensados depois de olhar os dados; os itens 1 a 6 já estão implementados, nas telas Visão geral, Coortes e O que faz voltar):** (1) **"voltou em 24 horas"** e a curva de retorno; (2) **pessoas ativas** no lugar de conversas, com **alerta de uso concentrado ou automatizado**; (3) tela **"Quando usam"** (hora × dia no fuso do país);
   (4) tela **"Dispositivo e navegador"**, com o aviso de que a medida pode distorcer; (5) **recusa por versão do modelo**; (6) **idioma do pedido × idioma do navegador**; (7) a **avaliação da resposta pelo usuário**, o dado que falta. Além do **mix × taxa** a cada mudança de retorno, que já está no painel.
 ## 6. O dashboard e a arquitetura
-Cinco telas para pessoas de negócio, cada uma com a pergunta que responde, cada número com definição e fórmula (botão "i") e cada efeito com intervalo: Visão geral, O que faz voltar (com recortes exploratórios de dispositivo e idioma, rotulados como hipótese), Coortes, Glossário e qualidade e Como ler.
+Quatro telas para pessoas de negócio, cada uma com a pergunta que responde, cada número com definição e fórmula (botão "i") e cada efeito com intervalo: Visão geral, O que faz voltar (com recortes exploratórios de dispositivo e idioma, rotulados como hipótese), Coortes e Ajuda.
 Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação de todos os países com 30 ou mais elegíveis, em lista fixa, e a média geral (Brasil 23,7% contra 21,5%).
 **O painel mostra:** contagens e taxas agregadas, com intervalo, e efeitos. **Nunca mostra:** texto das conversas, IP (nem com hash), user-agent nem identificador de usuário. Não mostra a taxa de grupos com menos de 30 pessoas por um motivo estatístico, não de privacidade: com tão poucas pessoas a taxa varia demais para ser confiável.
 **Fluxo:** semente do bruto → ETL (bronze, silver e gold no Postgres, numa só transação) → API somente leitura (lê só a gold) → Next.js. Sobe com `docker compose up --build` (diagrama e endpoints em `docs/arquitetura.md`; implantação na AWS em `infra/README.md`).

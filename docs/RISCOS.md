@@ -14,7 +14,7 @@ O que pode dar errado e o que eu levaria ao time ou ao cliente **antes** de impl
 | 7 | **Falta de dados** para responder melhor: avaliação do usuário (curtir/não curtir), custo e latência da resposta, tipo de conta. | O "porquê" fica sem sinal direto de qualidade. | Propor a instrumentação ao time do assistente (ver "Decisões"). |
 | 8 | **Mudança de formato ou de definição.** A carga depende do formato do dado e das regras. | Um campo novo ou uma mudança silenciosa quebra o número (foi o caso do incidente). | Testes de contrato da definição, portão de qualidade no ETL e reconciliação semanal; definição versionada. |
 | 9 | **Operação e custo na AWS** (quem opera, SLA, orçamento, retenção de logs). | O dashboard precisa de dono depois da entrega. | Custo estimado em `infra/README.md`: **≈ US$ 136 por mês em São Paulo** (≈ US$ 77 na Virgínia, que tira o dado do Brasil; ≈ US$ 190 com alta disponibilidade). Falta o cliente decidir região, SLA e o dono da operação. |
-| 10 | **Leitura errada pelo negócio** (número sem incerteza vira certeza). | Decisões em cima de ruído. | Cada número com definição, intervalo e aviso de amostra pequena; tela "Como ler". |
+| 10 | **Leitura errada pelo negócio** (número sem incerteza vira certeza). | Decisões em cima de ruído. | Cada número com definição, intervalo e aviso de amostra pequena; tela "Ajuda". |
 
 ## Decisões que eu levaria antes de começar
 | Decisão | Quem decide | Por que antes |

@@ -36,8 +36,8 @@ docker compose logs etl | grep SENHA          # Linux e macOS
 ```
 Para usar o seu e-mail e a sua senha, copie `.env.example` para `.env` e preencha `DASH_USERS` (`email|Nome|url-da-foto;email|Nome`; a foto é opcional) e `DASH_PASSWORD`; depois `docker compose up --build`.
 Se perder a senha gerada: `docker compose down -v` e suba de novo (ou defina `DASH_PASSWORD`).
-**O que você vai ver (5 telas):** Visão geral (cartão "de onde vêm os dados", 6 cartões, a história em 8 passos curtos, retorno por mês com intervalo, comparação entre modelos, curva de retorno, quando usam, modelo no tempo, concentração do uso e comparação de todos os países, com ranking só para quem tem 1.000+ elegíveis) ·
-O que faz voltar (efeitos ordenados, com intervalo, os 4 achados, com o impacto estimado no retorno, e, no fim, dispositivo e idioma × navegador, **exploratório**) · Coortes semanais (curva de retorno com 24 h, 7 e 30 dias, pessoas novas por semana, decomposição "chegou gente diferente × a mesma gente voltou diferente") · Glossário e qualidade · Como ler.
+**O que você vai ver (4 telas):** Visão geral (cartão "de onde vêm os dados", 6 cartões, a história em 8 passos curtos, retorno por mês com intervalo, comparação entre modelos, curva de retorno, quando usam, modelo no tempo, concentração do uso e comparação de todos os países, com ranking só para quem tem 1.000+ elegíveis) ·
+O que faz voltar (efeitos ordenados, com intervalo, os 4 achados, com o impacto estimado no retorno, e, no fim, dispositivo e idioma × navegador, **exploratório**) · Coortes semanais (curva de retorno com 24 h, 7 e 30 dias, pessoas novas por semana, decomposição "chegou gente diferente × a mesma gente voltou diferente") · Ajuda (para que serve o painel, palavras e regras, privacidade e problemas de qualidade dos dados).
 Seletor de país, idioma (PT/EN) e tema (claro/escuro) no cabeçalho; o botão "i" de cada indicador mostra a definição e a fórmula.
 
 ## Testes (90)

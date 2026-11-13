@@ -7,12 +7,12 @@ Prazo: 16/11/2026, 23h59.
 | Exigência | | Onde |
 |---|---|---|
 | Repositório com instruções e ADRs e BDRs (contexto, opções, escolha) | ✔ | [`README.md`](README.md), [`docs/adr/`](docs/adr), [`docs/bdr/`](docs/bdr) |
-| Sobe do zero com um comando, carrega a base analítica **a partir do bruto**, mostra 2+ telas com dados reais | ◐ | `docker compose up --build`; 5 telas. O "bruto" é a **semente** gerada da base completa (ADR-002), porque os 3 GB não cabem no GitHub; o caminho do bruto completo está em `etl/download_full.py` e `etl/make_seed.py` |
+| Sobe do zero com um comando, carrega a base analítica **a partir do bruto**, mostra 2+ telas com dados reais | ◐ | `docker compose up --build`; 4 telas. O "bruto" é a **semente** gerada da base completa (ADR-002), porque os 3 GB não cabem no GitHub; o caminho do bruto completo está em `etl/download_full.py` e `etl/make_seed.py` |
 | Frontend, backend e base analítica | ✔ | `frontend/`, `backend/`, `db/` e `etl/` (Postgres em camadas: bronze, silver, gold) |
 | O dashboard **não lê a base bruta** | ✔ | A API usa um papel somente leitura que só enxerga a gold e o `ops` (`db/migrations/002`) |
 | Documento curto com achados e decisões e parágrafo de uso de IA | ◐ | [`docs/DOCUMENTO.md`](docs/DOCUMENTO.md); **faltam as horas** no parágrafo de IA |
 | AWS: infraestrutura, custo e LLM; descrever a implantação | ◐ | [`infra/README.md`](infra/README.md): diagrama, custo (≈ US$ 136/mês), sem LLM; o Terraform passa em `validate` e **não foi aplicado** |
-| O que o dashboard mostra e **nunca mostra** | ✔ | Tela "Glossário e qualidade"; [`docs/arquitetura.md`](docs/arquitetura.md) |
+| O que o dashboard mostra e **nunca mostra** | ✔ | Tela "Ajuda"; [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Cada premissa registrada, com o que muda se estiver errada | ✔ | [`docs/bdr/BDR-001`](docs/bdr/BDR-001-usuario-sessao-retorno.md) e [`docs/SENSIBILIDADE.md`](docs/SENSIBILIDADE.md) (reproduzível) |
 | Análise sobre `country = 'Brazil'` | ✔ | Efeitos e decomposição são do Brasil; o painel tem seletor de país |
 
@@ -21,7 +21,7 @@ Prazo: 16/11/2026, 23h59.
 |---|---|---|
 | Definições de usuário, sessão, 1ª experiência e retorno + quanto o resultado muda | ✔ | BDR-001, `docs/SENSIBILIDADE.md` (o gap da sessão é a premissa que mais pesa: 19,6% a 26,3%) |
 | Variáveis da 1ª experiência e como cada uma é derivada | ◐ | [`docs/COMO_FUNCIONA.md`](docs/COMO_FUNCIONA.md), [`BDR-003`](docs/bdr/BDR-003-classificacao-de-tema.md). Tema e recusa são **regras**, sem IA; a **conferência manual está pendente** |
-| Problemas de qualidade e como foram tratados | ✔ | Tela "Glossário e qualidade" (11 problemas, números reais) e BDR-001 |
+| Problemas de qualidade e como foram tratados | ✔ | Tela "Ajuda" (11 problemas, números reais) e BDR-001 |
 | EDA com padrões, concentrações e anomalias | ✔ | [`docs/EDA.md`](docs/EDA.md): 7 figuras, cada uma com a conclusão e o que fazer (retorno rápido, GPT-4 some de jul a out/2023, 20 pessoas = 39% do volume, uso noturno e de fim de semana, dispositivo, efeitos por modelo, idioma); resumo em `docs/DOCUMENTO.md` §3; figuras reproduzíveis em `analise/06_eda_figuras.py` |
 | O que os dados permitem medir, não permitem e o que falta | ✔ | `docs/DOCUMENTO.md` §4 |
 | Sugestões para o assistente e para o dashboard | ✔ | `docs/DOCUMENTO.md` §5 e `docs/EDA.md` (7 indicadores ou telas novos e 4 sugestões ao produto; **6 deles já estão no painel**: curva e voltou em 24 h na tela Coortes, estratos por modelo, dispositivo e idioma em "O que faz voltar", o resto na Visão geral) |

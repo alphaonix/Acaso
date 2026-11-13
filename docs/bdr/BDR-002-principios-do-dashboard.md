@@ -24,7 +24,7 @@ Uma página curta, lida antes de acessar o painel, com:
 - **Resumo de cada indicador** em uma linha (o que mede, unidade, como ler).
 - **O que o dashboard nunca mostra** (texto de conversas, IP, identificadores individuais) e como a privacidade é tratada.
 - Aviso de que o resultado é associação, não prova de causa, e o que a análise causal faz para reduzir a seleção.
-- Botão "Entendi, abrir o painel" (e link permanente "Como ler" no cabeçalho).
+- Abertura: a Visão geral começa com o cartão "De onde vêm estes dados"; a aba "Ajuda" (antes "Como ler" e "Glossário") fica sempre no cabeçalho.
 Cada tela também tem uma frase de topo com a pergunta que responde.
 
 ### 3. Filtro de país global
