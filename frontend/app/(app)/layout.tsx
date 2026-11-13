@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/visao-geral", chave: "nav.visao" },
   { href: "/fatores", chave: "nav.fatores" },
   { href: "/coortes", chave: "nav.coortes" },
+  { href: "/explorar", chave: "nav.explorar" },
   { href: "/glossario", chave: "nav.glossario" },
   { href: "/sobre", chave: "nav.sobre" },
 ] as const;

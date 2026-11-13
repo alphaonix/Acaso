@@ -176,3 +176,49 @@ SELECT round(100 * avg((modelo LIKE 'gpt-4%')::int), 1) AS pct_gpt4_todos,
        round(100 * avg((modelo LIKE 'gpt-4%')::int) FILTER (WHERE elegivel), 1) AS pct_gpt4_elegiveis
 FROM silver.fato_usuario WHERE pais = 'Brazil';
 ```
+
+## Rodada 9: métricas ampliadas (Coortes, O que faz voltar e Explorar; conferir no DBeaver; valores do Brasil)
+Vêm de `silver.fato_usuario` e `silver.fato_conversa`; a gold só agrupa. **Ainda não estão no portão de qualidade** (os números validados só entram lá depois de você conferir). As consistências entre camadas (somas, curva que não decresce, 24 h ⊂ 7 dias) já rodam a cada carga.
+```sql
+-- 9.1 Curva de retorno: base com 30 dias de janela completa (esperado 2.039), voltou em 24 h (326 = 16,0%), 7 dias (489 = 24,0%), 30 dias (533 = 26,1%)
+SELECT count(*) FILTER (WHERE janela_30d) AS base,
+       count(*) FILTER (WHERE janela_30d AND voltou_24h) AS em_24h,
+       count(*) FILTER (WHERE janela_30d AND dias_ate_voltar <= 7) AS em_7d,
+       count(*) FILTER (WHERE janela_30d AND dias_ate_voltar <= 30) AS em_30d,
+       round((percentile_cont(0.5) WITHIN GROUP (ORDER BY dias_ate_voltar) FILTER (WHERE janela_30d AND dias_ate_voltar <= 30))::numeric, 2) AS mediana_dias   -- esperado 0,63
+FROM silver.fato_usuario WHERE pais = 'Brazil';
+
+-- 9.2 Concentração: pessoas por faixa de conversas (esperado 1: 1.516 · 2-3: 556 · 4-10: 308 · 11+: 150) e conversas (1.516 · 1.285 · 1.796 · 7.024)
+WITH u AS (SELECT usuario_id, count(*) AS n FROM silver.fato_conversa WHERE pais = 'Brazil' GROUP BY 1)
+SELECT CASE WHEN n = 1 THEN '1' WHEN n <= 3 THEN '2-3' WHEN n <= 10 THEN '4-10' ELSE '11+' END AS faixa, count(*) AS pessoas, sum(n) AS conversas
+FROM u GROUP BY 1 ORDER BY min(n);
+-- 10 mais ativas: esperado 3.751 conversas de 11.621 (32,3%); a mais ativa: 1.556 (13,4%)
+WITH u AS (SELECT usuario_id, count(*) AS n FROM silver.fato_conversa WHERE pais = 'Brazil' GROUP BY 1)
+SELECT (SELECT sum(n) FROM (SELECT n FROM u ORDER BY n DESC LIMIT 10) x) AS top10, (SELECT max(n) FROM u) AS maior, (SELECT sum(n) FROM u) AS total;
+
+-- 9.3 Quando usam (fuso de São Paulo): expediente seg-sex 9h-18h (esperado 35,5%) e madrugada 22h-6h (esperado 20,1%)
+SELECT round(100 * avg((extract(isodow FROM inicio_utc AT TIME ZONE 'America/Sao_Paulo') <= 5
+                        AND extract(hour FROM inicio_utc AT TIME ZONE 'America/Sao_Paulo') BETWEEN 9 AND 17)::int), 1) AS expediente,
+       round(100 * avg((extract(hour FROM inicio_utc AT TIME ZONE 'America/Sao_Paulo') >= 22
+                        OR extract(hour FROM inicio_utc AT TIME ZONE 'America/Sao_Paulo') < 6)::int), 1) AS madrugada
+FROM silver.fato_conversa WHERE pais = 'Brazil';
+
+-- 9.4 Recusa por versão do modelo (esperado: 3.5-0301 521/3.971 = 13,1% · 3.5-0613 137/3.593 = 3,8% · 3.5-0125 4/157 = 2,5% · gpt-4-0314 43/684 = 6,3% · gpt-4-1106 143/1.882 = 7,6% · gpt-4-0125 63/1.334 = 4,7%)
+SELECT modelo, count(*) AS conversas, count(*) FILTER (WHERE recusa) AS com_recusa, round(100 * avg(recusa::int), 1) AS pct
+FROM silver.fato_conversa WHERE pais = 'Brazil' AND recusa IS NOT NULL GROUP BY 1 ORDER BY 1;
+
+-- 9.5 Saudação e recusa dentro de cada modelo, só elegíveis (esperado: saudação 3.5 = 237 (36 voltam) · 4 = 149 (21); recusa 3.5 = 110 (21) · 4 = 88 (10))
+SELECT CASE WHEN u.modelo LIKE 'gpt-4%' THEN 'GPT-4' ELSE 'GPT-3.5' END AS familia,
+       count(*) FILTER (WHERE t.tema = 'Saudação') AS saudacao, count(*) FILTER (WHERE t.tema = 'Saudação' AND u.voltou_7d) AS saudacao_voltou,
+       count(*) FILTER (WHERE u.recusa) AS recusa, count(*) FILTER (WHERE u.recusa AND u.voltou_7d) AS recusa_voltou
+FROM silver.fato_usuario u LEFT JOIN silver.dim_tema t USING (tema_id) WHERE u.pais = 'Brazil' AND u.elegivel GROUP BY 1;
+
+-- 9.6 Dispositivo, só elegíveis (esperado: celular 734, 176 voltam · computador 1.500, 354 voltam)
+SELECT sistema IN ('Android', 'iOS') AS celular, count(*) AS elegiveis, count(*) FILTER (WHERE voltou_7d) AS voltaram
+FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel GROUP BY 1;
+
+-- 9.7 Idioma do pedido × do navegador: pessoas elegíveis com os dois idiomas conhecidos (esperado 2.220 = 1.560 + 343 + 317; sem um deles: 14)
+SELECT count(*) FILTER (WHERE idioma_navegador <> '' AND idioma IS NOT NULL) AS com_os_dois,
+       count(*) FILTER (WHERE idioma_navegador = '' OR idioma IS NULL) AS sem
+FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel;
+```

@@ -81,6 +81,17 @@ const QA: Record<string, string> = {
   "Novos por semana (gold) somam os usuarios da silver, todos os paises": "New users per week (gold) add up to silver users, all countries",
   "Fator modelo: elegiveis somam os elegiveis da silver, todos os paises": "Model factor: eligible users add up to silver eligible users, all countries",
   "Usuarios do Brasil por tema (11 temas, na ordem da taxonomia)": "Brazil users per theme (11 themes, in taxonomy order)",
+  "Curva de retorno: usuarios do ponto final = usuarios com janela de 30 dias na silver, todos os paises": "Return curve: users at the last point = silver users with a 30-day window, all countries",
+  "Curva de retorno: nunca decresce com os dias (pontos fora de ordem)": "Return curve: never decreases with days (out-of-order points)",
+  "Voltou em 24 h implica voltou em 7 dias (usuarios que violam)": "Returned within 24 h implies returned within 7 days (violating users)",
+  "Curva em 7 dias = retorno em 7 dias da silver entre quem tem janela de 30 dias (diferenca de usuarios)": "Curve at 7 days = silver 7-day return among users with a 30-day window (difference in users)",
+  "Concentracao: conversas por faixa somam as conversas da silver, todos os paises": "Concentration: conversations per band add up to silver conversations, all countries",
+  "Concentracao: usuarios por faixa somam os usuarios da silver, todos os paises": "Concentration: users per band add up to silver users, all countries",
+  "Uso por hora: conversas somam as conversas da silver, todos os paises": "Usage by hour: conversations add up to silver conversations, all countries",
+  "Modelo por mes: conversas somam as conversas da silver, todos os paises": "Model by month: conversations add up to silver conversations, all countries",
+  "Recusa por modelo: conversas com texto somam as conversas com recusa conhecida na silver": "Refusal by model: conversations with text add up to silver conversations with known refusal",
+  "Estratos de recusa: elegiveis somam os elegiveis com recusa conhecida na silver": "Refusal strata: eligible users add up to silver eligible users with known refusal",
+  "Fator dispositivo: elegiveis somam os elegiveis da silver, todos os paises": "Device factor: eligible users add up to silver eligible users, all countries",
 };
 
 const INDICADORES: Record<string, Partial<Record<keyof Indicador, string>>> = {
@@ -140,12 +151,47 @@ const INDICADORES: Record<string, Partial<Record<keyof Indicador, string>>> = {
     formula: "eligible users whose first response matches the refusal pattern ÷ eligible users",
     periodo_referencia: "Entire data period of the country",
   },
+  voltou_24h: {
+    nome: "Returned within 24 hours",
+    pergunta: "Of every 100 people, how many come back within 24 hours of the start of the 1st conversation?",
+    unidade: "user",
+    denominador: "Users with a full 30-day window (first use more than 30 days after the start and before the end of the data)",
+    formula: "users with a new session started within 24 hours of the start of the 1st conversation ÷ users with a 30-day window",
+    periodo_referencia: "Entire data period of the country",
+  },
+  voltou_30d: {
+    nome: "Returned within 30 days",
+    pergunta: "Of every 100 people, how many come back within 30 days of the start of the 1st conversation?",
+    unidade: "user",
+    denominador: "Users with a full 30-day window (first use more than 30 days after the start and before the end of the data)",
+    formula: "users with a new session started within 30 days of the start of the 1st conversation ÷ users with a 30-day window",
+    periodo_referencia: "Entire data period of the country",
+  },
+  concentracao_top10: {
+    nome: "Usage concentration (10 most active)",
+    pergunta: "What share of conversations comes from the 10 most active people?",
+    unidade: "conversation",
+    denominador: "Conversations of the country (after removing exact copies)",
+    formula: "conversations of the 10 people with the most conversations ÷ conversations of the country; concentrated-use alert from 25%",
+    periodo_referencia: "Entire data period of the country",
+  },
+  recusa_por_versao: {
+    nome: "Refusal by model version",
+    pergunta: "In what share of conversations does the first response open with a refusal, for each model version?",
+    unidade: "conversation",
+    denominador: "Conversations with text, of the model version",
+    formula: "conversations of the version whose first response matches the refusal pattern ÷ conversations of the version",
+    periodo_referencia: "Entire data period of the country",
+  },
 };
 
 const NIVEIS: Record<string, string> = {
   "1 turno": "1 turn", "2-3 turnos": "2-3 turns", "4-6 turnos": "4-6 turns", "7+ turnos": "7+ turns",
   "Madrugada (0-5h)": "Early morning (0-5h)", "Manhã (6-11h)": "Morning (6-11h)", "Tarde (12-17h)": "Afternoon (12-17h)", "Noite (18-23h)": "Evening (18-23h)",
   "Dia útil": "Weekday", "Fim de semana": "Weekend",
+  "Celular": "Mobile", "Computador": "Desktop", "Pedido no idioma do navegador": "Request in the browser language",
+  "Inglês (navegador em outro idioma)": "English (browser in another language)", "Outro idioma (nem o do navegador, nem inglês)": "Other language (neither the browser's nor English)",
+  "Com recusa": "With refusal", "Sem recusa": "Without refusal", "Outro tema": "Other theme",
 };
 /** Nivel de um fator (tema, turnos, periodo do dia...) na lingua da tela. */
 export const tNivel = (n: string, i: Id) => (i === "en" ? NIVEIS[n] ?? TEMAS[n] ?? n : n);

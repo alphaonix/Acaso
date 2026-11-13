@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
 import { Floresta } from "@/components/Floresta";
+import { EstratosModelo } from "@/components/AnaliseAmpliada";
 import { CabecalhoPagina, Painel, TurnosRetorno } from "@/components/Graficos";
 import { useApi } from "@/lib/api";
 import { useApp } from "@/lib/contexto";
 import { R, useI18n } from "@/lib/i18n";
 import { nomePais } from "@/lib/pais";
 import { pp } from "@/lib/formato";
-import type { Efeito, FatorNivel } from "@/lib/tipos";
+import type { Efeito, Estrato, FatorNivel } from "@/lib/tipos";
 
 type Filtro = "todos" | "alavanca" | "perfil";
 
@@ -16,6 +17,7 @@ export default function Fatores() {
   const { t, idioma } = useI18n();
   const efeitos = useApi<Efeito[]>(`/efeitos?pais=${encodeURIComponent(pais)}`);
   const turnos = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=turnos_da_primeira_conversa`);
+  const estratos = useApi<Estrato[]>(`/retencao/estratos?pais=${encodeURIComponent(pais)}`);
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const todos = efeitos.dados ?? [];
   const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro);
@@ -60,6 +62,12 @@ export default function Fatores() {
             </ol>
           </Painel>
         </div>
+      )}
+
+      {todos.length > 0 && (
+        <Painel className="bloco" titulo={t("fa.estTitulo")} pergunta={t("fa.estPergunta")}>
+          {estratos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : estratos.dados ? <EstratosModelo dados={estratos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
+        </Painel>
       )}
     </>
   );

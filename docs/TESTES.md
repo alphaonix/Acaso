@@ -1,10 +1,10 @@
 # Testes automatizados
 
 Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** Os testes fixam cada regra de borda da
-definição (BDR-001) e reproduzem o incidente do PDF (seção 4.2). São 76 testes, rodam em segundos e **não tocam o banco real**.
+definição (BDR-001) e reproduzem o incidente do PDF (seção 4.2). São 88 testes, rodam em segundos e **não tocam o banco real**.
 
 ```bash
-docker compose --profile test run --rm --build testes-etl     # 47 testes: sessão, retorno, elegibilidade, limpeza, tema, recusa, gold, catálogo, incidente
+docker compose --profile test run --rm --build testes-etl     # 59 testes: sessão, retorno, elegibilidade, limpeza, tema, recusa, gold, catálogo, incidente, análise ampliada
 docker compose --profile test run --rm --build testes-api     # 29 testes: decomposição mix x taxa
 ```
 O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um banco descartável (`retencao_teste`) no mesmo servidor,
@@ -20,7 +20,8 @@ termina em `ROLLBACK` e o banco é apagado no fim.
 | `test_variaveis.py` | navegador e sistema sem versão (9 casos); tema do 1º pedido (11 casos); recusa só na abertura da resposta (7 casos); tema e recusa vazios fora do Brasil; duração e tamanhos |
 | `test_gold.py` | intervalo de Wilson (valores conhecidos); amostra pequena esconde a taxa; taxa da semana (10 de 40 = 25%); a gold soma o que a silver tem |
 | `test_acesso.py` | **nenhuma conta ou senha real no repositório**: sem configuração, uma conta genérica com senha aleatória (mostrada uma vez); a senha da primeira subida é mantida; com `.env`, a senha definida vale e contas fora da lista saem |
-| `test_catalogo.py` | o **SQL de referência de cada indicador** (o que o glossário e `docs/INDICADORES.md` mostram) dá o mesmo número que a gold: a fórmula documentada e a consulta executada não se separam (BDR-002) |
+| `test_catalogo.py` | o **SQL de referência de cada indicador** (o que o glossário e `docs/INDICADORES.md` mostram) dá o mesmo número que a gold (inclui voltou em 24 h e 30 dias, concentração dos 10 mais ativos e recusa por versão): a fórmula documentada e a consulta executada não se separam (BDR-002) |
+| `test_analise_ampliada.py` | **voltou em 24 h** (24 h exatas conta; +1 s não, mas conta em 7 dias) e `dias_ate_voltar`; voltou em 24 h implica voltou em 7 dias; **janela de 30 dias** nas duas bordas; a curva de retorno só usa quem tem janela completa e nunca decresce; idioma do navegador; fatores `idioma_x_navegador` e `dispositivo`; **concentração** por faixa e peso dos 10 mais ativos; **uso por hora no fuso do país** (01:30 UTC de quarta = 22:30 de terça em São Paulo); recusa e GPT-4 por versão e por mês |
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios); só o mix; só a taxa; nada mudou; nível que aparece em um mês só |
 
 **Limite declarado:** os testes de tema e recusa fixam o comportamento atual das regras (regressão). Eles **não medem precisão**:
@@ -37,11 +38,11 @@ Alterei a definição de propósito e rodei a suíte; cada alteração foi **det
 
 ## Duas camadas de proteção
 1. **Estes testes** (código): a regra não muda sem quebrar um teste.
-2. **O portão do ETL** (dados): a cada carga, 36 conferências comparam a base com os números validados (Power BI e DBeaver) e entre as camadas;
+2. **O portão do ETL** (dados): a cada carga, 47 conferências comparam a base com os números validados (Power BI e DBeaver) e entre as camadas;
    se algo falhar, a carga é revertida e o dashboard continua no estado anterior.
 
 ## Como uma mudança chega à produção (desenho)
-1. **Pull request:** roda os 76 testes (`docker compose --profile test run ...`) e o `tsc` do frontend. Sem testes verdes, não faz merge.
+1. **Pull request:** roda os 88 testes (`docker compose --profile test run ...`) e o `tsc` do frontend. Sem testes verdes, não faz merge.
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem pelo ETL e registrados em `public.schema_migrations`; migração já aplicada nunca é editada (cria-se uma nova).
 3. **Ambientes:** `dev` (local, compose), `staging` (cópia na AWS com a mesma semente) e `prod`. A mudança de definição passa por `staging`, onde o portão do ETL compara os números novos com os antigos antes de promover.
 4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.

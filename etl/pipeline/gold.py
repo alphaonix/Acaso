@@ -48,7 +48,19 @@ _FATORES_VALUES = """
                                ELSE 'Mais de 500' END),
     ('tamanho_da_resposta', CASE WHEN u.resp1_chars IS NULL THEN NULL WHEN u.resp1_chars <= 300 THEN 'Até 300 caracteres'
                                  WHEN u.resp1_chars <= 1000 THEN '301-1.000' WHEN u.resp1_chars <= 2500 THEN '1.001-2.500'
-                                 ELSE 'Mais de 2.500' END)
+                                 ELSE 'Mais de 2.500' END),
+    ('sistema', coalesce(u.sistema, 'Outro')),
+    ('navegador', coalesce(u.navegador, 'Outro')),
+    ('dispositivo', CASE WHEN u.sistema IN ('Android', 'iOS') THEN 'Celular' ELSE 'Computador' END),
+    ('idioma_x_navegador', CASE
+        WHEN coalesce(u.idioma_navegador, '') = '' OR u.idioma IS NULL THEN NULL
+        WHEN split_part(u.idioma_navegador, '-', 1) = CASE u.idioma WHEN 'English' THEN 'en' WHEN 'Portuguese' THEN 'pt' WHEN 'Spanish' THEN 'es'
+             WHEN 'French' THEN 'fr' WHEN 'German' THEN 'de' WHEN 'Russian' THEN 'ru' WHEN 'Chinese' THEN 'zh' WHEN 'Japanese' THEN 'ja'
+             WHEN 'Korean' THEN 'ko' WHEN 'Arabic' THEN 'ar' WHEN 'Italian' THEN 'it' WHEN 'Turkish' THEN 'tr' WHEN 'Dutch' THEN 'nl'
+             WHEN 'Polish' THEN 'pl' WHEN 'Indonesian' THEN 'id' WHEN 'Vietnamese' THEN 'vi' WHEN 'Persian' THEN 'fa' WHEN 'Ukrainian' THEN 'uk'
+             WHEN 'Thai' THEN 'th' ELSE NULL END THEN 'Pedido no idioma do navegador'
+        WHEN u.idioma = 'English' THEN 'Inglês (navegador em outro idioma)'
+        ELSE 'Outro idioma (nem o do navegador, nem inglês)' END)
 """
 
 # Uso por dia (no fuso do pais): conversas e usuarios distintos ativos. Alimenta o grafico de uso diario.
@@ -114,6 +126,63 @@ SELECT * FROM (
   UNION ALL SELECT 'redigida', 11, 'brasil', count(*) FILTER (WHERE redigida), count(*) FROM silver.fato_conversa WHERE pais = 'Brazil'
 ) q
 """
+# ---- analise ampliada (migracao 018): curva de retorno, estratos por modelo, recusa por versao, concentracao, uso por hora, modelo no tempo
+SQL_CURVA = """
+INSERT INTO gold.agg_curva_retorno (pais, dias, usuarios, voltaram)
+SELECT u.pais, g.d, count(*), count(*) FILTER (WHERE u.dias_ate_voltar IS NOT NULL AND u.dias_ate_voltar <= g.d)
+FROM silver.fato_usuario u
+CROSS JOIN (VALUES (0.0), (0.25), (0.5), (1.0), (2.0), (3.0), (4.0), (5.0), (6.0), (7.0), (10.0), (14.0), (21.0), (30.0)) AS g(d)
+WHERE u.janela_30d GROUP BY 1, 2
+"""
+
+SQL_ESTRATO = """
+INSERT INTO gold.agg_estrato (pais, fator, familia, nivel, elegiveis, voltaram_7d)
+SELECT u.pais, f.fator, CASE WHEN u.modelo LIKE 'gpt-4%' THEN 'GPT-4' ELSE 'GPT-3.5' END, f.nivel, count(*), count(*) FILTER (WHERE u.voltou_7d)
+FROM silver.fato_usuario u LEFT JOIN silver.dim_tema t ON t.tema_id = u.tema_id
+CROSS JOIN LATERAL (VALUES
+  ('recusa', CASE WHEN u.recusa IS NULL THEN NULL WHEN u.recusa THEN 'Com recusa' ELSE 'Sem recusa' END),
+  ('saudacao', CASE WHEN t.tema IS NULL THEN NULL WHEN t.tema = 'Saudação' THEN 'Saudação' ELSE 'Outro tema' END)
+) AS f(fator, nivel)
+WHERE u.elegivel AND f.nivel IS NOT NULL GROUP BY 1, 2, 3, 4
+"""
+
+SQL_RECUSA_MODELO = """
+INSERT INTO gold.agg_recusa_modelo (pais, modelo, conversas, com_recusa, resp_media_chars)
+SELECT pais, modelo, count(*), count(*) FILTER (WHERE recusa), round(avg(resp1_chars))::int
+FROM silver.fato_conversa WHERE recusa IS NOT NULL GROUP BY 1, 2
+"""
+
+SQL_CONCENTRACAO = """
+INSERT INTO gold.agg_concentracao (pais, ordem, faixa, usuarios, conversas)
+WITH u AS (SELECT pais, usuario_id, count(*) AS n FROM silver.fato_conversa GROUP BY 1, 2)
+SELECT pais, ordem, faixa, count(*), sum(n) FROM (
+  SELECT pais, n,
+         CASE WHEN n = 1 THEN 1 WHEN n <= 3 THEN 2 WHEN n <= 10 THEN 3 ELSE 4 END AS ordem,
+         CASE WHEN n = 1 THEN '1' WHEN n <= 3 THEN '2-3' WHEN n <= 10 THEN '4-10' ELSE '11+' END AS faixa
+  FROM u) x GROUP BY 1, 2, 3
+"""
+
+SQL_CONCENTRACAO_PAIS = """
+WITH u AS (SELECT pais, usuario_id, count(*) AS n FROM silver.fato_conversa GROUP BY 1, 2),
+r AS (SELECT pais, n, row_number() OVER (PARTITION BY pais ORDER BY n DESC, usuario_id) AS rk FROM u),
+t AS (SELECT pais, sum(n) AS total, sum(n) FILTER (WHERE rk <= 10) AS top10, max(n) AS maior,
+             count(*) FILTER (WHERE n = 1) AS um, count(*) AS pessoas FROM r GROUP BY 1)
+UPDATE gold.pais g SET top10_pct = t.top10::numeric / t.total, maior_pct = t.maior::numeric / t.total,
+                       pessoas_1_conversa_pct = t.um::numeric / t.pessoas
+FROM t WHERE t.pais = g.pais
+"""
+
+SQL_USO_HORA = """
+INSERT INTO gold.agg_uso_hora (pais, dia_semana, hora, conversas)
+SELECT f.pais, extract(isodow FROM timezone(d.fuso, f.inicio_utc))::smallint, extract(hour FROM timezone(d.fuso, f.inicio_utc))::smallint, count(*)
+FROM silver.fato_conversa f JOIN silver.dim_pais d ON d.pais = f.pais GROUP BY 1, 2, 3
+"""
+
+SQL_MODELO_MES = """
+INSERT INTO gold.agg_modelo_mes (pais, mes, conversas, conversas_gpt4)
+SELECT f.pais, date_trunc('month', timezone(d.fuso, f.inicio_utc))::date, count(*), count(*) FILTER (WHERE f.modelo LIKE 'gpt-4%')
+FROM silver.fato_conversa f JOIN silver.dim_pais d ON d.pais = f.pais GROUP BY 1, 2
+"""
 def construir(dw) -> None:
     """Dentro da transacao `dw`."""
     with dw.cursor() as cur:
@@ -123,6 +192,8 @@ def construir(dw) -> None:
         cur.execute(SQL_USO_DIA)
         cur.execute(SQL_RETORNO_MES_FATOR)
         cur.execute(SQL_PROBLEMAS)
+        for sql in (SQL_CURVA, SQL_ESTRATO, SQL_RECUSA_MODELO, SQL_CONCENTRACAO, SQL_CONCENTRACAO_PAIS, SQL_USO_HORA, SQL_MODELO_MES):
+            cur.execute(sql)
         cur.executemany(
             """INSERT INTO gold.catalogo_indicador (indicador_id, nome, pergunta, unidade, denominador, formula,
                sql_referencia, fonte, periodo_referencia, amostra_minima)

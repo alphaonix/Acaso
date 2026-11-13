@@ -32,8 +32,9 @@ Desenho completo, rede, segurança, **custo mensal (≈ US$ 136 em São Paulo no
   com texto e mensagens em JSON, os demais so metadados; `arquivo_origem` liga cada linha ao seu lote). `ops.bronze_lote` registra arquivo, sha256,
   linhas e a tabela de destino. A silver e construida a partir dela.
 - **Silver** (so o ETL le): `dim_pais`, `dim_tema`, `fato_conversa` (1 linha por conversa, sem texto), `fato_usuario`
-  (1 linha por usuario: primeira experiencia + `voltou_7d` + `elegivel`).
+  (1 linha por usuario: primeira experiencia + `voltou_7d` + `elegivel` + `voltou_24h`, `dias_ate_voltar`, `janela_30d` e o idioma do navegador).
 - **Gold** (a API le): `pais`, `agg_retorno_semana`, `agg_retorno_fator`, `efeito_fator` (resultado da analise causal), `agg_uso_dia` (uso por dia), `agg_retorno_mes_fator` (retorno por mes e perfil, base da decomposicao mix x taxa), `problema_qualidade` (conversas afetadas por cada problema de qualidade da base, tela "Glossario e qualidade"),
+  `agg_curva_retorno` (% que voltou em ate d dias, base: 30 dias de janela), `agg_estrato` (saudacao e recusa dentro de cada familia de modelo), `agg_recusa_modelo` (recusa por versao), `agg_concentracao` (faixas de conversas por pessoa; `gold.pais` guarda a parcela dos 10 mais ativos), `agg_uso_hora` (dia da semana x hora no fuso do pais), `agg_modelo_mes` (GPT-4 por mes),
   `catalogo_indicador` (definicoes).
 - **Ops**: `etl_execucao`, `bronze_lote`, `qa_resultado`.
 Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, faz rollback e a API nao sobe.
@@ -45,8 +46,13 @@ Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, fa
 | `GET /api/paises` | - | país, código ISO, fuso, idioma, tem_texto, usuários, datas |
 | `GET /api/catalogo` | - | definicao, formula, denominador, SQL e fonte por indicador |
 | `GET /api/retencao/coortes` | pais, inicio, fim | por semana: novos, elegiveis, voltaram_7d, taxa, IC95, aviso de amostra |
-| `GET /api/retencao/fatores` | pais, fator | por nivel: elegiveis, taxa, IC95 |
+| `GET /api/retencao/fatores` | pais, fator (inclui `sistema`, `navegador`, `dispositivo` e `idioma_x_navegador`) | por nivel: elegiveis, taxa, IC95 |
 | `GET /api/retencao/comparacao` | - | retorno em 7 dias de cada pais (somando as semanas) e a media geral (todos os elegiveis, ponderada por usuarios), com IC95; so paises com 30+ elegiveis |
+| `GET /api/retencao/curva` | pais | pontos da curva (dias, usuarios, voltaram, taxa, IC95) e os destaques `voltou_24h`, `voltou_7d` e `voltou_30d` (base: quem tem 30 dias de janela) |
+| `GET /api/retencao/estratos` | pais | saudacao e recusa dentro de GPT-4 e GPT-3.5: taxa por grupo e diferenca simples em pp com IC95 (sem ajuste) |
+| `GET /api/explorar/concentracao` | pais | faixas de conversas por pessoa (1, 2-3, 4-10, 11+), parcela de pessoas e de conversas, peso dos 10 mais ativos |
+| `GET /api/explorar/uso-hora` | pais | conversas por dia da semana e hora (fuso do pais), % no expediente e na madrugada |
+| `GET /api/explorar/modelos` | pais | GPT-4 por mes e, por versao do modelo, conversas, recusa com IC95 e tamanho medio da resposta |
 | `GET /api/uso/diario` | pais | por dia (fuso do pais): conversas e usuarios ativos |
 | `GET /api/retencao/decomposicao` | pais, fator (tema, turnos, modelo, periodo do dia), de, para (meses) | variacao do retorno entre dois meses = mix + taxa + interacao (soma confere), com o detalhe por nivel; padrao: o par de meses com maior variacao |
 | `GET /api/efeitos` | pais | por fator: efeito (pp), IC95, n, metodo, ajustado_por; ordenado por tamanho |
@@ -57,8 +63,9 @@ Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, fa
 | Tela | Pergunta | Gráficos e por que esse tipo |
 |---|---|---|
 | **Visão geral** | "Quanto voltam, e como o uso e o perfil se distribuem?" | 6 cartões (valor + intervalo + definição); **linha com faixa de IC por semana** (mostra tendência e incerteza juntas); **rosca** do modelo (2 partes de um todo); **barras horizontais com IC** por tema (compara categorias com nome longo); **área** do uso diário; **barras** do país frente aos 15 maiores e a média geral (comparação ordenada) |
-| **O que faz voltar** | "Quais fatores pesam e quanto é causa?" | **Gráfico de intervalos** ordenado pelo tamanho do efeito (ponto = efeito, barra = IC; cruzar o zero = sem efeito detectável); **barras + linha** de turnos x retorno; os 3 achados com a decisão |
-| **Coortes semanais** | "O retorno mudou ao longo do tempo, e por quê?" | **Barras** de novos por semana (cinza = amostra pequena); **decomposição mix x taxa** (barras divergentes: separa "mudou quem chegou" de "mudou o retorno dentro do perfil"); **mapa de calor** do retorno por semana |
+| **O que faz voltar** | "Quais fatores pesam e quanto é causa?" | **Gráfico de intervalos** ordenado pelo tamanho do efeito (ponto = efeito, barra = IC; cruzar o zero = sem efeito detectável); **barras + linha** de turnos x retorno; os 3 achados com a decisão; **tabela com ponto e intervalo** de saudação e recusa dentro de cada modelo (hipótese, sem ajuste) |
+| **Coortes semanais** | "O retorno mudou ao longo do tempo, e por quê?" | 3 cartões (24 h, 7 e 30 dias); **curva de retorno** com faixa de IC (mostra que a decisão de voltar ocorre nas primeiras horas); **Barras** de novos por semana (cinza = amostra pequena); **decomposição mix x taxa** (barras divergentes: separa "mudou quem chegou" de "mudou o retorno dentro do perfil"); **mapa de calor** do retorno por semana |
+| **Explorar** | "O que mais os dados deixam ver?" (exploratório, com aviso) | **Mapa de calor** dia x hora (dois eixos categóricos); **linha + barras** do GPT-4 por mês; **tabela com barras** de recusa por versão; **barras agrupadas** da concentração (pessoas x conversas) com alerta de uso concentrado; **barras com IC** por dispositivo, sistema e navegador (com aviso de medida) e por idioma do pedido x do navegador (hipótese) |
 | **Glossário e qualidade** | "De onde vêm os números e o que a base tem de estranho?" | Definições, o que mostra e nunca mostra, e a **tabela de problemas de qualidade** (quantos e o que se fez) |
 | **Como ler** | "Qual o papel do painel?" | Texto curto antes do primeiro gráfico |
 O seletor de país, o idioma (PT/EN) e o tema (claro/escuro) ficam no cabeçalho de todas as telas.

@@ -97,7 +97,7 @@ def limpar(dw: psycopg.Connection) -> None:
     """Esvazia as tres camadas dentro da transacao (a API so ve o estado antigo ate o COMMIT)."""
     with dw.cursor() as cur:
         cur.execute("""TRUNCATE bronze.wildchat,
-                       gold.pais, gold.agg_retorno_semana, gold.agg_retorno_fator, gold.agg_uso_dia, gold.agg_retorno_mes_fator, gold.problema_qualidade, gold.efeito_fator, gold.catalogo_indicador,
+                       gold.pais, gold.agg_retorno_semana, gold.agg_retorno_fator, gold.agg_uso_dia, gold.agg_retorno_mes_fator, gold.problema_qualidade, gold.agg_curva_retorno, gold.agg_estrato, gold.agg_recusa_modelo, gold.agg_concentracao, gold.agg_uso_hora, gold.agg_modelo_mes, gold.efeito_fator, gold.catalogo_indicador,
                        silver.fato_conversa, silver.fato_usuario, silver.dim_tema, silver.dim_pais RESTART IDENTITY""")
 
 

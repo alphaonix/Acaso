@@ -44,3 +44,17 @@ export type Decomposicao = {
 export type LinhaComparacao = { elegiveis: number; voltaram_7d: number; taxa: number; ic_lo: number; ic_hi: number };
 export type Comparacao = { paises: (LinhaComparacao & { pais: string })[]; geral: LinhaComparacao };
 
+
+export type PontoCurva = { dias: number; usuarios: number; voltaram: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
+export type Curva = { pontos: PontoCurva[]; voltou_24h: PontoCurva | null; voltou_7d: PontoCurva | null; voltou_30d: PontoCurva | null };
+export type TaxaGrupo = { nivel: string; elegiveis: number; voltaram: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
+export type Estrato = { fator: "recusa" | "saudacao"; familia: "GPT-4" | "GPT-3.5"; tratado: TaxaGrupo | null; comparacao: TaxaGrupo | null; diferenca: { pp: number; ic_lo: number; ic_hi: number } | null };
+export type Concentracao = {
+  faixas: { faixa: string; usuarios: number; conversas: number; pct_pessoas: number; pct_conversas: number }[];
+  usuarios: number; conversas: number; top10_pct: number | null; maior_pct: number | null; pessoas_1_conversa_pct: number | null;
+};
+export type UsoHora = { celulas: { dia_semana: number; hora: number; conversas: number }[]; total: number; pct_expediente: number | null; pct_madrugada: number | null; fuso: string; fuso_aproximado: boolean };
+export type ModelosTempo = {
+  meses: { mes: string; conversas: number; conversas_gpt4: number }[];
+  versoes: { modelo: string; conversas: number; com_recusa: number; resp_media_chars: number | null; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean }[];
+};

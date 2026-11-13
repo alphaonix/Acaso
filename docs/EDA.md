@@ -71,6 +71,17 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 | A janela de 7 dias | premissa | **sustentada:** 92% dos retornos de 30 dias ocorrem em 7 |
 | Volume de uso | conversas | **pessoas**: 0,8% das pessoas fazem 39% das conversas |
 
+## Onde cada sugestão está no painel
+| Sugestão | Onde | Observação |
+|---|---|---|
+| Voltou em 24 horas e a curva de retorno | **Coortes** (3 cartões e a curva) | base: 2.039 pessoas com 30 dias de janela completa, por isso o 7 dias da curva (24,0%) difere do indicador principal (23,7%) |
+| Pessoas ativas no lugar de conversas, alerta de uso concentrado | **Explorar** (concentração) e a linha "ativos" no uso diário da Visão geral | o alerta dispara quando as 10 pessoas mais ativas passam de 25% das conversas (hoje: 32,3%) |
+| Quando usam | **Explorar** (mapa de calor dia × hora, fuso do país) | 35,5% no expediente e 20,1% na madrugada |
+| Dispositivo e navegador, com aviso | **Explorar** | o aviso de medida (IP + navegador) vem junto do gráfico |
+| Recusa por versão do modelo | **Explorar** (tabela) e o GPT-4 por mês | 13,1% (3.5-0301) a 2,5% (3.5-0125) |
+| Idioma do pedido × idioma do navegador | **Explorar**, rotulado como hipótese | no painel o cruzamento usa **todos** os navegadores (3 níveis); o −8,5 pp acima é só com navegador em português |
+| Saudação e recusa dentro de cada modelo | **O que faz voltar** (tabela com intervalo) | diferença simples, sem ajuste: −10,1 e −11,9 pp (saudação), −4,7 (inclui zero) e −14,1 pp (recusa) |
+
 ## Sugestões que saem da exploração
 **Para o dashboard (indicadores e telas pensados depois de olhar os dados):**
 1. **Voltou em 24 horas** (16,0%) e a **curva de retorno** na tela de coortes.

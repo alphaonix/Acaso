@@ -3,7 +3,8 @@
 Publico:    GET /api/saude · POST /api/auth/login · POST /api/auth/logout
 Protegido (cookie de sessao; todos aceitam ?pais=, padrao Brazil):
   GET /api/auth/me · /api/paises · /api/catalogo · /api/retencao/resumo · /api/retencao/coortes
-  GET /api/retencao/fatores · /api/efeitos · /api/qualidade
+  GET /api/retencao/fatores · /api/retencao/curva · /api/retencao/estratos · /api/efeitos · /api/qualidade
+  GET /api/explorar/concentracao · /api/explorar/uso-hora · /api/explorar/modelos
 """
 import json
 import logging
@@ -201,6 +202,82 @@ def decomposicao(pais: str = Depends(pais_valido), fator: str = "modelo", de: st
     if de not in ok or para not in ok or de == para:
         raise HTTPException(400, "periodos invalidos ou com amostra pequena")
     return {"disponivel": True, "fator": fator, "de": de, "para": para, "meses": meses, **decompor(por_mes, de, para)}
+
+def _com_taxa(r: dict, num: str, den: str) -> dict:
+    """Taxa e IC de Wilson de uma linha; com menos de 30 no denominador a taxa fica nula (amostra pequena)."""
+    n, x = r[den], r[num]
+    if n is None or n < AMOSTRA_MINIMA_MES:
+        return {**r, "taxa": None, "ic_lo": None, "ic_hi": None, "amostra_pequena": True}
+    ic = consulta("SELECT gold.wilson_lo(%s, %s) AS lo, gold.wilson_hi(%s, %s) AS hi", (x, n, x, n))[0]
+    return {**r, "taxa": x / n, "ic_lo": ic["lo"], "ic_hi": ic["hi"], "amostra_pequena": False}
+
+
+@app.get("/api/retencao/curva", dependencies=[Depends(usuario_atual)])
+def curva(pais: str = Depends(pais_valido)) -> dict:
+    """Curva de retorno: % de usuarios que voltaram em ate d dias, entre quem tem 30 dias de janela completa (gold.agg_curva_retorno).
+    `voltou_24h` = ponto d = 1; `voltou_7d` = d = 7 (nesta base, por isso difere do indicador principal)."""
+    pontos = [_com_taxa(r, "voltaram", "usuarios") for r in
+              consulta("SELECT dias::float AS dias, usuarios, voltaram FROM gold.agg_curva_retorno WHERE pais = %s ORDER BY dias", (pais,))]
+    por_dia = {p["dias"]: p for p in pontos}
+    return {"pontos": pontos, "voltou_24h": por_dia.get(1.0), "voltou_7d": por_dia.get(7.0), "voltou_30d": por_dia.get(30.0)}
+
+
+@app.get("/api/retencao/estratos", dependencies=[Depends(usuario_atual)])
+def estratos(pais: str = Depends(pais_valido)) -> list[dict]:
+    """Saudacao e recusa DENTRO de cada familia de modelo (GPT-4 e GPT-3.5): taxa por nivel e a diferenca simples
+    (grupo 'tratado' menos grupo de comparacao, em pontos percentuais, IC de 95% pela aproximacao normal). Sem ajuste: e hipotese."""
+    linhas = consulta("""SELECT fator, familia, nivel, elegiveis, voltaram_7d AS voltaram FROM gold.agg_estrato WHERE pais = %s
+                         ORDER BY fator, familia, nivel""", (pais,))
+    tratado = {"recusa": "Com recusa", "saudacao": "Saudação"}
+    grupos: dict[tuple[str, str], dict[str, dict]] = {}
+    for r in linhas:
+        grupos.setdefault((r["fator"], r["familia"]), {})[r["nivel"]] = _com_taxa(r, "voltaram", "elegiveis")
+    saida = []
+    for (fator, familia), niveis in grupos.items():
+        t = niveis.get(tratado[fator])
+        c = next((v for k, v in niveis.items() if k != tratado[fator]), None)
+        dif = None
+        if t and c and not t["amostra_pequena"] and not c["amostra_pequena"]:
+            d = t["taxa"] - c["taxa"]
+            ep = (t["taxa"] * (1 - t["taxa"]) / t["elegiveis"] + c["taxa"] * (1 - c["taxa"]) / c["elegiveis"]) ** 0.5
+            dif = {"pp": d * 100, "ic_lo": (d - 1.96 * ep) * 100, "ic_hi": (d + 1.96 * ep) * 100}
+        saida.append({"fator": fator, "familia": familia, "tratado": t, "comparacao": c, "diferenca": dif})
+    return saida
+
+
+@app.get("/api/explorar/concentracao", dependencies=[Depends(usuario_atual)])
+def concentracao(pais: str = Depends(pais_valido)) -> dict:
+    """Quantas conversas cada pessoa tem: faixas (1, 2-3, 4-10, 11+), participacao no volume e peso dos 10 mais ativos."""
+    faixas = consulta("SELECT faixa, usuarios, conversas FROM gold.agg_concentracao WHERE pais = %s ORDER BY ordem", (pais,))
+    tu, tc = sum(f["usuarios"] for f in faixas), sum(f["conversas"] for f in faixas)
+    for f in faixas:
+        f["pct_pessoas"], f["pct_conversas"] = f["usuarios"] / tu, f["conversas"] / tc
+    p = consulta("SELECT usuarios, top10_pct, maior_pct, pessoas_1_conversa_pct FROM gold.pais WHERE pais = %s", (pais,))[0]
+    ok = p["usuarios"] >= AMOSTRA_MINIMA_MES
+    return {"faixas": faixas if ok else [], "usuarios": tu, "conversas": tc,
+            "top10_pct": p["top10_pct"] if ok else None, "maior_pct": p["maior_pct"] if ok else None,
+            "pessoas_1_conversa_pct": p["pessoas_1_conversa_pct"] if ok else None}
+
+
+@app.get("/api/explorar/uso-hora", dependencies=[Depends(usuario_atual)])
+def uso_hora(pais: str = Depends(pais_valido)) -> dict:
+    """Conversas por dia da semana (1=segunda ... 7=domingo) e hora, no fuso do pais, e a parcela no expediente (seg-sex, 9h-18h)."""
+    celulas = consulta("SELECT dia_semana, hora, conversas FROM gold.agg_uso_hora WHERE pais = %s ORDER BY dia_semana, hora", (pais,))
+    total = sum(c["conversas"] for c in celulas)
+    exp = sum(c["conversas"] for c in celulas if c["dia_semana"] <= 5 and 9 <= c["hora"] < 18)
+    noite = sum(c["conversas"] for c in celulas if c["hora"] >= 22 or c["hora"] < 6)
+    fuso = consulta("SELECT fuso, fuso_aproximado FROM gold.pais WHERE pais = %s", (pais,))[0]
+    return {"celulas": celulas, "total": total, "pct_expediente": exp / total if total else None,
+            "pct_madrugada": noite / total if total else None, **fuso}
+
+
+@app.get("/api/explorar/modelos", dependencies=[Depends(usuario_atual)])
+def modelos(pais: str = Depends(pais_valido)) -> dict:
+    """Participacao do GPT-4 por mes e, por versao do modelo, as conversas, a recusa na 1a resposta e o tamanho medio da resposta."""
+    meses = consulta("SELECT mes, conversas, conversas_gpt4 FROM gold.agg_modelo_mes WHERE pais = %s ORDER BY mes", (pais,))
+    versoes = [_com_taxa(r, "com_recusa", "conversas") for r in
+               consulta("SELECT modelo, conversas, com_recusa, resp_media_chars FROM gold.agg_recusa_modelo WHERE pais = %s ORDER BY modelo", (pais,))]
+    return {"meses": meses, "versoes": versoes}
 
 @app.get("/api/efeitos", dependencies=[Depends(usuario_atual)])
 def efeitos(pais: str = Depends(pais_valido)) -> list[dict]:

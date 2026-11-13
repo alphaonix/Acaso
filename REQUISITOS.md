@@ -7,7 +7,7 @@ Prazo: 16/11/2026, 23h59.
 | Exigência | | Onde |
 |---|---|---|
 | Repositório com instruções e ADRs e BDRs (contexto, opções, escolha) | ✔ | [`README.md`](README.md), [`docs/adr/`](docs/adr), [`docs/bdr/`](docs/bdr) |
-| Sobe do zero com um comando, carrega a base analítica **a partir do bruto**, mostra 2+ telas com dados reais | ◐ | `docker compose up --build`; 5 telas. O "bruto" é a **semente** gerada da base completa (ADR-002), porque os 3 GB não cabem no GitHub; o caminho do bruto completo está em `etl/download_full.py` e `etl/make_seed.py` |
+| Sobe do zero com um comando, carrega a base analítica **a partir do bruto**, mostra 2+ telas com dados reais | ◐ | `docker compose up --build`; 6 telas. O "bruto" é a **semente** gerada da base completa (ADR-002), porque os 3 GB não cabem no GitHub; o caminho do bruto completo está em `etl/download_full.py` e `etl/make_seed.py` |
 | Frontend, backend e base analítica | ✔ | `frontend/`, `backend/`, `db/` e `etl/` (Postgres em camadas: bronze, silver, gold) |
 | O dashboard **não lê a base bruta** | ✔ | A API usa um papel somente leitura que só enxerga a gold e o `ops` (`db/migrations/002`) |
 | Documento curto com achados e decisões e parágrafo de uso de IA | ◐ | [`docs/DOCUMENTO.md`](docs/DOCUMENTO.md); **faltam as horas** no parágrafo de IA |
@@ -24,7 +24,7 @@ Prazo: 16/11/2026, 23h59.
 | Problemas de qualidade e como foram tratados | ✔ | Tela "Glossário e qualidade" (11 problemas, números reais) e BDR-001 |
 | EDA com padrões, concentrações e anomalias | ✔ | [`docs/EDA.md`](docs/EDA.md): 7 figuras, cada uma com a conclusão e o que fazer (retorno rápido, GPT-4 some de jul a out/2023, 20 pessoas = 39% do volume, uso noturno e de fim de semana, dispositivo, efeitos por modelo, idioma); resumo em `docs/DOCUMENTO.md` §3; figuras reproduzíveis em `analise/06_eda_figuras.py` |
 | O que os dados permitem medir, não permitem e o que falta | ✔ | `docs/DOCUMENTO.md` §4 |
-| Sugestões para o assistente e para o dashboard | ✔ | `docs/DOCUMENTO.md` §5 e `docs/EDA.md` (7 indicadores ou telas novos e 4 sugestões ao produto) |
+| Sugestões para o assistente e para o dashboard | ✔ | `docs/DOCUMENTO.md` §5 e `docs/EDA.md` (7 indicadores ou telas novos e 4 sugestões ao produto; **6 deles já estão no painel**: curva e voltou em 24 h na tela Coortes, estratos por modelo em "O que faz voltar" e a tela Explorar) |
 
 ## 3.2 Análise
 | Exigência | | Onde |
@@ -46,7 +46,7 @@ Prazo: 16/11/2026, 23h59.
 ## 4 Sustentação
 | Exigência | | Onde |
 |---|---|---|
-| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (76 testes, prova por mutação, fluxo de mudança), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
+| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (88 testes, 47 conferências por carga, prova por mutação, fluxo de mudança), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
 | 4.2 Incidente (as 5 respostas) | ✔ | [`docs/INCIDENTE.md`](docs/INCIDENTE.md); o teste dourado está em `etl/tests/test_incidente.py` |
 | 4.3 Riscos e decisões em aberto | ✔ | [`docs/RISCOS.md`](docs/RISCOS.md) |
 
@@ -63,6 +63,6 @@ Prazo: 16/11/2026, 23h59.
 ## O que ainda está aberto
 1. **Precisão de tema e recusa** (regras de palavras): amostras prontas em `exports/amostra_validacao_*.csv` (local, fora do Git); falta a conferência manual e o cálculo da precisão. Afeta os achados 1 e 2.
 2. **Horas do parágrafo de IA** em `docs/DOCUMENTO.md` (§8).
-3. **Rodadas 5 a 8 do `docs/VALIDACAO.md`** (conferência dos números no DBeaver) e dos três cartões novos (conversas, turnos médios, uso de GPT-4).
+3. **Rodadas 5 a 9 do `docs/VALIDACAO.md`** (conferência dos números no DBeaver), dos três cartões novos (conversas, turnos médios, uso de GPT-4) e das métricas ampliadas (curva, concentração, uso por hora, recusa por versão, estratos, dispositivo, idioma × navegador). Elas ainda **não** estão no portão de qualidade: só entram depois da conferência.
 4. **AWS:** o Terraform é esboço (`validate` ok, sem `plan`/`apply`); o preço do RDS vem de fonte secundária.
 5. **Fuso** de ~160 países, **cache** e **SSO** são extensões, descritas e não implementadas.

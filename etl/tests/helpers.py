@@ -55,7 +55,7 @@ def inserir(dw, convs: list[C]) -> None:
                 """INSERT INTO bronze.wildchat (conversation_hash, model, "timestamp", turn, language, country, state, hashed_ip, header,
                                                 toxic, redacted, conversation, primeira_resposta_ts, arquivo_origem)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, false, false, %s, %s, 'teste')""",
-                (c.hash or f"h{i}", c.modelo, fim, c.turnos, c.idioma, c.pais, c.estado, c.ip, Jsonb({"user-agent": c.ua}),
+                (c.hash or f"h{i}", c.modelo, fim, c.turnos, c.idioma, c.pais, c.estado, c.ip, Jsonb({"user-agent": c.ua, **({"accept-language": c.extras["al"]} if "al" in c.extras else {})}),
                  conversa if c.pais == "Brazil" else None, c.inicio))
 
 

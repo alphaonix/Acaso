@@ -53,17 +53,17 @@ Uso mês e não semana porque uma semana tem só 40 a 90 elegíveis; mesmo o mê
 
 ## 5. Sugestões (saíram dos dados; detalhe em `docs/EDA.md`)
 - **Para o assistente:** (1) **onboarding na saudação**, o achado mais firme, testado por A/B; (2) revisar recusas, **começando pelo GPT-4**; (3) cuidar de quem escreve em outros idiomas; (4) pensar o reengajamento **no primeiro dia**, já que metade de quem volta o faz em cerca de 14 horas.
-- **Para o dashboard (indicadores e telas pensados depois de olhar os dados):** (1) **"voltou em 24 horas"** e a curva de retorno; (2) **pessoas ativas** no lugar de conversas, com **alerta de uso concentrado ou automatizado**; (3) tela **"Quando usam"** (hora × dia no fuso do país);
+- **Para o dashboard (indicadores e telas pensados depois de olhar os dados; os itens 1 a 6 já estão implementados, nas telas Coortes, O que faz voltar e Explorar):** (1) **"voltou em 24 horas"** e a curva de retorno; (2) **pessoas ativas** no lugar de conversas, com **alerta de uso concentrado ou automatizado**; (3) tela **"Quando usam"** (hora × dia no fuso do país);
   (4) tela **"Dispositivo e navegador"**, com o aviso de que a medida pode distorcer; (5) **recusa por versão do modelo**; (6) **idioma do pedido × idioma do navegador**; (7) a **avaliação da resposta pelo usuário**, o dado que falta. Além do **mix × taxa** a cada mudança de retorno, que já está no painel.
 ## 6. O dashboard e a arquitetura
-Cinco telas para pessoas de negócio, cada uma com a pergunta que responde, cada número com definição e fórmula (botão "i") e cada efeito com intervalo: Visão geral, O que faz voltar, Coortes, Glossário e qualidade e Como ler.
+Seis telas para pessoas de negócio, cada uma com a pergunta que responde, cada número com definição e fórmula (botão "i") e cada efeito com intervalo: Visão geral, O que faz voltar, Coortes, **Explorar** (recortes exploratórios, rotulados como hipótese), Glossário e qualidade e Como ler.
 Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação do país com os maiores e a média geral (Brasil 23,7% contra 21,5%).
 **O painel mostra:** contagens e taxas agregadas, com intervalo, e efeitos. **Nunca mostra:** texto das conversas, IP (nem com hash), user-agent, identificador de usuário, nem grupos com menos de 30 pessoas.
 **Fluxo:** semente do bruto → ETL (bronze, silver e gold no Postgres, numa só transação) → API somente leitura (lê só a gold) → Next.js. Sobe com `docker compose up --build` (diagrama e endpoints em `docs/arquitetura.md`; implantação na AWS em `infra/README.md`).
 **AWS:** CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário como tarefa agendada, RDS PostgreSQL na base analítica, S3 para o bruto e Secrets Manager; região de São Paulo (LGPD). **Custo estimado: ≈ US$ 136 por mês** (≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade), com RDS, Fargate e ALB somando 98%; **não há LLM** (tema e recusa por regras). Os preços unitários vêm das listas oficiais da AWS, menos o RDS (fonte secundária); o esboço em Terraform passa em `validate`, mas não foi aplicado.
 
 ## 7. Sustentação
-76 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 36 conferências a cada carga reverte a publicação se algo divergir
+88 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 47 conferências a cada carga reverte a publicação se algo divergir
 (`docs/TESTES.md`). **Incidente:** o "retorno caiu de 31% para 18%" é um erro de medição (o `usuario_id` usa o user-agent bruto e uma atualização de navegador fez ~860 pessoas virarem "novas"); causa, consulta de confirmação, correção e prevenção em `docs/INCIDENTE.md`.
 **Riscos e decisões em aberto** (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS): `docs/RISCOS.md`.
 
