@@ -309,6 +309,7 @@ export function CabecalhoPagina({ eyebrow, titulo, destaque, desc }: { eyebrow: 
 const MIN_POSICAO = 300;
 
 function TickPais({ x, y, nome, linhas, pais }: { x: number; y: number; nome: string; linhas: { pais: string; nome: string; iso2: string | null; robusto: boolean }[]; pais: string }) {
+  if (nome === "__sep__") return null;
   const i = linhas.findIndex((l) => l.nome === nome);
   const l = linhas[i];
   const B = bandeiraDe(l?.iso2);
@@ -335,6 +336,10 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   const linhas = lista.map((p) => ({
     pais: p.pais, iso2: info.get(p.pais)?.iso2 ?? null, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi, robusto: p.elegiveis >= MIN_POSICAO,
   })).sort((a, b) => Number(b.robusto) - Number(a.robusto) || b.taxa - a.taxa);   // primeiro quem tem amostra para ter posicao; depois os demais, sem posicao
+  // linha em branco entre quem tem amostra para ter posicao e os demais: a reference line tracejada marca a divisa
+  const corte = linhas.findIndex((l) => !l.robusto);
+  const SEP = { pais: "__sep__", iso2: null, nome: "__sep__", taxa: 0, erro: [0, 0], n: 0, v: 0, lo: 0, hi: 0, robusto: false };
+  const dadosGraf = corte > 0 ? [...linhas.slice(0, corte), SEP, ...linhas.slice(corte)] : linhas;
   const atual = linhas.find((l) => l.pais === pais);
   const dif = atual ? atual.taxa - geral.taxa * 100 : null;
   const max = Math.max(...linhas.map((l) => l.taxa + l.erro[1]), geral.taxa * 100);
@@ -352,22 +357,24 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
       )}
       {!sel && <p className="aviso alerta">{t("comp.semAmostra")}</p>}
       <div className="comp-rolagem" ref={rolagem}>
-      <div role="img" className="graf-flex" style={{ minHeight: linhas.length * 30 + 56 }} aria-label={t("comp.aria")}>
-        <ResponsiveContainer width="100%" height="100%" minHeight={linhas.length * 30 + 56}>
-          <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
+      <div role="img" className="graf-flex" style={{ minHeight: dadosGraf.length * 30 + 56 }} aria-label={t("comp.aria")}>
+        <ResponsiveContainer width="100%" height="100%" minHeight={dadosGraf.length * 30 + 56}>
+          <BarChart data={dadosGraf} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />
             <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, Math.ceil((max + 2) / 5) * 5]} ticks={marcas(Math.ceil((max + 2) / 5) * 5)} />
             <YAxis type="category" dataKey="nome" stroke="var(--borda)" tickLine={false} width={196} interval={0}
               tick={(p: { x: number; y: number; payload: { value: string } }) => <TickPais x={p.x} y={p.y} nome={p.payload.value} linhas={linhas} pais={pais} />} />
             <Tooltip cursor={{ fill: "var(--acento-fundo)" }} content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
+              if (!active || !payload?.length || payload[0].payload.pais === "__sep__") return null;
               const l = payload[0].payload;
               return <Dica linhas={<><strong>{l.nome}</strong><br />{t("grafico.retorno")} <b>{pct(l.taxa / 100)}</b><br />{t("grafico.ic", { lo: pct(l.lo), hi: pct(l.hi) })}<br />{t("grafico.voltaram", { v: num(l.v), n: num(l.n) })}</>} />;
             }} />
             <ReferenceLine x={geral.taxa * 100} stroke="var(--graf-3)" strokeDasharray="5 4" strokeWidth={2}
               label={{ value: t("comp.geral", { v: pct(geral.taxa) }), position: "top", fill: "var(--texto-suave)", fontSize: 11 }} />
+            {corte > 0 && <ReferenceLine y="__sep__" stroke="var(--texto-mudo)" strokeDasharray="6 5" strokeWidth={1.5}
+              label={{ value: t("comp.divisa", { n: MIN_POSICAO }), position: "insideTopRight", fill: "var(--texto-suave)", fontSize: 11 }} />}
             <Bar dataKey="taxa" radius={[0, 6, 6, 0]}>
-              {linhas.map((l) => <Cell key={l.pais} fill={l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : l.robusto ? "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" : "color-mix(in srgb, var(--roxo) 16%, var(--superficie))"} />)}
+              {dadosGraf.map((l) => <Cell key={l.pais} fill={l.pais === "__sep__" ? "transparent" : l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : l.robusto ? "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" : "color-mix(in srgb, var(--roxo) 16%, var(--superficie))"} />)}
               <ErrorBar dataKey="erro" direction="x" stroke="var(--texto-suave)" strokeWidth={1.5} width={5} />
             </Bar>
           </BarChart>
