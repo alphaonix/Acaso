@@ -76,3 +76,9 @@ a recusa é medida só na abertura da 1ª resposta.
 3. **Trocar para um modelo maior ou respostas mais longas não mostra ganho de retorno** (-0,6 e +0,1 pp, IC ±5). Decisão:
    não justificar o custo de GPT-4 por retenção; usar turnos e pedido longo (únicos efeitos que resistem à correção para
    múltiplos testes) como **sinal precoce** de engajamento, não como alavanca.
+
+## Atualização da exploração (12/11/2026, `docs/EDA.md`)
+Comparações simples **dentro de cada família de modelo** (sem ajuste, intervalos isolados) refinam os achados 1 e 2:
+- **Saudação** pesa nos dois modelos: GPT-3.5 −10,1 pp [−15,4; −4,8] (n=237) e GPT-4 −11,9 pp [−18,3; −5,6] (n=149). Fica **mais firme**.
+- **Recusa** depende do modelo: GPT-4 −14,1 pp [−21,3; −6,9] (n=88); GPT-3.5 −4,7 pp [−12,5; +3,0] (n=110, inclui zero); na versão 3.5-0301, −0,2 pp [−12,2; +11,7] (59 recusas). O −9,6 médio mistura os dois: é um **indício concentrado no GPT-4**.
+- A versão do modelo (não só a família) muda a taxa de recusa de 2,5% a 13,1%; o ajuste do AIPW usa a família e o mês de chegada, então a confusão com a versão **não está totalmente tratada**.

@@ -22,9 +22,9 @@ Prazo: 16/11/2026, 23h59.
 | Definições de usuário, sessão, 1ª experiência e retorno + quanto o resultado muda | ✔ | BDR-001, `docs/SENSIBILIDADE.md` (o gap da sessão é a premissa que mais pesa: 19,6% a 26,3%) |
 | Variáveis da 1ª experiência e como cada uma é derivada | ◐ | [`docs/COMO_FUNCIONA.md`](docs/COMO_FUNCIONA.md), [`BDR-003`](docs/bdr/BDR-003-classificacao-de-tema.md). Tema e recusa são **regras**, sem IA; a **conferência manual está pendente** |
 | Problemas de qualidade e como foram tratados | ✔ | Tela "Glossário e qualidade" (11 problemas, números reais) e BDR-001 |
-| EDA com padrões, concentrações e anomalias | ✔ | [`docs/DOCUMENTO.md`](docs/DOCUMENTO.md) §3 (56% das conversas têm 1 turno; 10 usuários = 32% do uso; GPT-4 some de jul a out/2023) e as telas |
+| EDA com padrões, concentrações e anomalias | ✔ | [`docs/EDA.md`](docs/EDA.md): 7 figuras, cada uma com a conclusão e o que fazer (retorno rápido, GPT-4 some de jul a out/2023, 20 pessoas = 39% do volume, uso noturno e de fim de semana, dispositivo, efeitos por modelo, idioma); resumo em `docs/DOCUMENTO.md` §3; figuras reproduzíveis em `analise/06_eda_figuras.py` |
 | O que os dados permitem medir, não permitem e o que falta | ✔ | `docs/DOCUMENTO.md` §4 |
-| Sugestões para o assistente e para o dashboard | ✔ | `docs/DOCUMENTO.md` §5 |
+| Sugestões para o assistente e para o dashboard | ✔ | `docs/DOCUMENTO.md` §5 e `docs/EDA.md` (7 indicadores ou telas novos e 4 sugestões ao produto) |
 
 ## 3.2 Análise
 | Exigência | | Onde |

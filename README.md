@@ -11,6 +11,7 @@ trocar de modelo ou alongar a resposta não mostra ganho. É associação ajusta
 |---|---|
 | **Ler o resultado** (achados, decisões, riscos, uso de IA) | [`docs/DOCUMENTO.md`](docs/DOCUMENTO.md) |
 | Ver **onde cada exigência do PDF foi atendida** | [`REQUISITOS.md`](REQUISITOS.md) |
+| **Explorar os dados:** sete conclusões com figuras, intervalos e sugestões | [`docs/EDA.md`](docs/EDA.md) |
 | Entender **como o dado vira o número**, passo a passo, com consultas de conferência | [`docs/COMO_FUNCIONA.md`](docs/COMO_FUNCIONA.md) |
 | O incidente da seção 4.2 e os riscos da 4.3 | [`docs/INCIDENTE.md`](docs/INCIDENTE.md) · [`docs/RISCOS.md`](docs/RISCOS.md) |
 | Arquitetura, endpoints e telas | [`docs/arquitetura.md`](docs/arquitetura.md) |
@@ -71,8 +72,8 @@ Os textos que vêm do banco (nomes de indicadores, fatores e conferências) são
 | `db/migrations/` | Esquema da base analítica (bronze, silver, gold, ops, auditoria) e papel somente leitura da API |
 | `backend/` | API FastAPI (lê só a gold e o `ops`) e `tests/` |
 | `frontend/` | Dashboard Next.js (React, Recharts), PT/EN, tema claro e escuro |
-| `analise/` | Scripts de discovery, sensibilidade e exportação para Power BI |
-| `docs/` | Documento da entrega, `adr/` (decisões técnicas), `bdr/` (negócio e premissas), `COMO_FUNCIONA`, `INDICADORES`, `SENSIBILIDADE`, `TESTES`, `INCIDENTE`, `RISCOS`, `VALIDACAO` |
+| `analise/` | Scripts de discovery, sensibilidade, figuras da exploração (`06_eda_figuras.py`) e exportação para Power BI |
+| `docs/` | Documento da entrega, `adr/` (decisões técnicas), `bdr/` (negócio e premissas), `COMO_FUNCIONA`, `EDA` (com `figuras/`), `INDICADORES`, `SENSIBILIDADE`, `TESTES`, `INCIDENTE`, `RISCOS`, `VALIDACAO` |
 | `infra/` | Implantação na AWS: desenho, custo e esboço em Terraform |
 
 ## Decisões registradas
