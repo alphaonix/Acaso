@@ -2,7 +2,7 @@ import type { Chave } from "./pt";
 
 /** English UI text. Same keys as pt.ts (the compiler fails if one is missing). Text between **asterisks** is bold. */
 export const en: Record<Chave, string> = {
-  "nav.aria": "Screens",
+  "nav.menu": "Open or close the menu", "nav.aria": "Screens",
   "nav.visao": "Overview",
   "nav.fatores": "What brings people back",
   "nav.glossario": "Glossary & quality",

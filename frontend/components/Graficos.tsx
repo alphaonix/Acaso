@@ -309,6 +309,47 @@ export function CabecalhoPagina({ eyebrow, titulo, destaque, desc }: { eyebrow: 
 /* ---------------- Comparacao entre paises: o pais selecionado frente aos maiores e a media geral ---------------- */
 
 /** Rotulo do eixo: posicao (ranking pela estimativa), nome e bandeira do pais; o selecionado vai em destaque. */
+/** Em tela estreita o grafico de barras da lugar a uma lista (posicao, bandeira, nome, taxa e uma barra fina com a margem de erro). */
+function useEstreito(px: number) {
+  const [e, setE] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia(`(max-width: ${px}px)`);
+    const f = () => setE(m.matches);
+    f();
+    m.addEventListener("change", f);
+    return () => m.removeEventListener("change", f);
+  }, [px]);
+  return e;
+}
+
+function ListaPaises({ linhas, pais, geral, topo }: { linhas: { pais: string; iso2: string | null; nome: string; taxa: number; erro: number[]; robusto: boolean }[]; pais: string; geral: number; topo: number }) {
+  const { t } = useI18n();
+  const x = (v: number) => `${Math.min(100, Math.max(0, (v / topo) * 100))}%`;
+  return (
+    <ol className="comp-lista" aria-label={t("comp.aria")}>
+      {linhas.map((l, i) => {
+        if (l.pais === "__sep__") return <li key="sep" className="comp-divisa">{t("comp.divisa", { n: num(MIN_POSICAO) })}</li>;
+        const B = bandeiraDe(l.iso2);
+        return (
+          <li key={l.pais} className={`${l.pais === pais ? "sel" : ""} ${l.robusto ? "" : "peq"}`}>
+            <div className="comp-lin">
+              <span className="pos">{l.robusto ? `${i + 1}º` : "·"}</span>
+              {B ? <B className="bandeira" aria-hidden={true} /> : <span className="bandeira" />}
+              <span className="nm">{l.nome}</span>
+              <b>{pct(l.taxa / 100)}</b>
+            </div>
+            <div className="comp-trilho" aria-hidden="true">
+              <i className="barra" style={{ width: x(l.taxa) }} />
+              <i className="ic" style={{ left: x(l.taxa - l.erro[0]), width: `calc(${x(l.taxa + l.erro[1])} - ${x(l.taxa - l.erro[0])})` }} />
+              <i className="media" style={{ left: x(geral) }} />
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** Abaixo disso o intervalo e largo demais para dar posicao: o pais aparece na lista, sem numero. */
 const MIN_POSICAO = 1000;
 
@@ -348,6 +389,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   const dif = atual ? atual.taxa - geral.taxa * 100 : null;
   const max = Math.max(...linhas.map((l) => l.taxa + l.erro[1]), geral.taxa * 100);
   const rolagem = useRef<HTMLDivElement>(null);
+  const estreito = useEstreito(640);
   const posicao = linhas.findIndex((l) => l.pais === pais);
   useEffect(() => { if (rolagem.current && posicao >= 0) rolagem.current.scrollTop = Math.max(0, posicao * 30 - 120); }, [pais, posicao]);
 
@@ -361,7 +403,8 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
       )}
       {!sel && <p className="aviso alerta">{t("comp.semAmostra")}</p>}
       <div className="comp-rolagem" ref={rolagem}>
-      <div role="img" className="graf-flex" style={{ minHeight: dadosGraf.length * 30 + 56, minWidth: 560 }} aria-label={t("comp.aria")}>
+      {estreito ? <ListaPaises linhas={dadosGraf} pais={pais} geral={geral.taxa * 100} topo={Math.ceil((max + 2) / 5) * 5} /> : (
+      <div role="img" className="graf-flex" style={{ minHeight: dadosGraf.length * 30 + 56 }} aria-label={t("comp.aria")}>
         <ResponsiveContainer width="100%" height="100%" minHeight={dadosGraf.length * 30 + 56}>
           <BarChart data={dadosGraf} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />
@@ -383,7 +426,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </div>)}
       </div>
       <div className="legenda-graf">
         <span><i style={{ background: "var(--graf-1)" }} />{t("comp.selecionado")}</span>

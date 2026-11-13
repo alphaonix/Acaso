@@ -1,6 +1,6 @@
 /** Textos da interface em português (idioma-base). Trechos entre **asteriscos** saem em negrito. {nome} = variavel. */
 export const pt = {
-  "nav.aria": "Telas",
+  "nav.menu": "Abrir ou fechar o menu", "nav.aria": "Telas",
   "nav.visao": "Visão geral",
   "nav.fatores": "O que faz voltar",
   "nav.glossario": "Glossário e qualidade",
