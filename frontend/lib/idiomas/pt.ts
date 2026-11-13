@@ -193,6 +193,7 @@ export const pt = {
   "co.curvaMarcos": "Em 24 horas: **{a}** · em 7 dias: **{b}** · em 30 dias: **{c}**",
   "nav.ajuda": "Ajuda",
   "aj.antes": "Antes de começar",
+  "topo.paisAnalisado": "País analisado",
   "pais.desconhecido": "Desconhecido",
   "graf.fonte": "Fonte: WildChat",
   "graf.d30": "30 dias", "graf.d90": "90 dias", "graf.tudo": "Tudo", "graf.periodo": "Período exibido",

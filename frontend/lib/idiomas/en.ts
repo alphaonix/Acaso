@@ -195,6 +195,7 @@ export const en: Record<Chave, string> = {
   "co.curvaMarcos": "Within 24 hours: **{a}** · within 7 days: **{b}** · within 30 days: **{c}**",
   "nav.ajuda": "Help",
   "aj.antes": "Before you start",
+  "topo.paisAnalisado": "Country analysed",
   "pais.desconhecido": "Unknown",
   "graf.fonte": "Source: WildChat",
   "graf.d30": "30 days", "graf.d90": "90 days", "graf.tudo": "All", "graf.periodo": "Period shown",

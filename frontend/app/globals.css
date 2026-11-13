@@ -499,3 +499,6 @@ body { background-image: var(--hero); background-attachment: fixed; }
 @media (max-width: 860px) { .def-duas { grid-template-columns: minmax(0, 1fr); } }
 .priv-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
 @media (max-width: 860px) { .priv-tres { grid-template-columns: minmax(0, 1fr); } }
+.seletor-txt { display: grid; text-align: left; line-height: 1.15; min-width: 0; }
+.seletor-txt small { font-size: 0.75rem; color: var(--texto-mudo); }
+.seletor-btn { padding-top: 0.3rem; padding-bottom: 0.3rem; }

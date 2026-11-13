@@ -84,7 +84,7 @@ export function SeletorPais() {
       <button type="button" className="seletor-btn" title={t("topo.pais")} aria-label={`${t("topo.pais")}: ${atual ? nome(atual) : ""}`}
         aria-haspopup="listbox" aria-expanded={aberto} onClick={() => (aberto ? setAberto(false) : abrir())}>
         <Flag iso2={atual?.iso2 ?? null} />
-        <span className="seletor-nome">{atual ? nome(atual) : ""}</span>
+        <span className="seletor-txt"><small>{t("topo.paisAnalisado")}</small><span className="seletor-nome">{atual ? nome(atual) : ""}</span></span>
         <svg {...ico} width={12} height={12} strokeWidth={3} className="seletor-seta"><path d="M6 9l6 6 6-6" /></svg>
       </button>
       {aberto && (
