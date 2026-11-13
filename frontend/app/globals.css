@@ -419,6 +419,3 @@ body { background-image: var(--hero); background-attachment: fixed; }
 @media (min-width: 1180px) { .kpis4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .sub-titulo { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--texto-forte); }
 .comp-rolagem { max-height: 560px; overflow-y: auto; padding-right: 4px; }
-
-/* cartoes lado a lado ficam com a altura do proprio conteudo (sem espaco vazio embaixo do mais curto) */
-.grade2, .grade3 { align-items: start; }
