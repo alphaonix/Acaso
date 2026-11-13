@@ -347,7 +347,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
   .fl2-eixo { display: none; }
 }
 /* Coortes: coluna da esquerda empilha os paineis (sem espaco vazio dentro dos cartoes); topo alinhado */
-.grade3.topo { align-items: start; }
+.grade3.alinha-topo { align-items: start; }
 .pilha { display: grid; gap: 1.5rem; min-width: 0; }
 .pilha > .cartao { margin: 0; min-width: 0; }
 .calor { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }.calor { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.4rem; }

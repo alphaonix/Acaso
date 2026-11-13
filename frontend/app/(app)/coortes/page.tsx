@@ -31,7 +31,7 @@ export default function Coortes() {
         {curva.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : curva.dados ? <CurvaRetorno curva={curva.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
       </Painel>
 
-      <div className="grade3 topo">
+      <div className="grade3 alinha-topo">
         <div className="pilha">
           <Painel nota="nt.novos" titulo={t("co.novosTitulo")} pergunta={t("co.novosPergunta")}>
             {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length ? <BarrasNovos coortes={semanas} /> : <p className="vazio">{t("vg.semDados")}</p>}
