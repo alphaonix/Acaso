@@ -147,9 +147,13 @@ WHERE u.elegivel AND f.nivel IS NOT NULL GROUP BY 1, 2, 3, 4
 """
 
 SQL_RECUSA_MODELO = """
-INSERT INTO gold.agg_recusa_modelo (pais, modelo, conversas, com_recusa, resp_media_chars)
-SELECT pais, modelo, count(*), count(*) FILTER (WHERE recusa), round(avg(resp1_chars))::int
-FROM silver.fato_conversa WHERE recusa IS NOT NULL GROUP BY 1, 2
+INSERT INTO gold.agg_recusa_modelo (pais, modelo, conversas, com_recusa, resp_media_chars, elegiveis, voltaram_7d)
+WITH c AS (SELECT pais, modelo, count(*) AS conversas, count(*) FILTER (WHERE recusa) AS com_recusa, round(avg(resp1_chars))::int AS resp
+           FROM silver.fato_conversa WHERE recusa IS NOT NULL GROUP BY 1, 2),
+     u AS (SELECT pais, modelo, count(*) FILTER (WHERE elegivel) AS el, count(*) FILTER (WHERE elegivel AND voltou_7d) AS v
+           FROM silver.fato_usuario WHERE recusa IS NOT NULL GROUP BY 1, 2)
+SELECT c.pais, c.modelo, c.conversas, c.com_recusa, c.resp, coalesce(u.el, 0), coalesce(u.v, 0)
+FROM c LEFT JOIN u ON u.pais = c.pais AND u.modelo = c.modelo
 """
 
 SQL_CONCENTRACAO = """

@@ -80,3 +80,10 @@ def test_recusa_e_modelo_por_versao(dw):
     assert r["gpt-3.5-turbo-0301"] == (2, 1) and r["gpt-4-0125-preview"] == (1, 0)
     mes = linhas(dw, "SELECT conversas, conversas_gpt4 FROM gold.agg_modelo_mes WHERE pais = 'Brazil' AND mes = '2023-06-01'")
     assert mes == [(3, 1)]
+
+def test_retorno_por_versao_do_modelo(dw):
+    # 3 usuarios da versao 0301 (1 volta em 2 dias) e 2 da gpt-4-0125 (nenhum volta); todos elegiveis
+    rodar(dw, [C("a", BASE, modelo="gpt-3.5-turbo-0301"), C("a", BASE + timedelta(days=2)), C("b", BASE, modelo="gpt-3.5-turbo-0301"),
+               C("c", BASE, modelo="gpt-3.5-turbo-0301"), C("d", BASE, modelo="gpt-4-0125-preview"), C("e", BASE, modelo="gpt-4-0125-preview")], com_gold=True)
+    r = {m: (el, v) for m, el, v in linhas(dw, "SELECT modelo, elegiveis, voltaram_7d FROM gold.agg_recusa_modelo WHERE pais = 'Brazil'")}
+    assert r["gpt-3.5-turbo-0301"] == (3, 1) and r["gpt-4-0125-preview"] == (2, 0)

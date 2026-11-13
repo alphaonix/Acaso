@@ -1,8 +1,9 @@
 "use client";
-import { Bar, BarChart, CartesianGrid, ComposedChart, Area, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, ErrorBar, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Kpi } from "@/components/Graficos";
 import { R, useI18n } from "@/lib/i18n";
 import { dec, mesAno, num, pct, pp } from "@/lib/formato";
-import type { Concentracao, Curva, Estrato, ModelosTempo, UsoHora } from "@/lib/tipos";
+import type { Concentracao, Curva, Estrato, FamiliaModelo, ModelosTempo, UsoHora, VersaoModelo } from "@/lib/tipos";
 
 const EIXO = { fontSize: 11, fill: "var(--texto-mudo)" };
 const marcas = (topo: number) => { const passo = topo > 40 ? 10 : 5; return Array.from({ length: Math.floor(topo / passo) + 1 }, (_, i) => i * passo); };
@@ -154,28 +155,78 @@ export function ModeloTempo({ dados }: { dados: ModelosTempo["meses"] }) {
   );
 }
 
-/* ---------------- Recusa por versao do modelo ---------------- */
-export function VersoesModelo({ dados }: { dados: ModelosTempo["versoes"] }) {
+/* ---------------- Comparacao entre modelos: cartoes por familia, barras por versao e tabela ---------------- */
+const COR_FAMILIA = { "GPT-4": "var(--graf-1)", "GPT-3.5": "var(--graf-2)" } as const;
+
+export function CartoesModelos({ familias }: { familias: FamiliaModelo[] }) {
   const { t } = useI18n();
-  const max = Math.max(0.01, ...dados.map((d) => d.ic_hi ?? d.taxa ?? 0));
+  return (
+    <div className="kpis kpis4">
+      {familias.flatMap((f) => [
+        <Kpi key={`${f.familia}-r`} rotulo={`${f.familia} · ${t("vg.modRetorno")}`} valor={f.retorno.taxa != null ? pct(f.retorno.taxa) : "—"}
+          delta={f.retorno.taxa != null ? t("vg.modCardSub", { lo: pct(f.retorno.ic_lo), hi: pct(f.retorno.ic_hi), v: num(f.voltaram_7d), n: num(f.elegiveis) }) : t("vg.modPequena")} />,
+        ...(f.recusa ? [<Kpi key={`${f.familia}-c`} rotulo={`${f.familia} · ${t("vg.modRecusa")}`} valor={f.recusa.taxa != null ? pct(f.recusa.taxa) : "—"}
+          delta={f.recusa.taxa != null ? t("vg.modCardSubConv", { lo: pct(f.recusa.ic_lo), hi: pct(f.recusa.ic_hi), v: num(f.com_recusa), n: num(f.conversas) }) : t("vg.modPequena")} />] : []),
+      ])}
+    </div>
+  );
+}
+
+/** Barras horizontais com IC por versao do modelo, coloridas pela familia. `campo` escolhe retorno ou recusa. */
+export function BarrasVersoes({ versoes, campo }: { versoes: VersaoModelo[]; campo: "retorno" | "recusa" }) {
+  const { t } = useI18n();
+  const linhas = versoes.filter((v) => v[campo].taxa != null).map((v) => {
+    const x = v[campo];
+    return { nome: v.modelo.replace("gpt-", "").replace("-turbo", "").replace("-preview", ""), familia: v.familia, taxa: x.taxa! * 100, erro: [(x.taxa! - x.ic_lo!) * 100, (x.ic_hi! - x.taxa!) * 100],
+      lo: x.ic_lo, hi: x.ic_hi, n: campo === "retorno" ? v.elegiveis : v.conversas, k: campo === "retorno" ? v.voltaram_7d : v.com_recusa, modelo: v.modelo };
+  });
+  if (!linhas.length) return <p className="vazio">{t("ex.semDados")}</p>;
+  const topo = Math.ceil((Math.max(...linhas.map((l) => l.taxa + l.erro[1])) + 2) / 5) * 5;
+  return (
+    <div>
+      <div role="img" aria-label={linhas.map((l) => `${l.modelo} ${l.taxa.toFixed(1)}%`).join("; ")}>
+        <ResponsiveContainer width="100%" height={linhas.length * 40 + 50}>
+          <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
+            <CartesianGrid stroke="var(--borda)" horizontal={false} />
+            <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, topo]} ticks={marcas(topo)} />
+            <YAxis type="category" dataKey="nome" tick={EIXO} stroke="var(--borda)" tickLine={false} width={96} interval={0} />
+            <Tooltip cursor={{ fill: "var(--acento-fundo)" }} content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const l = payload[0].payload;
+              return <Dica linhas={<><strong>{l.modelo}</strong><br />{t(campo === "retorno" ? "vg.modRetorno" : "vg.modRecusa")} <b>{pct(l.taxa / 100)}</b><br />{t("grafico.ic", { lo: pct(l.lo), hi: pct(l.hi) })}<br />{t(campo === "retorno" ? "vg.modTipRet" : "vg.modTipRec", { v: num(l.k), n: num(l.n) })}</>} />;
+            }} />
+            <Bar dataKey="taxa" radius={[0, 6, 6, 0]}>
+              {linhas.map((l) => <Cell key={l.modelo} fill={COR_FAMILIA[l.familia]} />)}
+              <ErrorBar dataKey="erro" direction="x" stroke="var(--texto-suave)" strokeWidth={1.5} width={5} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="legenda-graf">
+        <span><i style={{ background: COR_FAMILIA["GPT-3.5"] }} />GPT-3.5</span>
+        <span><i style={{ background: COR_FAMILIA["GPT-4"] }} />GPT-4</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Tabela por versao: retorno e recusa lado a lado ---------------- */
+export function VersoesModelo({ dados }: { dados: VersaoModelo[] }) {
+  const { t } = useI18n();
+  const celula = (x: { taxa: number | null; ic_lo: number | null; ic_hi: number | null }) => x.taxa == null ? <span className="dica">{t("vg.modPequena")}</span> : <span><b>{pct(x.taxa)}</b> <small>[{pct(x.ic_lo)}; {pct(x.ic_hi)}]</small></span>;
   return (
     <div>
       <div className="tabela-rolagem">
         <table className="tabela">
-          <thead><tr><th>{t("ex.verModelo")}</th><th className="num">{t("ex.verConversas")}</th><th>{t("ex.verRecusa")}</th><th className="num">{t("ex.verTam")}</th></tr></thead>
+          <thead><tr><th>{t("ex.verModelo")}</th><th className="num">{t("ex.verElegiveis")}</th><th>{t("ex.verRetorno")}</th><th className="num">{t("ex.verConversas")}</th><th>{t("ex.verRecusa")}</th><th className="num">{t("ex.verTam")}</th></tr></thead>
           <tbody>
             {dados.map((d) => (
               <tr key={d.modelo}>
                 <td><code>{d.modelo}</code></td>
+                <td className="num">{num(d.elegiveis)}</td>
+                <td>{celula(d.retorno)}</td>
                 <td className="num">{num(d.conversas)}</td>
-                <td>
-                  {d.taxa == null ? "—" : (
-                    <div className="est-dif">
-                      <span><b>{pct(d.taxa)}</b> <small>[{pct(d.ic_lo)}; {pct(d.ic_hi)}]</small></span>
-                      <div className="barra-trilho" aria-hidden="true"><div className="barra-cheia" style={{ width: `${(d.taxa / max) * 100}%` }} /></div>
-                    </div>
-                  )}
-                </td>
+                <td>{celula(d.recusa)}</td>
                 <td className="num">{d.resp_media_chars == null ? "—" : num(d.resp_media_chars)}</td>
               </tr>
             ))}

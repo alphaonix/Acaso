@@ -44,7 +44,7 @@ flowchart LR
 - **Acesso ao painel:** as contas ficam na tabela `ops.usuario_dashboard` (senha com scrypt) e a sessão é um cookie HttpOnly. Para o cliente, o próximo passo é SSO (Cognito ou o provedor dele).
 
 ## Como uma mudança chega à produção
-1. **PR:** roda os 88 testes (`docs/TESTES.md`) e o `tsc` do front. Sem verde, sem merge.
+1. **PR:** roda os 89 testes (`docs/TESTES.md`) e o `tsc` do front. Sem verde, sem merge.
 2. **Build e push** das três imagens com a etiqueta do commit (`CODE_VERSION`), que o ETL grava em `ops.etl_execucao`.
 3. **Migrações** (`db/migrations/`, numeradas e nunca editadas depois de aplicadas) são aplicadas pelo próprio ETL, antes da carga.
 4. **Staging:** a tarefa de ETL roda primeiro e o **portão de qualidade** compara os números novos com os validados; só se passar a API e o front sobem (`update-service`, rolling).

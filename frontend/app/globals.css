@@ -414,3 +414,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .hora-escala { display: inline-block; width: 7rem; height: 0.6rem; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--roxo) 10%, var(--superficie)), var(--roxo)); }
 .destaques { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.7rem; }
 .destaques li { line-height: 1.5; }
+
+.kpis4 { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 0.5rem; }
+@media (min-width: 1180px) { .kpis4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.sub-titulo { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--texto-forte); }

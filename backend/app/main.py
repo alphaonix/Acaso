@@ -273,11 +273,32 @@ def uso_hora(pais: str = Depends(pais_valido)) -> dict:
 
 @app.get("/api/explorar/modelos", dependencies=[Depends(usuario_atual)])
 def modelos(pais: str = Depends(pais_valido)) -> dict:
-    """Participacao do GPT-4 por mes e, por versao do modelo, as conversas, a recusa na 1a resposta e o tamanho medio da resposta."""
+    """Comparacao entre modelos: por familia (GPT-4 e GPT-3.5) e por versao, o retorno em 7 dias (elegiveis), a recusa na 1a resposta
+    (conversas com texto) e o tamanho medio da resposta; mais a participacao do GPT-4 por mes. Taxas com menos de 30 no denominador ficam nulas."""
     meses = consulta("SELECT mes, conversas, conversas_gpt4 FROM gold.agg_modelo_mes WHERE pais = %s ORDER BY mes", (pais,))
-    versoes = [_com_taxa(r, "com_recusa", "conversas") for r in
-               consulta("SELECT modelo, conversas, com_recusa, resp_media_chars FROM gold.agg_recusa_modelo WHERE pais = %s ORDER BY modelo", (pais,))]
-    return {"meses": meses, "versoes": versoes}
+    brutas = consulta("""SELECT modelo, conversas, com_recusa, resp_media_chars, elegiveis, voltaram_7d
+                         FROM gold.agg_recusa_modelo WHERE pais = %s ORDER BY modelo""", (pais,))
+    versoes = []
+    for r in brutas:
+        v = _com_taxa(r, "com_recusa", "conversas")                       # recusa
+        v["recusa"] = {k: v.pop(k) for k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")}
+        v["retorno"] = {k: x for k, x in _com_taxa({"x": r["voltaram_7d"], "n": r["elegiveis"]}, "x", "n").items() if k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")}
+        v["familia"] = "GPT-4" if r["modelo"].startswith("gpt-4") else "GPT-3.5"
+        versoes.append(v)
+    familias = []
+    for nome in ("GPT-3.5", "GPT-4"):
+        ret = consulta("SELECT elegiveis, voltaram_7d FROM gold.agg_retorno_fator WHERE pais = %s AND fator = 'modelo' AND nivel = %s", (pais, nome))
+        vs = [v for v in versoes if v["familia"] == nome]
+        if not ret and not vs:
+            continue
+        conv, rec = sum(v["conversas"] for v in vs), sum(v["com_recusa"] for v in vs)
+        f = {"familia": nome, "elegiveis": ret[0]["elegiveis"] if ret else 0, "voltaram_7d": ret[0]["voltaram_7d"] if ret else 0,
+             "conversas": conv, "com_recusa": rec}
+        f["retorno"] = {k: x for k, x in _com_taxa({"x": f["voltaram_7d"], "n": f["elegiveis"]}, "x", "n").items() if k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")}
+        f["recusa"] = {k: x for k, x in _com_taxa({"x": rec, "n": conv}, "x", "n").items() if k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")} if conv else None
+        familias.append(f)
+    return {"meses": meses, "versoes": versoes, "familias": familias}
+
 
 @app.get("/api/efeitos", dependencies=[Depends(usuario_atual)])
 def efeitos(pais: str = Depends(pais_valido)) -> list[dict]:

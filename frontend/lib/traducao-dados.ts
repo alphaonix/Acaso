@@ -91,6 +91,8 @@ const QA: Record<string, string> = {
   "Modelo por mes: conversas somam as conversas da silver, todos os paises": "Model by month: conversations add up to silver conversations, all countries",
   "Recusa por modelo: conversas com texto somam as conversas com recusa conhecida na silver": "Refusal by model: conversations with text add up to silver conversations with known refusal",
   "Estratos de recusa: elegiveis somam os elegiveis com recusa conhecida na silver": "Refusal strata: eligible users add up to silver eligible users with known refusal",
+  "Retorno por versao do modelo: elegiveis somam os elegiveis com recusa conhecida na silver": "Return by model version: eligible users add up to silver eligible users with known refusal",
+  "Retorno por versao do modelo: voltaram em 7 dias somam os da silver (usuarios com recusa conhecida)": "Return by model version: 7-day returners add up to silver returners (users with known refusal)",
   "Fator dispositivo: elegiveis somam os elegiveis da silver, todos os paises": "Device factor: eligible users add up to silver eligible users, all countries",
 };
 

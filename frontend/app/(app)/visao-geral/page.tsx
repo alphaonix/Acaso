@@ -1,5 +1,5 @@
 "use client";
-import { ConcentracaoUso, CurvaRetorno, MapaHora, ModeloTempo } from "@/components/AnaliseAmpliada";
+import { BarrasVersoes, CartoesModelos, ConcentracaoUso, CurvaRetorno, MapaHora, ModeloTempo, VersoesModelo } from "@/components/AnaliseAmpliada";
 import { AreaUso, BarrasTema, CabecalhoPagina, ComparacaoPaises, Kpi, Painel, RoscaModelo } from "@/components/Graficos";
 import { LinhaRetorno } from "@/components/LinhaRetorno";
 import { useApi } from "@/lib/api";
@@ -29,6 +29,8 @@ export default function VisaoGeral() {
   const ef = (fator: string, inicio?: string) => efeitos.dados?.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta");
   const cn = conc.dados;
+  const f35 = modTempo.dados?.familias.find((f) => f.familia === "GPT-3.5"), f4 = modTempo.dados?.familias.find((f) => f.familia === "GPT-4");
+  const recs = (modTempo.dados?.versoes ?? []).filter((v) => v.recusa.taxa != null).map((v) => v.recusa.taxa as number);
   const r = resumo.dados;
   const semanas = coortes.dados ?? [];
   const pequenas = semanas.filter((c) => c.amostra_pequena).length;
@@ -64,6 +66,7 @@ export default function VisaoGeral() {
           {sa && <li><R texto={t("vg.dest2", { e: pp(sa.efeito_pp), lo: pp(sa.ic_lo), hi: pp(sa.ic_hi) })} /></li>}
           {re && <li><R texto={t("vg.dest3", { e: pp(re.efeito_pp), lo: pp(re.ic_lo), hi: pp(re.ic_hi) })} /></li>}
           {cn?.top10_pct != null && <li><R texto={t("vg.dest4", { a: pct(cn.top10_pct), b: pct(cn.pessoas_1_conversa_pct) })} /></li>}
+          {f4?.retorno.taxa != null && f35?.retorno.taxa != null && f4.recusa?.taxa != null && f35.recusa?.taxa != null && recs.length > 1 && <li><R texto={t("vg.dest6", { a: pct(f4.retorno.taxa), b: pct(f35.retorno.taxa), d: pp((f4.retorno.taxa - f35.retorno.taxa) * 100), c: pct(f4.recusa.taxa), e: pct(f35.recusa.taxa), r1: pct(Math.min(...recs)), r2: pct(Math.max(...recs)) })} /></li>}
           {hora.dados?.pct_expediente != null && <li><R texto={t("vg.dest5", { a: pct(hora.dados.pct_expediente) })} /></li>}
         </ul>
         <p className="dica" style={{ marginTop: "0.8rem" }}>{t("vg.maisExplorar")}</p>
@@ -78,6 +81,20 @@ export default function VisaoGeral() {
           {modelos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (modelos.dados?.length ? <RoscaModelo dados={modelos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
         </Painel>
       </div>
+
+      <Painel className="bloco" titulo={t("vg.modComparTitulo")} pergunta={t("vg.modComparPergunta")}>
+        {modTempo.carregando ? carregando : modTempo.dados?.familias.length ? (
+          <>
+            <CartoesModelos familias={modTempo.dados.familias} />
+            <div className="grade2">
+              <div><h3 className="sub-titulo">{t("vg.modRetornoTitulo")}</h3><BarrasVersoes versoes={modTempo.dados.versoes} campo="retorno" /></div>
+              <div><h3 className="sub-titulo">{t("vg.modRecusaTitulo")}</h3><BarrasVersoes versoes={modTempo.dados.versoes} campo="recusa" /></div>
+            </div>
+            {modTempo.dados.versoes.length > 0 && <VersoesModelo dados={modTempo.dados.versoes} />}
+            <p className="dica" style={{ marginTop: "0.8rem" }}><R texto={t("vg.modNota")} /></p>
+          </>
+        ) : <p className="vazio">{t("vg.semDados")}</p>}
+      </Painel>
 
       <div className="grade2">
         <Painel titulo={t("vg.curvaTitulo")} pergunta={t("co.curvaPergunta")}>

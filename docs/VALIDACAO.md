@@ -217,6 +217,11 @@ FROM silver.fato_usuario u LEFT JOIN silver.dim_tema t USING (tema_id) WHERE u.p
 SELECT sistema IN ('Android', 'iOS') AS celular, count(*) AS elegiveis, count(*) FILTER (WHERE voltou_7d) AS voltaram
 FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel GROUP BY 1;
 
+-- 9.8 Retorno por versão do modelo da 1ª conversa, só elegíveis (esperado: 3.5-0125 41 (11 voltam) · 3.5-0301 343 (82) · 3.5-0613 894 (206) · gpt-4-0125 365 (82) · gpt-4-0314 158 (28) · gpt-4-1106 433 (121))
+-- Por família: GPT-3.5 1.278 (299 = 23,4%) · GPT-4 956 (231 = 24,2%)
+SELECT modelo, count(*) AS elegiveis, count(*) FILTER (WHERE voltou_7d) AS voltaram, round(100 * avg(voltou_7d::int), 1) AS pct
+FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel GROUP BY 1 ORDER BY 1;
+
 -- 9.7 Idioma do pedido × do navegador: pessoas elegíveis com os dois idiomas conhecidos (esperado 2.220 = 1.560 + 343 + 317; sem um deles: 14)
 SELECT count(*) FILTER (WHERE idioma_navegador <> '' AND idioma IS NOT NULL) AS com_os_dois,
        count(*) FILTER (WHERE idioma_navegador = '' OR idioma IS NULL) AS sem
