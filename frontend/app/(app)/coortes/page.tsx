@@ -27,20 +27,20 @@ export default function Coortes() {
         {cartao("co.kpi7", curva.dados?.voltou_7d, "retorno_7d", "co.kpi7Dica")}
         {cartao("co.kpi30", curva.dados?.voltou_30d, "voltou_30d", "co.kpiDica")}
       </div>
-      <Painel className="bloco" titulo={t("co.curvaTitulo")} pergunta={t("co.curvaPergunta")}>
+      <Painel nota="nt.curva" className="bloco" titulo={t("co.curvaTitulo")} pergunta={t("co.curvaPergunta")}>
         {curva.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : curva.dados ? <CurvaRetorno curva={curva.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
       </Painel>
 
       <div className="grade3 topo">
         <div className="pilha">
-          <Painel titulo={t("co.novosTitulo")} pergunta={t("co.novosPergunta")}>
+          <Painel nota="nt.novos" titulo={t("co.novosTitulo")} pergunta={t("co.novosPergunta")}>
             {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length ? <BarrasNovos coortes={semanas} /> : <p className="vazio">{t("vg.semDados")}</p>}
           </Painel>
-          <Painel titulo={t("co.calorTitulo")} pergunta={t("co.calorPergunta")}>
+          <Painel nota="nt.calor" tipo="alerta" titulo={t("co.calorTitulo")} pergunta={t("co.calorPergunta")}>
             {semanas.length ? <MapaCalor coortes={semanas} /> : <p className="vazio">{t("vg.semDados")}</p>}
           </Painel>
         </div>
-        <Painel titulo={t("co.decTitulo")} pergunta={t("co.decPergunta")}>
+        <Painel nota="nt.decomp" titulo={t("co.decTitulo")} pergunta={t("co.decPergunta")}>
           <Decomposicao pais={pais} />
         </Painel>
       </div>

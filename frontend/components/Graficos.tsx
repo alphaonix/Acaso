@@ -7,6 +7,7 @@ import { nomePais } from "@/lib/pais";
 import { dataCurta, dataLonga, mesAno, num, pct, pp } from "@/lib/formato";
 import { Definicao } from "@/components/Definicao";
 import { R, useI18n } from "@/lib/i18n";
+import type { Chave } from "@/lib/idiomas/pt";
 import { tNivel } from "@/lib/traducao-dados";
 import type { Comparacao, Coorte, Decomposicao as Decomp, FatorNivel, Uso } from "@/lib/tipos";
 
@@ -15,13 +16,15 @@ const EIXO = { fontSize: 11, fill: "var(--texto-mudo)" };
 const marcas = (topo: number) => { const passo = topo > 40 ? 10 : 5; return Array.from({ length: Math.floor(topo / passo) + 1 }, (_, i) => i * passo); };
 
 /** Moldura de cada grafico: titulo, a pergunta que responde, o grafico, e a FONTE (de onde vem o numero). */
-export function Painel({ titulo, pergunta, className = "", children }: {
-  titulo: string; pergunta?: string; className?: string; children: React.ReactNode;
+/** `nota` = texto padrao do painel: rotulo em negrito, o que mostra, o limite e o que fazer. `tipo` "alerta" (laranja) para cuidado, indicio e hipotese. */
+export function Painel({ titulo, pergunta, nota, tipo = "info", className = "", children }: {
+  titulo: string; pergunta?: string; nota?: Chave; tipo?: "info" | "alerta"; className?: string; children: React.ReactNode;
 }) {
   const { t } = useI18n();
   return (
     <section className={`cartao ${className}`}>
       <header className="painel-cab"><h2>{titulo}</h2>{pergunta && <p>{pergunta}</p>}</header>
+      {nota && <div className={`aviso ${tipo === "alerta" ? "alerta" : ""}`}><R texto={t(nota)} /></div>}
       {children}
       <p className="painel-rodape"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg><span>{t("graf.fonte")}</span></p>
     </section>

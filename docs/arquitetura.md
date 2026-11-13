@@ -69,6 +69,7 @@ Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, fa
 | **Explorar** | "O que mais os dados deixam ver?" (exploratório, com aviso) | **Mapa de calor** dia x hora (dois eixos categóricos); **linha + barras** do GPT-4 por mês; **tabela com barras** de recusa por versão; **barras agrupadas** da concentração (pessoas x conversas) com alerta de uso concentrado; **barras com IC** por dispositivo, sistema e navegador (com aviso de medida) e por idioma do pedido x do navegador (hipótese) |
 | **Glossário e qualidade** | "De onde vêm os números e o que a base tem de estranho?" | Definições, o que mostra e nunca mostra, e a **tabela de problemas de qualidade** (quantos e o que se fez) |
 | **Como ler** | "Qual o papel do painel?" | Texto curto antes do primeiro gráfico |
+**Padrão das notas:** cada painel traz, acima do gráfico, uma nota com rótulo em negrito (*Achado firme*, *Leitura*, *Indício, não achado*, *Hipótese, não achado*, *Cuidado*), o que o gráfico mostra, o limite do que ele prova e, quando há, o que fazer. Notas laranja avisam de ruído, medida ou hipótese; notas roxas dão a leitura.
 O seletor de país, o idioma (PT/EN) e o tema (claro/escuro) ficam no cabeçalho de todas as telas.
 ## Performance
 - **Pré-calculado no ETL (gold):** agregados por semana, por fator, por mês e perfil, uso por dia, resumo por país, efeitos estimados e problemas de qualidade. A API nunca varre as conversas: cada endpoint lê dezenas ou poucas centenas de linhas por índice (chave `pais`).

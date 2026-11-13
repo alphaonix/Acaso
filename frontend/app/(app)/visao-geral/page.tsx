@@ -76,12 +76,12 @@ export default function VisaoGeral() {
       </Painel>
 
       <div className="grade3">
-        <Painel titulo={t("vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
+        <Painel nota="nt.semanal" tipo="alerta" titulo={t("vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
           {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length === 0 ? <p className="vazio">{t("vg.semDados")}</p> : <LinhaRetorno coortes={usarMeses ? (meses.dados ?? []) : semanas} mensal={usarMeses} />}
           {usarMeses ? <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("vg.mensalAviso", { n: (meses.dados?.length ?? 0) - mesesOk, total: meses.dados?.length ?? 0 })} /></p>
             : pequenas > 0 && <p className="dica" style={{ marginTop: "0.6rem" }}>{t("vg.pequenas", { n: pequenas, total: semanas.length })}</p>}
         </Painel>
-        <Painel titulo={t("vg.modeloTitulo")} pergunta={t("vg.modeloPergunta")}>
+        <Painel nota="nt.rosca" tipo="alerta" titulo={t("vg.modeloTitulo")} pergunta={t("vg.modeloPergunta")}>
           {modelos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (modelos.dados?.length ? <RoscaModelo dados={modelos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
         </Painel>
       </div>
@@ -101,19 +101,19 @@ export default function VisaoGeral() {
       </Painel>
 
       <div className="grade2">
-        <Painel titulo={t("vg.curvaTitulo")} pergunta={t("co.curvaPergunta")}>
+        <Painel nota="nt.curva" titulo={t("vg.curvaTitulo")} pergunta={t("co.curvaPergunta")}>
           {curva.carregando ? carregando : curva.dados ? <CurvaRetorno curva={curva.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
         </Painel>
-        <Painel titulo={t("vg.horaTitulo")} pergunta={t("ex.horaPergunta")}>
+        <Painel nota="nt.hora" titulo={t("vg.horaTitulo")} pergunta={t("ex.horaPergunta")}>
           {hora.carregando ? carregando : hora.dados && hora.dados.total > 0 ? <MapaHora dados={hora.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
         </Painel>
       </div>
 
       <div className="grade2">
-        <Painel titulo={t("vg.usoTitulo")} pergunta={t("vg.usoPergunta")}>
+        <Painel nota="nt.uso" tipo="alerta" titulo={t("vg.usoTitulo")} pergunta={t("vg.usoPergunta")}>
           {uso.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (uso.dados?.length ? <AreaUso dados={uso.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
         </Painel>
-        <Painel titulo={t("vg.temaTitulo")} pergunta={t("vg.temaPergunta")}>
+        <Painel nota="nt.tema" tipo="alerta" titulo={t("vg.temaTitulo")} pergunta={t("vg.temaPergunta")}>
           {temas.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (temas.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={temas.dados} /> : <p className="vazio"><R texto={t("vg.temaSemTexto")} /></p>)}
         </Painel>
       </div>
