@@ -438,3 +438,5 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .tabela-compacta th { font-size: 0.6rem; letter-spacing: 0; padding: 0.3rem 0.2rem; }
 .tabela-compacta td { padding: 0.4rem 0.2rem; }
 .tabela-compacta .n-menor { display: block; font-size: 0.64rem; color: var(--texto-mudo); }
+.dec-detalhe { margin-top: 0.5rem; }
+.dec-detalhe-titulo { font-weight: 700; color: var(--acento-texto); margin: 0 0 0.4rem; }

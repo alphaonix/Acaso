@@ -254,8 +254,8 @@ export function Decomposicao({ pais }: { pais: string }) {
             <p><strong>{t(dentro ? "co.decLeituraTaxa" : "co.decLeituraMix")}</strong></p>
             <p className="dica"><R texto={t("co.decExplica", { delta: pp(d.delta_pp!) })} /></p>
             {Math.min(d.n_de ?? 0, d.n_para ?? 0) < 300 && <p className="aviso alerta">{t("co.decAmostra", { a: num(d.n_de), b: num(d.n_para) })}</p>}
-            <details open>
-              <summary>{t("co.decNiveis")}</summary>
+            <div className="dec-detalhe">
+              <p className="dec-detalhe-titulo">{t("co.decNiveis")}</p>
               <div className="tabela-rolagem">
               <table className="tabela tabela-compacta">
                 <thead><tr><th>{t("co.decPerfil")}</th><th className="num">{t("co.decPeso", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decPeso", { m: mesAno(d.para!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.para!) })}</th></tr></thead>
@@ -267,7 +267,7 @@ export function Decomposicao({ pais }: { pais: string }) {
                 </tbody>
               </table>
               </div>
-            </details>
+            </div>
           </>
         );
       })()}
