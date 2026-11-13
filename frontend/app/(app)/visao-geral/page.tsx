@@ -42,7 +42,7 @@ export default function VisaoGeral() {
     <>
       <CabecalhoPagina eyebrow={t("vg.eyebrow")} titulo={t("vg.h1a")} destaque={t("vg.h1b")} desc={t("vg.desc")} />
 
-      {paisAtual?.fuso_aproximado && <p className="aviso alerta"><R texto={t("vg.fuso", { fuso: paisAtual.fuso })} /></p>}
+      {paisAtual?.fuso_aproximado && <p className="aviso"><R texto={t("vg.fuso", { fuso: paisAtual.fuso })} /></p>}
       {(resumo.erro || coortes.erro) && <p className="aviso alerta" role="alert">{t("comum.erro", { erro: resumo.erro ?? coortes.erro ?? "" })}</p>}
 
       <div className="kpis">
@@ -76,17 +76,17 @@ export default function VisaoGeral() {
       </Painel>
 
       <div className="grade3">
-        <Painel nota="nt.semanal" tipo="alerta" titulo={t("vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
+        <Painel nota="nt.semanal" titulo={t("vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
           {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length === 0 ? <p className="vazio">{t("vg.semDados")}</p> : <LinhaRetorno coortes={usarMeses ? (meses.dados ?? []) : semanas} mensal={usarMeses} />}
           {usarMeses ? <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("vg.mensalAviso", { n: (meses.dados?.length ?? 0) - mesesOk, total: meses.dados?.length ?? 0 })} /></p>
             : pequenas > 0 && <p className="dica" style={{ marginTop: "0.6rem" }}>{t("vg.pequenas", { n: pequenas, total: semanas.length })}</p>}
         </Painel>
-        <Painel nota="nt.rosca" tipo="alerta" titulo={t("vg.modeloTitulo")} pergunta={t("vg.modeloPergunta")}>
+        <Painel nota="nt.rosca" titulo={t("vg.modeloTitulo")} pergunta={t("vg.modeloPergunta")}>
           {modelos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (modelos.dados?.length ? <RoscaModelo dados={modelos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
         </Painel>
       </div>
 
-      <Painel className="bloco" titulo={t("vg.modComparTitulo")} pergunta={t("vg.modComparPergunta")}>
+      <Painel nota="vg.modNota" className="bloco" titulo={t("vg.modComparTitulo")} pergunta={t("vg.modComparPergunta")}>
         {modTempo.carregando ? carregando : modTempo.dados?.familias.length ? (
           <>
             <CartoesModelos familias={modTempo.dados.familias} />
@@ -95,7 +95,6 @@ export default function VisaoGeral() {
               <div><h3 className="sub-titulo">{t("vg.modRecusaTitulo")}</h3>{modTempo.dados.versoes.some((v) => v.recusa_possivel) ? <BarrasVersoes versoes={modTempo.dados.versoes} campo="recusa" /> : <p className="vazio"><R texto={t("vg.modSemTexto")} /></p>}</div>
             </div>
             {modTempo.dados.versoes.length > 0 && <VersoesModelo dados={modTempo.dados.versoes} />}
-            <p className="dica" style={{ marginTop: "0.8rem" }}><R texto={t("vg.modNota")} /></p>
           </>
         ) : <p className="vazio">{t("vg.semDados")}</p>}
       </Painel>
@@ -110,16 +109,16 @@ export default function VisaoGeral() {
       </div>
 
       <div className="grade2">
-        <Painel nota="nt.uso" tipo="alerta" titulo={t("vg.usoTitulo")} pergunta={t("vg.usoPergunta")}>
+        <Painel nota="nt.uso" titulo={t("vg.usoTitulo")} pergunta={t("vg.usoPergunta")}>
           {uso.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (uso.dados?.length ? <AreaUso dados={uso.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
         </Painel>
-        <Painel nota="nt.tema" tipo="alerta" titulo={t("vg.temaTitulo")} pergunta={t("vg.temaPergunta")}>
+        <Painel nota="nt.tema" titulo={t("vg.temaTitulo")} pergunta={t("vg.temaPergunta")}>
           {temas.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (temas.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={temas.dados} /> : <p className="vazio"><R texto={t("vg.temaSemTexto")} /></p>)}
         </Painel>
       </div>
 
       <div className="grade2">
-        <Painel titulo={t("vg.modTitulo2")} pergunta={t("ex.modPergunta")}>
+        <Painel nota="nt.modtempo" titulo={t("vg.modTitulo2")} pergunta={t("ex.modPergunta")}>
           {modTempo.carregando ? carregando : modTempo.dados?.meses.length ? <ModeloTempo dados={modTempo.dados.meses} /> : <p className="vazio">{t("vg.semDados")}</p>}
         </Painel>
         <Painel titulo={t("vg.conTitulo2")} pergunta={t("ex.conPergunta")}>
@@ -127,7 +126,7 @@ export default function VisaoGeral() {
         </Painel>
       </div>
 
-      <Painel className="bloco" titulo={t("comp.titulo", { pais: paisAtual ? nomePais(paisAtual, idioma, t("pais.desconhecido")) : pais })} pergunta={t("comp.pergunta")}>
+      <Painel nota="nt.paises" className="bloco" titulo={t("comp.titulo", { pais: paisAtual ? nomePais(paisAtual, idioma, t("pais.desconhecido")) : pais })} pergunta={t("comp.pergunta")}>
         {comp.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : comp.dados ? <ComparacaoPaises dados={comp.dados} pais={pais} /> : <p className="vazio">{t("vg.semDados")}</p>}
       </Painel>
     </>

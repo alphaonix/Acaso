@@ -36,7 +36,7 @@ export default function Coortes() {
           <Painel nota="nt.novos" titulo={t("co.novosTitulo")} pergunta={t("co.novosPergunta")}>
             {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length ? <BarrasNovos coortes={semanas} /> : <p className="vazio">{t("vg.semDados")}</p>}
           </Painel>
-          <Painel nota="nt.calor" tipo="alerta" titulo={t("co.calorTitulo")} pergunta={t("co.calorPergunta")}>
+          <Painel nota="nt.calor" titulo={t("co.calorTitulo")} pergunta={t("co.calorPergunta")}>
             {semanas.length ? <MapaCalor coortes={semanas} /> : <p className="vazio">{t("vg.semDados")}</p>}
           </Painel>
         </div>

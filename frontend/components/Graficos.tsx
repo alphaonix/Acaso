@@ -24,7 +24,7 @@ export function Painel({ titulo, pergunta, nota, tipo = "info", className = "", 
   return (
     <section className={`cartao ${className}`}>
       <header className="painel-cab"><h2>{titulo}</h2>{pergunta && <p>{pergunta}</p>}</header>
-      {nota && <div className={`aviso ${tipo === "alerta" ? "alerta" : ""}`}><R texto={t(nota)} /></div>}
+      {nota && <div className="aviso"><R texto={t(nota)} /></div>}
       {children}
       <p className="painel-rodape"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg><span>{t("graf.fonte")}</span></p>
     </section>
@@ -320,7 +320,10 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   return (
     <div>
       {atual && dif != null && (
-        <p className="comp-resumo"><R texto={t("comp.resumo", { pais: atual.nome, taxa: pct(atual.taxa / 100), geral: pct(geral.taxa), dif: pp(dif) })} /></p>
+        <>
+          <p className="comp-resumo"><R texto={t("comp.resumo", { pais: atual.nome, taxa: pct(atual.taxa / 100), geral: pct(geral.taxa), dif: pp(dif) })} /></p>
+          <p className="comp-resumo"><R texto={t(atual.hi < geral.taxa ? "comp.sigAbaixo" : atual.lo > geral.taxa ? "comp.sigAcima" : "comp.sigIgual")} /></p>
+        </>
       )}
       {!sel && <p className="aviso alerta">{t("comp.semAmostra")}</p>}
       <div className="comp-rolagem" ref={rolagem}>

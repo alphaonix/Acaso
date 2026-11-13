@@ -51,7 +51,7 @@ export default function Fatores() {
 
       {todos.length > 0 && (
         <div className="grade2">
-          <Painel nota="nt.turnos" tipo="alerta" titulo={t("fa.turnosTitulo")} pergunta={t("fa.turnosPergunta")}>
+          <Painel nota="nt.turnos" titulo={t("fa.turnosTitulo")} pergunta={t("fa.turnosPergunta")}>
             {turnos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : turnos.dados?.length ? <TurnosRetorno dados={turnos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
           </Painel>
           <Painel titulo={t("fa.achadosTitulo")} pergunta={t("fa.achadosPergunta")}>

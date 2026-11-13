@@ -150,7 +150,6 @@ export function ModeloTempo({ dados }: { dados: ModelosTempo["meses"] }) {
         <span><i style={{ background: "var(--graf-1)" }} />{t("ex.modGpt4")}</span>
         <span><i style={{ background: "var(--graf-2)", opacity: 0.6 }} />{t("ex.modConversas")}</span>
       </div>
-      <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("ex.modNota")} /></p>
     </div>
   );
 }
@@ -247,7 +246,7 @@ export function ConcentracaoUso({ dados }: { dados: Concentracao }) {
   const linhas = dados.faixas.map((f) => ({ ...f, pessoas: f.pct_pessoas * 100, conversasPct: f.pct_conversas * 100 }));
   return (
     <div>
-      {dados.top10_pct >= LIMITE_CONCENTRACAO && <p className="aviso alerta">{t("ex.conAlerta", { x: pct(dados.top10_pct), lim: pct(LIMITE_CONCENTRACAO) })}</p>}
+      {dados.top10_pct >= LIMITE_CONCENTRACAO && <p className="aviso">{t("ex.conAlerta", { x: pct(dados.top10_pct), lim: pct(LIMITE_CONCENTRACAO) })}</p>}
       <p><R texto={t("ex.conResumo", { a: pct(dados.pessoas_1_conversa_pct), b: pct(dados.top10_pct), c: pct(dados.maior_pct) })} /></p>
       <div role="img" aria-label={t("ex.conAria")}>
         <ResponsiveContainer width="100%" height={250}>

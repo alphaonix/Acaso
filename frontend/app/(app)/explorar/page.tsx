@@ -28,15 +28,15 @@ export default function Explorar() {
   return (
     <>
       <CabecalhoPagina eyebrow={t("ex.eyebrow")} titulo={t("ex.h1a")} destaque={t("ex.h1b")} desc={t("ex.desc")} />
-      <div className="aviso alerta"><R texto={t("ex.aviso")} /></div>
+      <div className="aviso"><R texto={t("ex.aviso")} /></div>
       {erro && <p className="aviso alerta" role="alert">{t("comum.erro", { erro })}</p>}
 
-      <Painel className="bloco" titulo={t("ex.horaTitulo")} pergunta={t("ex.horaPergunta")}>
+      <Painel nota="nt.hora" className="bloco" titulo={t("ex.horaTitulo")} pergunta={t("ex.horaPergunta")}>
         {hora.carregando ? carregando : hora.dados && hora.dados.total > 0 ? <MapaHora dados={hora.dados} /> : vazio}
       </Painel>
 
       <div className="grade2">
-        <Painel titulo={t("ex.modTitulo")} pergunta={t("ex.modPergunta")}>
+        <Painel nota="nt.modtempo" titulo={t("ex.modTitulo")} pergunta={t("ex.modPergunta")}>
           {modelos.carregando ? carregando : modelos.dados?.meses.length ? <ModeloTempo dados={modelos.dados.meses} /> : vazio}
         </Painel>
         <Painel titulo={t("ex.verTitulo")} pergunta={t("ex.verPergunta")}>
@@ -49,15 +49,13 @@ export default function Explorar() {
       </Painel>
 
       <div className="grade2">
-        <Painel titulo={t("ex.dispTitulo")} pergunta={t("ex.dispPergunta")}>
-          <div className="aviso alerta"><R texto={t("ex.dispAviso")} /></div>
+        <Painel nota="ex.dispAviso" titulo={t("ex.dispTitulo")} pergunta={t("ex.dispPergunta")}>
           <div className="pilulas" role="group" aria-label={t("ex.dispGrupo")}>
             {GRUPOS.map((g) => <button key={g} type="button" className="pilula" aria-pressed={grupo === g} onClick={() => setGrupo(g)}>{rotulo[g]}</button>)}
           </div>
           {disp.carregando ? carregando : disp.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={disp.dados} /> : vazio}
         </Painel>
-        <Painel titulo={t("ex.idiTitulo")} pergunta={t("ex.idiPergunta")}>
-          <div className="aviso alerta"><R texto={t("ex.idiAviso")} /></div>
+        <Painel nota="ex.idiAviso" titulo={t("ex.idiTitulo")} pergunta={t("ex.idiPergunta")}>
           {idi.carregando ? carregando : idi.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={idi.dados} /> : vazio}
         </Painel>
       </div>
