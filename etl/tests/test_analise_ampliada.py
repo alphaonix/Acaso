@@ -76,7 +76,7 @@ def test_recusa_e_modelo_por_versao(dw):
     rec = "Desculpe, mas nao posso ajudar com isso."
     rodar(dw, [C("a", BASE, modelo="gpt-3.5-turbo-0301", resposta=rec), C("b", BASE, modelo="gpt-3.5-turbo-0301"),
                C("c", BASE, modelo="gpt-4-0125-preview")], com_gold=True)
-    r = {m: (n, k) for m, n, k in linhas(dw, "SELECT modelo, conversas, com_recusa FROM gold.agg_recusa_modelo WHERE pais = 'Brazil'")}
+    r = {m: (n, k) for m, n, k in linhas(dw, "SELECT modelo, conversas_texto, com_recusa FROM gold.agg_recusa_modelo WHERE pais = 'Brazil'")}
     assert r["gpt-3.5-turbo-0301"] == (2, 1) and r["gpt-4-0125-preview"] == (1, 0)
     mes = linhas(dw, "SELECT conversas, conversas_gpt4 FROM gold.agg_modelo_mes WHERE pais = 'Brazil' AND mes = '2023-06-01'")
     assert mes == [(3, 1)]
@@ -87,3 +87,9 @@ def test_retorno_por_versao_do_modelo(dw):
                C("c", BASE, modelo="gpt-3.5-turbo-0301"), C("d", BASE, modelo="gpt-4-0125-preview"), C("e", BASE, modelo="gpt-4-0125-preview")], com_gold=True)
     r = {m: (el, v) for m, el, v in linhas(dw, "SELECT modelo, elegiveis, voltaram_7d FROM gold.agg_recusa_modelo WHERE pais = 'Brazil'")}
     assert r["gpt-3.5-turbo-0301"] == (3, 1) and r["gpt-4-0125-preview"] == (2, 0)
+
+def test_modelo_por_versao_vale_para_pais_sem_texto(dw):
+    # fora do Brasil nao ha texto: o retorno por versao existe, a recusa nao (conversas_texto = 0)
+    rodar(dw, [C("fa", t("2023-01-01 10:00"), pais="France"), C("fb", t("2023-12-31 10:00"), pais="France"),   # a elegibilidade usa o periodo de cada pais
+               C("f1", BASE, pais="France", modelo="gpt-4-0314"), C("f1", BASE + timedelta(days=1), pais="France", modelo="gpt-4-0314"), C("f2", BASE, pais="France", modelo="gpt-4-0314")], com_gold=True)
+    assert linhas(dw, "SELECT conversas, conversas_texto, elegiveis, voltaram_7d FROM gold.agg_recusa_modelo WHERE pais = 'France' AND modelo = 'gpt-4-0314'") == [(3, 0, 2, 1)]

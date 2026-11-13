@@ -71,5 +71,5 @@ def test_concentracao_top10_do_sql_de_referencia_igual_ao_da_gold(cenario):
 
 def test_recusa_por_versao_do_sql_de_referencia_igual_ao_da_gold(cenario):
     ref = {m: float(v) for m, v in linhas(cenario, SQLS["recusa_por_versao"])}
-    gold = {m: c / n for m, n, c in linhas(cenario, "SELECT modelo, conversas, com_recusa FROM gold.agg_recusa_modelo WHERE pais = 'Brazil'")}
+    gold = {m: c / n for m, n, c in linhas(cenario, "SELECT modelo, conversas_texto, com_recusa FROM gold.agg_recusa_modelo WHERE pais = 'Brazil'")}
     assert ref == pytest.approx(gold) and ref["gpt-4"] == pytest.approx(8 / 12)

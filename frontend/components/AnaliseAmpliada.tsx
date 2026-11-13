@@ -178,7 +178,7 @@ export function BarrasVersoes({ versoes, campo }: { versoes: VersaoModelo[]; cam
   const linhas = versoes.filter((v) => v[campo].taxa != null).map((v) => {
     const x = v[campo];
     return { nome: v.modelo.replace("gpt-", "").replace("-turbo", "").replace("-preview", ""), familia: v.familia, taxa: x.taxa! * 100, erro: [(x.taxa! - x.ic_lo!) * 100, (x.ic_hi! - x.taxa!) * 100],
-      lo: x.ic_lo, hi: x.ic_hi, n: campo === "retorno" ? v.elegiveis : v.conversas, k: campo === "retorno" ? v.voltaram_7d : v.com_recusa, modelo: v.modelo };
+      lo: x.ic_lo, hi: x.ic_hi, n: campo === "retorno" ? v.elegiveis : v.conversas_texto, k: campo === "retorno" ? v.voltaram_7d : v.com_recusa, modelo: v.modelo };
   });
   if (!linhas.length) return <p className="vazio">{t("ex.semDados")}</p>;
   const topo = Math.ceil((Math.max(...linhas.map((l) => l.taxa + l.erro[1])) + 2) / 5) * 5;
@@ -226,7 +226,7 @@ export function VersoesModelo({ dados }: { dados: VersaoModelo[] }) {
                 <td className="num">{num(d.elegiveis)}</td>
                 <td>{celula(d.retorno)}</td>
                 <td className="num">{num(d.conversas)}</td>
-                <td>{celula(d.recusa)}</td>
+                <td>{d.recusa_possivel ? celula(d.recusa) : "—"}</td>
                 <td className="num">{d.resp_media_chars == null ? "—" : num(d.resp_media_chars)}</td>
               </tr>
             ))}

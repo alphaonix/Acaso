@@ -46,7 +46,7 @@ Prazo: 16/11/2026, 23h59.
 ## 4 Sustentação
 | Exigência | | Onde |
 |---|---|---|
-| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (89 testes, 49 conferências por carga, prova por mutação, fluxo de mudança), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
+| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (90 testes, 50 conferências por carga, prova por mutação, fluxo de mudança), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
 | 4.2 Incidente (as 5 respostas) | ✔ | [`docs/INCIDENTE.md`](docs/INCIDENTE.md); o teste dourado está em `etl/tests/test_incidente.py` |
 | 4.3 Riscos e decisões em aberto | ✔ | [`docs/RISCOS.md`](docs/RISCOS.md) |
 
@@ -66,3 +66,5 @@ Prazo: 16/11/2026, 23h59.
 3. **Rodadas 5 a 9 do `docs/VALIDACAO.md`** (conferência dos números no DBeaver), dos três cartões novos (conversas, turnos médios, uso de GPT-4) e das métricas ampliadas (curva, concentração, uso por hora, recusa por versão, estratos, dispositivo, idioma × navegador). Elas ainda **não** estão no portão de qualidade: só entram depois da conferência.
 4. **AWS:** o Terraform é esboço (`validate` ok, sem `plan`/`apply`); o preço do RDS vem de fonte secundária.
 5. **Fuso** de ~160 países, **cache** e **SSO** são extensões, descritas e não implementadas.
+6. **Tema e recusa fora do Brasil:** a semente só tem o texto das conversas do Brasil e as regras de palavras são em português. Retorno, modelo por versão, uso, horário e concentração já valem para todos os países; tema e recusa pedem o texto completo (`etl/download_full.py`) e regras por idioma, com validação própria.
+7. **Países pequenos:** a Visão geral troca o gráfico semanal pelo mensal quando quase nenhuma semana alcança 30 elegíveis.

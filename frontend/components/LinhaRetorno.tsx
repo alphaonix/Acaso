@@ -1,18 +1,18 @@
 "use client";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { dataCurta, dataLonga, num, pct } from "@/lib/formato";
+import { dataCurta, dataLonga, mesAno, num, pct } from "@/lib/formato";
 import { useI18n } from "@/lib/i18n";
 import type { Coorte } from "@/lib/tipos";
 
 type Ponto = { semana: string; rotulo: string; taxa: number | null; faixa: [number, number] | null; c: Coorte };
 
-function Dica({ active, payload }: { active?: boolean; payload?: { payload: Ponto }[] }) {
+function Dica({ active, payload, mensal }: { active?: boolean; payload?: { payload: Ponto }[]; mensal?: boolean }) {
   const { t } = useI18n();
   if (!active || !payload?.length) return null;
   const { c } = payload[0].payload;
   return (
     <div className="tip-graf">
-      <strong>{t("grafico.titulo", { d: dataLonga(c.semana) })}</strong>
+      <strong>{mensal ? t("grafico.tituloMes", { d: mesAno(c.semana) }) : t("grafico.titulo", { d: dataLonga(c.semana) })}</strong>
       <p style={{ margin: "0.3rem 0 0" }}>
         {c.taxa == null
           ? t("grafico.pequena", { n: num(c.elegiveis) })
@@ -23,10 +23,10 @@ function Dica({ active, payload }: { active?: boolean; payload?: { payload: Pont
 }
 
 /** Linha = taxa de retorno por semana; faixa roxa clara = intervalo de confianca de 95%. Semana sem amostra = lacuna. */
-export function LinhaRetorno({ coortes }: { coortes: Coorte[] }) {
+export function LinhaRetorno({ coortes, mensal = false }: { coortes: Coorte[]; mensal?: boolean }) {
   const { t } = useI18n();
   const dados: Ponto[] = coortes.map((c) => ({
-    semana: c.semana, rotulo: dataCurta(c.semana), c,
+    semana: c.semana, rotulo: mensal ? mesAno(c.semana) : dataCurta(c.semana), c,
     taxa: c.taxa == null ? null : c.taxa * 100,
     faixa: c.taxa == null ? null : [(c.ic_lo ?? 0) * 100, (c.ic_hi ?? 0) * 100],
   }));
@@ -38,7 +38,7 @@ export function LinhaRetorno({ coortes }: { coortes: Coorte[] }) {
           <CartesianGrid stroke="var(--borda)" vertical={false} />
           <XAxis dataKey="rotulo" tick={{ fontSize: 11, fill: "var(--texto-mudo)" }} stroke="var(--borda)" tickLine={false} minTickGap={28} />
           <YAxis unit="%" domain={[0, (max: number) => Math.min(100, Math.ceil((max + 5) / 10) * 10)]} tick={{ fontSize: 11, fill: "var(--texto-mudo)" }} stroke="var(--borda)" tickLine={false} width={44} />
-          <Tooltip content={<Dica />} />
+          <Tooltip content={<Dica mensal={mensal} />} />
           <Area dataKey="faixa" stroke="none" fill="url(#bandaIC)" />
           <Line dataKey="taxa" stroke="var(--graf-1)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--graf-1)" }} activeDot={{ r: 5 }} connectNulls={false} />
         </ComposedChart>

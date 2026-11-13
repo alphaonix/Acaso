@@ -19,6 +19,7 @@ export default function VisaoGeral() {
   const temas = useApi<FatorNivel[]>(`/retencao/fatores?${q}&fator=tema`);
   const uso = useApi<Uso[]>(`/uso/diario?${q}`);
   const comp = useApi<Comparacao>("/retencao/comparacao");
+  const meses = useApi<Coorte[]>(`/retencao/meses?${q}`);
   const curva = useApi<Curva>(`/retencao/curva?${q}`);
   const conc = useApi<Concentracao>(`/explorar/concentracao?${q}`);
   const hora = useApi<UsoHora>(`/explorar/uso-hora?${q}`);
@@ -34,6 +35,8 @@ export default function VisaoGeral() {
   const r = resumo.dados;
   const semanas = coortes.dados ?? [];
   const pequenas = semanas.filter((c) => c.amostra_pequena).length;
+  const mesesOk = (meses.dados ?? []).filter((m) => m.taxa != null).length;
+  const usarMeses = semanas.length > 0 && semanas.length - pequenas < 8 && mesesOk >= 3;   // paises pequenos: nenhuma semana alcanca 30 elegiveis
 
   return (
     <>
@@ -74,8 +77,9 @@ export default function VisaoGeral() {
 
       <div className="grade3">
         <Painel titulo={t("vg.graficoTitulo")} pergunta={t("vg.graficoDica")}>
-          {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length === 0 ? <p className="vazio">{t("vg.semDados")}</p> : <LinhaRetorno coortes={semanas} />}
-          {pequenas > 0 && <p className="dica" style={{ marginTop: "0.6rem" }}>{t("vg.pequenas", { n: pequenas, total: semanas.length })}</p>}
+          {coortes.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : semanas.length === 0 ? <p className="vazio">{t("vg.semDados")}</p> : <LinhaRetorno coortes={usarMeses ? (meses.dados ?? []) : semanas} mensal={usarMeses} />}
+          {usarMeses ? <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("vg.mensalAviso", { n: (meses.dados?.length ?? 0) - mesesOk, total: meses.dados?.length ?? 0 })} /></p>
+            : pequenas > 0 && <p className="dica" style={{ marginTop: "0.6rem" }}>{t("vg.pequenas", { n: pequenas, total: semanas.length })}</p>}
         </Painel>
         <Painel titulo={t("vg.modeloTitulo")} pergunta={t("vg.modeloPergunta")}>
           {modelos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (modelos.dados?.length ? <RoscaModelo dados={modelos.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
@@ -88,7 +92,7 @@ export default function VisaoGeral() {
             <CartoesModelos familias={modTempo.dados.familias} />
             <div className="grade2">
               <div><h3 className="sub-titulo">{t("vg.modRetornoTitulo")}</h3><BarrasVersoes versoes={modTempo.dados.versoes} campo="retorno" /></div>
-              <div><h3 className="sub-titulo">{t("vg.modRecusaTitulo")}</h3><BarrasVersoes versoes={modTempo.dados.versoes} campo="recusa" /></div>
+              <div><h3 className="sub-titulo">{t("vg.modRecusaTitulo")}</h3>{modTempo.dados.versoes.some((v) => v.recusa_possivel) ? <BarrasVersoes versoes={modTempo.dados.versoes} campo="recusa" /> : <p className="vazio">{t("vg.modSemTexto")}</p>}</div>
             </div>
             {modTempo.dados.versoes.length > 0 && <VersoesModelo dados={modTempo.dados.versoes} />}
             <p className="dica" style={{ marginTop: "0.8rem" }}><R texto={t("vg.modNota")} /></p>

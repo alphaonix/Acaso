@@ -34,7 +34,7 @@ Desenho completo, rede, segurança, **custo mensal (≈ US$ 136 em São Paulo no
 - **Silver** (so o ETL le): `dim_pais`, `dim_tema`, `fato_conversa` (1 linha por conversa, sem texto), `fato_usuario`
   (1 linha por usuario: primeira experiencia + `voltou_7d` + `elegivel` + `voltou_24h`, `dias_ate_voltar`, `janela_30d` e o idioma do navegador).
 - **Gold** (a API le): `pais`, `agg_retorno_semana`, `agg_retorno_fator`, `efeito_fator` (resultado da analise causal), `agg_uso_dia` (uso por dia), `agg_retorno_mes_fator` (retorno por mes e perfil, base da decomposicao mix x taxa), `problema_qualidade` (conversas afetadas por cada problema de qualidade da base, tela "Glossario e qualidade"),
-  `agg_curva_retorno` (% que voltou em ate d dias, base: 30 dias de janela), `agg_estrato` (saudacao e recusa dentro de cada familia de modelo), `agg_recusa_modelo` (recusa e retorno em 7 dias por versao do modelo), `agg_concentracao` (faixas de conversas por pessoa; `gold.pais` guarda a parcela dos 10 mais ativos), `agg_uso_hora` (dia da semana x hora no fuso do pais), `agg_modelo_mes` (GPT-4 por mes),
+  `agg_curva_retorno` (% que voltou em ate d dias, base: 30 dias de janela), `agg_estrato` (saudacao e recusa dentro de cada familia de modelo), `agg_recusa_modelo` (conversas e retorno em 7 dias por versao do modelo, para todos os paises; a recusa so onde ha texto), `agg_concentracao` (faixas de conversas por pessoa; `gold.pais` guarda a parcela dos 10 mais ativos), `agg_uso_hora` (dia da semana x hora no fuso do pais), `agg_modelo_mes` (GPT-4 por mes),
   `catalogo_indicador` (definicoes).
 - **Ops**: `etl_execucao`, `bronze_lote`, `qa_resultado`.
 Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, faz rollback e a API nao sobe.
@@ -46,6 +46,7 @@ Portao de qualidade no ETL: compara a carga com os numeros validados; falhou, fa
 | `GET /api/paises` | - | país, código ISO, fuso, idioma, tem_texto, usuários, datas |
 | `GET /api/catalogo` | - | definicao, formula, denominador, SQL e fonte por indicador |
 | `GET /api/retencao/coortes` | pais, inicio, fim | por semana: novos, elegiveis, voltaram_7d, taxa, IC95, aviso de amostra |
+| `GET /api/retencao/meses` | pais | retorno em 7 dias por mes de chegada com IC95 (alternativa as semanas em paises pequenos) |
 | `GET /api/retencao/fatores` | pais, fator (inclui `sistema`, `navegador`, `dispositivo` e `idioma_x_navegador`) | por nivel: elegiveis, taxa, IC95 |
 | `GET /api/retencao/comparacao` | - | retorno em 7 dias de cada pais (somando as semanas) e a media geral (todos os elegiveis, ponderada por usuarios), com IC95; so paises com 30+ elegiveis |
 | `GET /api/retencao/curva` | pais | pontos da curva (dias, usuarios, voltaram, taxa, IC95) e os destaques `voltou_24h`, `voltou_7d` e `voltou_30d` (base: quem tem 30 dias de janela) |

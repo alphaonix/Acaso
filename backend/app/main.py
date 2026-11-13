@@ -145,6 +145,20 @@ def coortes(pais: str = Depends(pais_valido), inicio: str | None = None, fim: st
        ORDER BY semana""", (pais, inicio, fim))
 
 
+@app.get("/api/retencao/meses", dependencies=[Depends(usuario_atual)])
+def meses(pais: str = Depends(pais_valido)) -> list[dict]:
+    """Retorno em 7 dias por MES de chegada (soma do fator 'modelo' de gold.agg_retorno_mes_fator, que cobre todos os elegiveis).
+    Serve de alternativa as semanas em paises pequenos, onde nenhuma semana alcanca 30 elegiveis."""
+    linhas = consulta("""SELECT mes AS semana, sum(elegiveis)::int AS elegiveis, sum(voltaram_7d)::int AS voltaram_7d
+                         FROM gold.agg_retorno_mes_fator WHERE pais = %s AND fator = 'modelo' GROUP BY mes ORDER BY mes""", (pais,))
+    saida = []
+    for r in linhas:
+        x = _com_taxa({"x": r["voltaram_7d"], "n": r["elegiveis"]}, "x", "n")
+        saida.append({"semana": r["semana"], "novos": r["elegiveis"], "elegiveis": r["elegiveis"], "voltaram_7d": r["voltaram_7d"],
+                      "taxa": x["taxa"], "ic_lo": x["ic_lo"], "ic_hi": x["ic_hi"], "amostra_pequena": x["amostra_pequena"]})
+    return saida
+
+
 @app.get("/api/retencao/fatores", dependencies=[Depends(usuario_atual)])
 def fatores(pais: str = Depends(pais_valido), fator: str | None = None) -> list[dict]:
     return consulta("""SELECT fator, nivel, elegiveis, voltaram_7d, taxa, ic_lo, ic_hi, (taxa IS NULL) AS amostra_pequena
@@ -276,11 +290,12 @@ def modelos(pais: str = Depends(pais_valido)) -> dict:
     """Comparacao entre modelos: por familia (GPT-4 e GPT-3.5) e por versao, o retorno em 7 dias (elegiveis), a recusa na 1a resposta
     (conversas com texto) e o tamanho medio da resposta; mais a participacao do GPT-4 por mes. Taxas com menos de 30 no denominador ficam nulas."""
     meses = consulta("SELECT mes, conversas, conversas_gpt4 FROM gold.agg_modelo_mes WHERE pais = %s ORDER BY mes", (pais,))
-    brutas = consulta("""SELECT modelo, conversas, com_recusa, resp_media_chars, elegiveis, voltaram_7d
+    brutas = consulta("""SELECT modelo, conversas, conversas_texto, com_recusa, resp_media_chars, elegiveis, voltaram_7d
                          FROM gold.agg_recusa_modelo WHERE pais = %s ORDER BY modelo""", (pais,))
     versoes = []
     for r in brutas:
-        v = _com_taxa(r, "com_recusa", "conversas")                       # recusa
+        v = _com_taxa({**r, "n": r["conversas_texto"]}, "com_recusa", "n")   # recusa: so onde ha texto
+        v.pop("n"); v["recusa_possivel"] = r["conversas_texto"] > 0
         v["recusa"] = {k: v.pop(k) for k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")}
         v["retorno"] = {k: x for k, x in _com_taxa({"x": r["voltaram_7d"], "n": r["elegiveis"]}, "x", "n").items() if k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")}
         v["familia"] = "GPT-4" if r["modelo"].startswith("gpt-4") else "GPT-3.5"
@@ -291,9 +306,9 @@ def modelos(pais: str = Depends(pais_valido)) -> dict:
         vs = [v for v in versoes if v["familia"] == nome]
         if not ret and not vs:
             continue
-        conv, rec = sum(v["conversas"] for v in vs), sum(v["com_recusa"] for v in vs)
+        conv, rec = sum(v["conversas_texto"] for v in vs), sum(v["com_recusa"] for v in vs)
         f = {"familia": nome, "elegiveis": ret[0]["elegiveis"] if ret else 0, "voltaram_7d": ret[0]["voltaram_7d"] if ret else 0,
-             "conversas": conv, "com_recusa": rec}
+             "conversas": sum(v["conversas"] for v in vs), "conversas_texto": conv, "com_recusa": rec}
         f["retorno"] = {k: x for k, x in _com_taxa({"x": f["voltaram_7d"], "n": f["elegiveis"]}, "x", "n").items() if k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")}
         f["recusa"] = {k: x for k, x in _com_taxa({"x": rec, "n": conv}, "x", "n").items() if k in ("taxa", "ic_lo", "ic_hi", "amostra_pequena")} if conv else None
         familias.append(f)

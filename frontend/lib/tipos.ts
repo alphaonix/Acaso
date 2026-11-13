@@ -56,8 +56,8 @@ export type Concentracao = {
 export type UsoHora = { celulas: { dia_semana: number; hora: number; conversas: number }[]; total: number; pct_expediente: number | null; pct_madrugada: number | null; fuso: string; fuso_aproximado: boolean };
 export type TaxaIC = { taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
 export type VersaoModelo = {
-  modelo: string; familia: "GPT-4" | "GPT-3.5"; conversas: number; com_recusa: number; resp_media_chars: number | null;
+  modelo: string; familia: "GPT-4" | "GPT-3.5"; conversas: number; conversas_texto: number; recusa_possivel: boolean; com_recusa: number; resp_media_chars: number | null;
   elegiveis: number; voltaram_7d: number; retorno: TaxaIC; recusa: TaxaIC;
 };
-export type FamiliaModelo = { familia: "GPT-4" | "GPT-3.5"; elegiveis: number; voltaram_7d: number; conversas: number; com_recusa: number; retorno: TaxaIC; recusa: TaxaIC | null };
+export type FamiliaModelo = { familia: "GPT-4" | "GPT-3.5"; elegiveis: number; voltaram_7d: number; conversas: number; conversas_texto: number; com_recusa: number; retorno: TaxaIC; recusa: TaxaIC | null };
 export type ModelosTempo = { meses: { mes: string; conversas: number; conversas_gpt4: number }[]; versoes: VersaoModelo[]; familias: FamiliaModelo[] };

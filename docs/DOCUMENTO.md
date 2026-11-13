@@ -63,7 +63,7 @@ Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação de 
 **AWS:** CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário como tarefa agendada, RDS PostgreSQL na base analítica, S3 para o bruto e Secrets Manager; região de São Paulo (LGPD). **Custo estimado: ≈ US$ 136 por mês** (≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade), com RDS, Fargate e ALB somando 98%; **não há LLM** (tema e recusa por regras). Os preços unitários vêm das listas oficiais da AWS, menos o RDS (fonte secundária); o esboço em Terraform passa em `validate`, mas não foi aplicado.
 
 ## 7. Sustentação
-89 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 49 conferências a cada carga reverte a publicação se algo divergir
+90 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 50 conferências a cada carga reverte a publicação se algo divergir
 (`docs/TESTES.md`). **Incidente:** o "retorno caiu de 31% para 18%" é um erro de medição (o `usuario_id` usa o user-agent bruto e uma atualização de navegador fez ~860 pessoas virarem "novas"); causa, consulta de confirmação, correção e prevenção em `docs/INCIDENTE.md`.
 **Riscos e decisões em aberto** (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS): `docs/RISCOS.md`.
 
