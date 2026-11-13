@@ -305,7 +305,9 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   // os maiores paises por usuarios elegiveis (comparacao com amostra boa) + o pais selecionado, mesmo que seja pequeno
   const grandes = dados.paises.filter((p) => p.pais !== "Desconhecido").slice(0, TOP_PAISES);
   const sel = dados.paises.find((p) => p.pais === pais);
-  const lista = sel && !grandes.some((p) => p.pais === pais) ? [...grandes, sel] : grandes;
+  // o pais selecionado e o Brasil (foco da analise) entram sempre, mesmo fora dos maiores
+  const extras = [sel, dados.paises.find((p) => p.pais === "Brazil")].filter((p, i, a): p is NonNullable<typeof p> => !!p && !grandes.some((g) => g.pais === p.pais) && a.findIndex((x) => x?.pais === p.pais) === i);
+  const lista = [...grandes, ...extras];
   const linhas = lista.map((p) => ({
     pais: p.pais, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi,
   })).sort((a, b) => b.taxa - a.taxa);
@@ -332,7 +334,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
             <ReferenceLine x={geral.taxa * 100} stroke="var(--graf-3)" strokeDasharray="5 4" strokeWidth={2}
               label={{ value: t("comp.geral", { v: pct(geral.taxa) }), position: "top", fill: "var(--texto-suave)", fontSize: 11 }} />
             <Bar dataKey="taxa" radius={[0, 6, 6, 0]}>
-              {linhas.map((l) => <Cell key={l.pais} fill={l.pais === pais ? "var(--graf-1)" : "color-mix(in srgb, var(--roxo) 32%, var(--superficie))"} />)}
+              {linhas.map((l) => <Cell key={l.pais} fill={l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : "color-mix(in srgb, var(--roxo) 32%, var(--superficie))"} />)}
               <ErrorBar dataKey="erro" direction="x" stroke="var(--texto-suave)" strokeWidth={1.5} width={5} />
             </Bar>
           </BarChart>
@@ -340,6 +342,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
       </div>
       <div className="legenda-graf">
         <span><i style={{ background: "var(--graf-1)" }} />{t("comp.selecionado")}</span>
+        {pais !== "Brazil" && <span><i style={{ background: "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" }} />{t("comp.brasil")}</span>}
         <span><i style={{ background: "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" }} />{t("comp.outros")}</span>
         <span><i style={{ background: "var(--graf-3)", borderRadius: 2, height: "0.2rem", width: "0.9rem" }} />{t("comp.mediaGeral")}</span>
       </div>
