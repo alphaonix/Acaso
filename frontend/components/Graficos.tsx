@@ -12,7 +12,7 @@ import type { Chave } from "@/lib/idiomas/pt";
 import { tNivel } from "@/lib/traducao-dados";
 import type { Comparacao, Coorte, Decomposicao as Decomp, FatorNivel, Uso } from "@/lib/tipos";
 
-const EIXO = { fontSize: 11, fill: "var(--texto-mudo)" };
+const EIXO = { fontSize: 12, fill: "var(--texto-mudo)" };
 /** marcas do eixo de porcentagem de 5 em 5 (ou 10 em 10 se o eixo for longo), terminando em `topo` */
 const marcas = (topo: number) => { const passo = topo > 40 ? 10 : 5; return Array.from({ length: Math.floor(topo / passo) + 1 }, (_, i) => i * passo); };
 
@@ -225,7 +225,8 @@ export function Decomposicao({ pais }: { pais: string }) {
 
   return (
     <div>
-      <div className="pilulas" role="group" aria-label={t("co.decPerfil")}>
+      <p className="dica" style={{ margin: "0 0 0.3rem" }}>{t("co.decPor")}</p>
+      <div className="pilulas" role="group" aria-label={t("co.decPor")}>
         {FATORES_DEC.map((f) => <button key={f} type="button" className="pilula" aria-pressed={fator === f} onClick={() => mudar(f)}>{t(`co.f.${f}`)}</button>)}
       </div>
       {r.erro && <p className="aviso alerta" role="alert">{r.erro}</p>}
@@ -257,7 +258,7 @@ export function Decomposicao({ pais }: { pais: string }) {
                 </div>
               </div>
             ))}
-            <p><strong>{t(dentro ? "co.decLeituraTaxa" : "co.decLeituraMix")}</strong></p>
+            <p><strong>{t(Math.abs(d.delta_pp!) < 2 ? "co.decLeituraPequena" : dentro ? "co.decLeituraTaxa" : "co.decLeituraMix")}</strong></p>
             <p className="dica"><R texto={t("co.decExplica", { delta: pp(d.delta_pp!) })} /></p>
             {Math.min(d.n_de ?? 0, d.n_para ?? 0) < 300 && <p className="aviso alerta">{t("co.decAmostra", { a: num(d.n_de), b: num(d.n_para) })}</p>}
             <div className="dec-detalhe">
@@ -362,8 +363,8 @@ function TickPais({ x, y, nome, linhas, pais }: { x: number; y: number; nome: st
   const cor = sel ? "var(--texto)" : "var(--texto-suave)";
   return (
     <g>
-      <text x={x - 192} y={y} dy={4} textAnchor="start" fontSize={11} fill="var(--texto-mudo)" style={{ fontVariantNumeric: "tabular-nums" }}>{l?.robusto ? `${i + 1}º` : "·"}</text>
-      <text x={x - 30} y={y} dy={4} textAnchor="end" fontSize={11} fontWeight={sel ? 700 : 400} fill={cor}>{nome}</text>
+      <text x={x - 192} y={y} dy={4} textAnchor="start" fontSize={12} fill="var(--texto-mudo)" style={{ fontVariantNumeric: "tabular-nums" }}>{l?.robusto ? `${i + 1}º` : "·"}</text>
+      <text x={x - 30} y={y} dy={4} textAnchor="end" fontSize={12} fontWeight={sel ? 700 : 400} fill={cor}>{nome}</text>
       {B ? <B x={x - 24} y={y - 7} width={20} height={14} /> : null}
     </g>
   );
@@ -407,6 +408,12 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
       <div role="img" className="graf-flex" style={{ minHeight: dadosGraf.length * 30 + 56 }} aria-label={t("comp.aria")}>
         <ResponsiveContainer width="100%" height="100%" minHeight={dadosGraf.length * 30 + 56}>
           <BarChart data={dadosGraf} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
+            <defs>
+              <pattern id="listras-pais" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="7" height="7" style={{ fill: "color-mix(in srgb, var(--roxo) 12%, var(--superficie))" }} />
+                <rect width="3" height="7" style={{ fill: "color-mix(in srgb, var(--roxo) 45%, var(--superficie))" }} />
+              </pattern>
+            </defs>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />
             <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, Math.ceil((max + 2) / 5) * 5]} ticks={marcas(Math.ceil((max + 2) / 5) * 5)} />
             <YAxis type="category" dataKey="nome" stroke="var(--borda)" tickLine={false} width={196} interval={0}
@@ -417,11 +424,11 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
               return <Dica linhas={<><strong>{l.nome}</strong><br />{t("grafico.retorno")} <b>{pct(l.taxa / 100)}</b><br />{t("grafico.ic", { lo: pct(l.lo), hi: pct(l.hi) })}<br />{t("grafico.voltaram", { v: num(l.v), n: num(l.n) })}</>} />;
             }} />
             <ReferenceLine x={geral.taxa * 100} stroke="var(--graf-3)" strokeDasharray="5 4" strokeWidth={2}
-              label={{ value: t("comp.geral", { v: pct(geral.taxa) }), position: "top", fill: "var(--texto-suave)", fontSize: 11 }} />
+              label={{ value: t("comp.geral", { v: pct(geral.taxa) }), position: "top", fill: "var(--texto-suave)", fontSize: 12 }} />
             {corte > 0 && <ReferenceLine y="__sep__" stroke="var(--texto-mudo)" strokeDasharray="6 5" strokeWidth={1.5}
-              label={{ value: t("comp.divisa", { n: num(MIN_POSICAO) }), position: "insideTopRight", fill: "var(--texto-suave)", fontSize: 11 }} />}
+              label={{ value: t("comp.divisa", { n: num(MIN_POSICAO) }), position: "insideTopRight", fill: "var(--texto-suave)", fontSize: 12 }} />}
             <Bar dataKey="taxa" radius={[0, 6, 6, 0]}>
-              {dadosGraf.map((l) => <Cell key={l.pais} fill={l.pais === "__sep__" ? "transparent" : l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : l.robusto ? "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" : "color-mix(in srgb, var(--roxo) 16%, var(--superficie))"} />)}
+              {dadosGraf.map((l) => <Cell key={l.pais} fill={l.pais === "__sep__" ? "transparent" : l.pais === pais ? "var(--graf-1)" : l.pais === "Brazil" ? "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" : l.robusto ? "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" : "url(#listras-pais)"} />)}
               <ErrorBar dataKey="erro" direction="x" stroke="var(--texto-suave)" strokeWidth={1.5} width={5} />
             </Bar>
           </BarChart>
@@ -432,7 +439,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
         <span><i style={{ background: "var(--graf-1)" }} />{t("comp.selecionado")}</span>
         {pais !== "Brazil" && <span><i style={{ background: "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" }} />{t("comp.brasil")}</span>}
         <span><i style={{ background: "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" }} />{t("comp.outros")}</span>
-        <span><i style={{ background: "color-mix(in srgb, var(--roxo) 16%, var(--superficie))" }} />{t("comp.semPosicao", { n: num(MIN_POSICAO) })}</span>
+        <span><i className="leg-listras" />{t("comp.semPosicao", { n: num(MIN_POSICAO) })}</span>
         <span><i style={{ background: "var(--graf-3)", borderRadius: 2, height: "0.2rem", width: "0.9rem" }} />{t("comp.mediaGeral")}</span>
       </div>
       <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("comp.eleg")} /></p>

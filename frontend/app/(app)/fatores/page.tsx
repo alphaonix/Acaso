@@ -35,6 +35,7 @@ export default function Fatores() {
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta"), mo = ef("Modelo"), lo = ef("Tamanho da primeira resposta");
   // impacto = parcela de pessoas com o fator x efeito (em pp); vale so se o efeito for causal
   const elegiveis = resumo.dados?.elegiveis ?? 0;
+  const pts = (x: number) => t(x < 0 ? "vg.pontosMenos" : "vg.pontosMais", { v: dec(Math.abs(x)) });
   const imp = (e?: Efeito) => { if (!e || !elegiveis) return null; const k = e.n_tratados / elegiveis, g = (x: number) => `${dec(Math.abs(x) * k)} pp`; const [a, b] = [Math.abs(e.ic_lo), Math.abs(e.ic_hi)].sort((x, y) => x - y); return { sh: pct(k), imp: g(e.efeito_pp), il: g(a), ih: g(b) }; };
   const ic = (e?: Efeito) => (e ? { e: pp(e.efeito_pp), lo: pp(e.ic_lo), hi: pp(e.ic_hi) } : null);
   const dif = (fator: string, fam: string) => estratos.dados?.find((e) => e.fator === fator && e.familia === fam)?.diferenca?.pp;
@@ -71,10 +72,10 @@ export default function Fatores() {
           </Painel>
           <Painel nota="nt.achados" titulo={t("fa.achadosTitulo")} pergunta={t("fa.achadosPergunta")}>
             <ol className="achados">
-              {sa && imp(sa) && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p>{t("fa.a1d", { ...ic(sa)!, ...imp(sa)!, nota: t(resisteACorrecao(sa, todos.length) ? "fa.nResiste" : "fa.nIndicio") })}</p></div></li>}
-              {re && imp(re) && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p>{t("fa.a2d", { ...ic(re)!, ...imp(re)!, nota: t(resisteACorrecao(re, todos.length) ? "fa.nResiste" : "fa.nIndicio") })}</p></div></li>}
-              {mo && lo && <li><span className="num-achado">3</span><div><b>{t("fa.a3t")}</b><p>{t("fa.a3d", { e1: ic(mo)!.e, lo1: ic(mo)!.lo, hi1: ic(mo)!.hi, e2: ic(lo)!.e })}</p></div></li>}
-              {s35 != null && s4 != null && r35 != null && r4 != null && <li><span className="num-achado">4</span><div><b>{t("fa.a4t")}</b><p>{t("fa.a4d", { s35: pp(s35), s4: pp(s4), r35: pp(r35), r4: pp(r4) })}</p></div></li>}
+              {sa && imp(sa) && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p><R texto={t("fa.a1d", { ...ic(sa)!, ...imp(sa)!, e: pts(sa.efeito_pp), nota: t(resisteACorrecao(sa, todos.length) ? "fa.nResiste" : "fa.nIndicio") })} /></p></div></li>}
+              {re && imp(re) && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p><R texto={t("fa.a2d", { ...ic(re)!, ...imp(re)!, e: pts(re.efeito_pp), nota: t(resisteACorrecao(re, todos.length) ? "fa.nResiste" : "fa.nIndicio") })} /></p></div></li>}
+              {mo && lo && <li><span className="num-achado">3</span><div><b>{t("fa.a3t")}</b><p><R texto={t("fa.a3d", { e1: ic(mo)!.e, lo1: ic(mo)!.lo, hi1: ic(mo)!.hi, e2: ic(lo)!.e })} /></p></div></li>}
+              {s35 != null && s4 != null && r35 != null && r4 != null && <li><span className="num-achado">4</span><div><b>{t("fa.a4t")}</b><p><R texto={t("fa.a4d", { s35: pp(s35), s4: pp(s4), r35: pp(r35), r4: pp(r4) })} /></p></div></li>}
             </ol>
           </Painel>
         </div>

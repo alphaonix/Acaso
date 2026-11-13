@@ -1,13 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/contexto";
 import { R, useI18n } from "@/lib/i18n";
-import { tIndicador } from "@/lib/traducao-dados";
 
 /** Tela de abertura (BDR-002): papel do painel, resumo de cada indicador e o que ele nunca mostra. */
 export default function Sobre() {
-  const { catalogo } = useApp();
-  const { t, idioma } = useI18n();
+  const { t } = useI18n();
   const router = useRouter();
   function entrar() {
     try { localStorage.setItem("visto_sobre", "1"); } catch { /* sem storage */ }
@@ -30,9 +27,9 @@ export default function Sobre() {
       </section>
 
       <section className="cartao largo">
-        <h2>{t("so.indicadores")}</h2>
+        <h2>{t("so.palavras")}</h2>
         <ul className="lista-sobre">
-          {catalogo.filter((c) => !["turnos_medios", "uso_gpt4"].includes(c.indicador_id)).map((c) => { const i = tIndicador(c, idioma); return <li key={i.indicador_id}><strong>{i.nome}</strong> ({i.unidade}): {i.pergunta}</li>; })}
+          {(["so.g1", "so.g2", "so.g3", "so.g4", "so.g5", "so.g6", "so.g7", "so.g8"] as const).map((k) => <li key={k}><R texto={t(k)} /></li>)}
         </ul>
         <p className="dica"><R texto={t("so.indicadoresDica")} /></p>
       </section>

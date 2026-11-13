@@ -157,7 +157,7 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; backg
 .popover dl { margin: 0.5rem 0; } .popover dt { font-weight: 700; font-size: 0.8rem; color: var(--acento-texto); margin-top: 0.4rem; } .popover dd { margin: 0; font-size: 0.88rem; }
 .popover details code { display: block; white-space: pre-wrap; margin-top: 0.4rem; }
 
-.badge { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; }
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px; }
 .badge.alavanca { background: var(--roxo); color: var(--branco); }
 .badge.perfil { background: var(--superficie-2); color: var(--texto-suave); border: 1px solid var(--borda); }
 
@@ -296,7 +296,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .kpi { position: relative; padding: 1rem; background: var(--vidro); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--borda); border-radius: var(--raio-cartao); transition: border-color 0.15s, box-shadow 0.15s; }
 :root[data-tema="escuro"] .kpi { border-color: rgba(255, 255, 255, 0.09); }
 .kpi:hover { border-color: color-mix(in srgb, var(--roxo) 50%, transparent); box-shadow: var(--brilho); }
-.kpi-rot { display: flex; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-mudo); }
+.kpi-rot { display: flex; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-mudo); }
 .kpi-rot .info { width: 16px; height: 16px; font-size: 10px; }
 .kpi-val { margin: 0.5rem 0 0; font-family: var(--fonte-titulo); font-size: 1.55rem; font-weight: 700; color: var(--texto-forte); line-height: 1.15; }
 .kpi-delta { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--acento-texto); }
@@ -332,7 +332,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .fl2-selo.ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
 .fl2-selo.mudo { background: var(--borda-suave); color: var(--texto-mudo); }
 .fl2-det { grid-column: 1 / -1; margin: 0; }
-.fl2-det summary { font-size: 0.72rem; color: var(--texto-mudo); cursor: pointer; }
+.fl2-det summary { font-size: 0.75rem; color: var(--texto-mudo); cursor: pointer; }
 .fl2-det summary:hover { color: var(--acento-texto); }
 .fl2-eixo { margin: 0.3rem 0 0; font-size: 0.7rem; color: var(--texto-mudo); }
 .fl2-eixo-rot { display: flex; justify-content: space-between; }
@@ -349,7 +349,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .pilha > .cartao { margin: 0; min-width: 0; }
 .calor { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }.calor { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.4rem; }
 .calor-celula { padding: 0.35rem 0.2rem; border-radius: 9px; }
-.calor-celula small { font-size: 0.62rem; }
+.calor-celula small { font-size: 0.75rem; }
 .calor-celula b { font-size: 0.9rem; }
 /* fundo do dashboard: no tema escuro, o MESMO degradê da tela de login (quase preto, com um toque de roxo); no claro, apenas um brilho sutil */
 :root { --hero: radial-gradient(ellipse at 30% 0%, rgba(160, 11, 255, 0.05), transparent 60%), radial-gradient(ellipse at 90% 100%, rgba(122, 15, 208, 0.03), transparent 55%); }
@@ -361,7 +361,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .def-lista dt { font-size: 0.85rem; font-weight: 700; color: var(--acento-texto); }
 .def-lista dd { margin: 0.1rem 0 0; font-size: 0.9rem; color: var(--texto-suave); }
 .def-lista.pequena { gap: 0.5rem; margin-top: 0.6rem; }
-.def-lista.pequena dt { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-mudo); }
+.def-lista.pequena dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-mudo); }
 .def-lista.pequena dd { font-size: 0.85rem; }
 .priv-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; font-size: 0.9rem; }
 .priv-grade ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.35rem; color: var(--texto-suave); }
@@ -396,7 +396,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .kpis3 .kpi:last-child .popover { left: auto; right: 0; }
 .tabela-rolagem { overflow-x: auto; max-width: 100%; }
 .tabela-compacta { font-size: 0.8rem; table-layout: auto; }
-.tabela-compacta th { font-size: 0.66rem; padding: 0.35rem 0.3rem; }
+.tabela-compacta th { font-size: 0.75rem; padding: 0.35rem 0.3rem; }
 .tabela-compacta td { padding: 0.4rem 0.3rem; }
 .painel-corpo > div:not([class]) details { min-width: 0; max-width: 100%; }
 .est-dif { display: grid; gap: 0.3rem; min-width: 190px; }
@@ -409,7 +409,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .barra-cheia { height: 100%; background: var(--graf-1); border-radius: 4px; }
 .hora-mapa { display: grid; grid-template-columns: 2.4rem repeat(24, minmax(0, 1fr)); gap: 2px; align-items: center; }
 .hora-linha { display: contents; }
-.hora-cab, .hora-dia { font-size: 0.68rem; color: var(--texto-mudo); text-align: center; }
+.hora-cab, .hora-dia { font-size: 0.75rem; color: var(--texto-mudo); text-align: center; }
 .hora-dia { text-align: left; }
 .hora-celula { display: block; aspect-ratio: 1.15; border-radius: 3px; min-height: 14px; }
 .hora-escala { display: inline-block; width: 7rem; height: 0.6rem; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--roxo) 10%, var(--superficie)), var(--roxo)); }
@@ -432,9 +432,9 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .hora-mapa { flex: 1; grid-template-rows: auto repeat(7, minmax(14px, 1fr)); }
 .hora-celula { aspect-ratio: auto; height: 100%; }
 .tabela-compacta { width: 100%; font-size: 0.76rem; }
-.tabela-compacta th { font-size: 0.6rem; letter-spacing: 0; padding: 0.3rem 0.2rem; }
+.tabela-compacta th { font-size: 0.75rem; letter-spacing: 0; padding: 0.3rem 0.2rem; }
 .tabela-compacta td { padding: 0.4rem 0.2rem; }
-.tabela-compacta .n-menor { display: block; font-size: 0.64rem; color: var(--texto-mudo); }
+.tabela-compacta .n-menor { display: block; font-size: 0.75rem; color: var(--texto-mudo); }
 .dec-detalhe { margin-top: 0.5rem; }
 .dec-detalhe-titulo { font-weight: 700; color: var(--acento-texto); margin: 0 0 0.4rem; }
 .avatar { padding: 0; overflow: hidden; }
@@ -483,3 +483,15 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .comp-divisa { text-align: center; font-size: 0.78rem; color: var(--texto-suave); border-top: 1.5px dashed var(--texto-mudo); padding-top: 0.5rem !important; margin-top: 0.4rem; }
 .fl2-selo.indicio { background: color-mix(in srgb, var(--graf-3) 22%, transparent); color: var(--graf-3); border-color: color-mix(in srgb, var(--graf-3) 55%, transparent); }
 .rodape-app { max-width: 1280px; margin: 0 auto; padding: 0.5rem 1.25rem 2rem; color: var(--texto-mudo); font-size: 0.8rem; }
+
+/* ---- historia da Visao geral e cartao "de onde vem" ---- */
+.historia { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.historia li { display: grid; grid-template-columns: minmax(5.5rem, 7.5rem) 1fr; gap: 1rem; align-items: start; padding-bottom: 0.9rem; border-bottom: 1px solid var(--borda-suave); }
+.historia li:last-child { border-bottom: 0; padding-bottom: 0; }
+.hist-num { font-size: 1.5rem; font-weight: 800; color: var(--acento-texto); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.historia b { display: block; font-size: 1.02rem; margin-bottom: 0.2rem; }
+.historia p { margin: 0; color: var(--texto-suave); }
+@media (max-width: 560px) { .historia li { grid-template-columns: 1fr; gap: 0.2rem; } }
+.lista-dados { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.45rem; }
+.leg-listras { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--roxo) 45%, var(--superficie)) 0 3px, color-mix(in srgb, var(--roxo) 12%, var(--superficie)) 3px 6px) !important; }
+.comp-lista li.peq .barra { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--roxo) 45%, var(--superficie)) 0 3px, color-mix(in srgb, var(--roxo) 12%, var(--superficie)) 3px 6px); }

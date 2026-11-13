@@ -5,7 +5,7 @@ import { R, useI18n } from "@/lib/i18n";
 import { dec, mesAno, num, pct, pp } from "@/lib/formato";
 import type { Concentracao, Curva, Estrato, FamiliaModelo, ModelosTempo, UsoHora, VersaoModelo } from "@/lib/tipos";
 
-const EIXO = { fontSize: 11, fill: "var(--texto-mudo)" };
+const EIXO = { fontSize: 12, fill: "var(--texto-mudo)" };
 const marcas = (topo: number) => { const passo = topo > 40 ? 10 : 5; return Array.from({ length: Math.floor(topo / passo) + 1 }, (_, i) => i * passo); };
 const Dica = ({ linhas }: { linhas: React.ReactNode }) => <div className="tip-graf">{linhas}</div>;
 
@@ -30,8 +30,8 @@ export function CurvaRetorno({ curva }: { curva: Curva }) {
               const p = payload[0].payload;
               return <Dica linhas={<><strong>{t("co.curvaDias", { d: dec(p.dias) })}</strong><br />{t("grafico.retorno")} <b>{pct(p.taxa / 100)}</b><br />{t("grafico.ic", { lo: pct(p.lo), hi: pct(p.hi) })}<br />{t("grafico.voltaram", { v: num(p.v), n: num(p.n) })}</>} />;
             }} />
-            <ReferenceLine x={1} stroke="var(--graf-3)" strokeDasharray="4 4" label={{ value: "24 h", position: "top", fill: "var(--texto-suave)", fontSize: 11 }} />
-            <ReferenceLine x={7} stroke="var(--graf-3)" strokeDasharray="4 4" label={{ value: "7 d", position: "top", fill: "var(--texto-suave)", fontSize: 11 }} />
+            <ReferenceLine x={1} stroke="var(--graf-3)" strokeDasharray="4 4" label={{ value: "24 h", position: "top", fill: "var(--texto-suave)", fontSize: 12 }} />
+            <ReferenceLine x={7} stroke="var(--graf-3)" strokeDasharray="4 4" label={{ value: "7 d", position: "top", fill: "var(--texto-suave)", fontSize: 12 }} />
             <Area dataKey="faixa" stroke="none" fill="var(--graf-1)" fillOpacity={0.16} isAnimationActive={false} />
             <Line dataKey="taxa" stroke="var(--graf-1)" strokeWidth={2.5} dot={{ r: 3.5, fill: "var(--graf-1)" }} isAnimationActive={false} />
           </ComposedChart>

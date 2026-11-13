@@ -36,8 +36,8 @@ export function LinhaRetorno({ coortes, mensal = false }: { coortes: Coorte[]; m
         <ComposedChart data={dados} margin={{ top: 10, right: 16, bottom: 4, left: 0 }}>
           <defs><linearGradient id="bandaIC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--graf-1)" stopOpacity={0.35} /><stop offset="100%" stopColor="var(--graf-1)" stopOpacity={0.05} /></linearGradient></defs>
           <CartesianGrid stroke="var(--borda)" vertical={false} />
-          <XAxis dataKey="rotulo" tick={{ fontSize: 11, fill: "var(--texto-mudo)" }} stroke="var(--borda)" tickLine={false} minTickGap={28} />
-          <YAxis unit="%" domain={[0, (max: number) => Math.min(100, Math.ceil((max + 5) / 10) * 10)]} tick={{ fontSize: 11, fill: "var(--texto-mudo)" }} stroke="var(--borda)" tickLine={false} width={44} />
+          <XAxis dataKey="rotulo" tick={{ fontSize: 12, fill: "var(--texto-mudo)" }} stroke="var(--borda)" tickLine={false} minTickGap={28} />
+          <YAxis unit="%" domain={[0, (max: number) => Math.min(100, Math.ceil((max + 5) / 10) * 10)]} tick={{ fontSize: 12, fill: "var(--texto-mudo)" }} stroke="var(--borda)" tickLine={false} width={44} />
           <Tooltip content={<Dica mensal={mensal} />} />
           <Area dataKey="faixa" stroke="none" fill="url(#bandaIC)" />
           <Line dataKey="taxa" stroke="var(--graf-1)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--graf-1)" }} activeDot={{ r: 5 }} connectNulls={false} />

@@ -6,8 +6,8 @@ A consulta de referência usa o parâmetro `:pais` e as tabelas do banco analít
 ## Retorno em 7 dias (`retorno_7d`)
 
 - **Pergunta:** De cada 100 pessoas que experimentaram o assistente, quantas voltam em até 7 dias?
-- **Fórmula:** usuários elegíveis com nova sessão iniciada em até 7 dias após a primeira ÷ usuários elegíveis
-- **Denominador:** Usuários elegíveis: primeira vez há pelo menos 7 dias do fim dos dados e depois dos 30 primeiros dias
+- **Fórmula:** pessoas elegíveis com nova sessão iniciada em até 7 dias após a primeira ÷ pessoas elegíveis
+- **Denominador:** pessoas elegíveis: primeira vez há pelo menos 7 dias do fim dos dados e depois dos 30 primeiros dias
 - **Unidade:** usuário
 - **Período de referência:** Semana de chegada (segunda a domingo) no fuso do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -17,10 +17,10 @@ A consulta de referência usa o parâmetro `:pais` e as tabelas do banco analít
 SELECT count(*) FILTER (WHERE voltou_7d)::numeric / count(*) FROM silver.fato_usuario WHERE elegivel AND pais = :pais
 ```
 
-## Usuários novos (`usuarios_novos`)
+## Pessoas novas (`usuarios_novos`)
 
 - **Pergunta:** Quantas pessoas usaram o assistente pela primeira vez em cada semana?
-- **Fórmula:** contagem de usuários distintos pela semana da primeira conversa
+- **Fórmula:** contagem de pessoas distintos pela semana da primeira conversa
 - **Denominador:** não se aplica (contagem)
 - **Unidade:** usuário
 - **Período de referência:** Semana de chegada, no fuso do país
@@ -31,11 +31,11 @@ SELECT count(*) FILTER (WHERE voltou_7d)::numeric / count(*) FROM silver.fato_us
 SELECT semana, count(*) FROM silver.fato_usuario WHERE pais = :pais GROUP BY semana
 ```
 
-## Usuários elegíveis (`usuarios_elegiveis`)
+## Pessoas elegíveis (`usuarios_elegiveis`)
 
-- **Pergunta:** Quantos usuários têm janela completa para medir o retorno?
-- **Fórmula:** usuários novos cuja primeira vez está a mais de 30 dias do início e a mais de 7 dias do fim dos dados
-- **Denominador:** Usuários novos
+- **Pergunta:** Quantos pessoas têm janela completa para medir o retorno?
+- **Fórmula:** pessoas novos cuja primeira vez está a mais de 30 dias do início e a mais de 7 dias do fim dos dados
+- **Denominador:** Pessoas novas
 - **Unidade:** usuário
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -47,9 +47,9 @@ SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND pais = :pais
 
 ## Conversas (`conversas`)
 
-- **Pergunta:** Quantas conversas o assistente teve no período, e quantas por usuário?
+- **Pergunta:** Quantas conversas o assistente teve no período, e quantas por pessoa?
 - **Fórmula:** contagem de conversas, depois de excluir as cópias exatas
-- **Denominador:** não se aplica (contagem); por usuário = conversas ÷ usuários
+- **Denominador:** não se aplica (contagem); por pessoa = conversas ÷ Pessoas
 - **Unidade:** conversa
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -61,9 +61,9 @@ SELECT count(*) FROM silver.fato_conversa WHERE pais = :pais
 
 ## Turnos médios (`turnos_medios`)
 
-- **Pergunta:** Quantos turnos (trocas de mensagem) tem, em média, a 1ª conversa de cada usuário?
-- **Fórmula:** média do número de turnos da 1ª conversa de cada usuário; a mediana é o valor do meio
-- **Denominador:** Usuários do país
+- **Pergunta:** Quantos turnos (trocas de mensagem) tem, em média, a 1ª conversa de cada pessoa?
+- **Fórmula:** média do número de turnos da 1ª conversa de cada pessoa; a mediana é o valor do meio
+- **Denominador:** Pessoas do país
 - **Unidade:** turno
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -76,8 +76,8 @@ SELECT avg(turnos), percentile_cont(0.5) WITHIN GROUP (ORDER BY turnos) FROM sil
 ## Uso de GPT-4 (`uso_gpt4`)
 
 - **Pergunta:** Que parte das 1ªs conversas usou um modelo GPT-4?
-- **Fórmula:** usuários cuja 1ª conversa usou um modelo GPT-4 ÷ usuários
-- **Denominador:** Usuários do país
+- **Fórmula:** pessoas cuja 1ª conversa usou um modelo GPT-4 ÷ pessoas
+- **Denominador:** Pessoas do país
 - **Unidade:** usuário
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -89,9 +89,9 @@ SELECT avg((modelo LIKE 'gpt-4%')::int) FROM silver.fato_usuario WHERE pais = :p
 
 ## Recusa na primeira resposta (`recusa_primeira_conversa`)
 
-- **Pergunta:** Em quantos usuários a primeira resposta do assistente abre com recusa ou desculpa?
-- **Fórmula:** usuários elegíveis cuja primeira resposta casa o padrão de recusa ÷ usuários elegíveis
-- **Denominador:** Usuários elegíveis de países com texto (hoje só o Brasil)
+- **Pergunta:** Em quantos pessoas a primeira resposta do assistente abre com recusa ou desculpa?
+- **Fórmula:** pessoas elegíveis cuja primeira resposta casa o padrão de recusa ÷ pessoas elegíveis
+- **Denominador:** Pessoas elegíveis de países com texto (hoje só o Brasil)
 - **Unidade:** usuário
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -104,8 +104,8 @@ SELECT count(*) FILTER (WHERE recusa)::numeric / count(*) FROM silver.fato_usuar
 ## Voltou em 24 horas (`voltou_24h`)
 
 - **Pergunta:** De cada 100 pessoas, quantas voltam em até 24 horas depois do início da 1ª conversa?
-- **Fórmula:** usuários com nova sessão iniciada em até 24 horas após o início da 1ª conversa ÷ usuários com janela de 30 dias
-- **Denominador:** Usuários com janela completa de 30 dias (1ª vez há mais de 30 dias do início e do fim dos dados)
+- **Fórmula:** pessoas com nova sessão iniciada em até 24 horas após o início da 1ª conversa ÷ pessoas com 30 dias completos
+- **Denominador:** Pessoas com janela completa de 30 dias (1ª vez há mais de 30 dias do início e do fim dos dados)
 - **Unidade:** usuário
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -118,8 +118,8 @@ SELECT count(*) FILTER (WHERE voltou_24h)::numeric / count(*) FROM silver.fato_u
 ## Voltou em 24 horas (base do retorno em 7 dias) (`voltou_24h_elegivel`)
 
 - **Pergunta:** De cada 100 pessoas elegíveis, quantas voltam em até 24 horas depois do início da 1ª conversa?
-- **Fórmula:** usuários elegíveis com nova sessão iniciada em até 24 horas após o início da 1ª conversa ÷ usuários elegíveis
-- **Denominador:** Usuários elegíveis (1ª vez há mais de 30 dias do início e 7 dias antes do fim dos dados): a mesma base do retorno em 7 dias
+- **Fórmula:** pessoas elegíveis com nova sessão iniciada em até 24 horas após o início da 1ª conversa ÷ pessoas elegíveis
+- **Denominador:** Pessoas elegíveis (1ª vez há mais de 30 dias do início e 7 dias antes do fim dos dados): a mesma base do retorno em 7 dias
 - **Unidade:** usuário
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
@@ -132,8 +132,8 @@ SELECT count(*) FILTER (WHERE voltou_24h)::numeric / count(*) FROM silver.fato_u
 ## Voltou em 30 dias (`voltou_30d`)
 
 - **Pergunta:** De cada 100 pessoas, quantas voltam em até 30 dias depois do início da 1ª conversa?
-- **Fórmula:** usuários com nova sessão iniciada em até 30 dias após o início da 1ª conversa ÷ usuários com janela de 30 dias
-- **Denominador:** Usuários com janela completa de 30 dias (1ª vez há mais de 30 dias do início e do fim dos dados)
+- **Fórmula:** pessoas com nova sessão iniciada em até 30 dias após o início da 1ª conversa ÷ pessoas com 30 dias completos
+- **Denominador:** Pessoas com janela completa de 30 dias (1ª vez há mais de 30 dias do início e do fim dos dados)
 - **Unidade:** usuário
 - **Período de referência:** Todo o período dos dados do país
 - **Amostra mínima:** 30 (abaixo disso a tela esconde a taxa e o intervalo)
