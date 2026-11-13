@@ -1,16 +1,17 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { resisteACorrecao } from "@/lib/estatistica";
 import { tendencia } from "@/lib/tendencia";
 import { BarrasVersoes, CartoesModelos, ConcentracaoUso, CurvaRetorno, MapaHora, ModeloTempo, VersoesModelo, faixasHora, LIMITE_CONCENTRACAO } from "@/components/AnaliseAmpliada";
-import { AreaUso, BarrasTema, CabecalhoPagina, ComparacaoPaises, Kpi, Painel } from "@/components/Graficos";
+import { CabecalhoPagina, ComparacaoPaises, Kpi, Painel } from "@/components/Graficos";
 import { LinhaRetorno } from "@/components/LinhaRetorno";
 import { useApi } from "@/lib/api";
 import { useApp } from "@/lib/contexto";
 import { dataLonga, dec, mesAno, num, pct, pp } from "@/lib/formato";
 import { R, useI18n } from "@/lib/i18n";
 import { nomePais } from "@/lib/pais";
-import type { Comparacao, Concentracao, Coorte, Curva, Efeito, FatorNivel, ModelosTempo, Resumo, Uso, UsoHora } from "@/lib/tipos";
+import type { Comparacao, Concentracao, Coorte, Curva, Efeito, ModelosTempo, Resumo, UsoHora } from "@/lib/tipos";
 
 export default function VisaoGeral() {
   const { pais, paisAtual, paises } = useApp();
@@ -18,8 +19,6 @@ export default function VisaoGeral() {
   const q = `pais=${encodeURIComponent(pais)}`;
   const resumo = useApi<Resumo>(`/retencao/resumo?${q}`);
   const coortes = useApi<Coorte[]>(`/retencao/coortes?${q}`);
-  const temas = useApi<FatorNivel[]>(`/retencao/fatores?${q}&fator=tema`);
-  const uso = useApi<Uso[]>(`/uso/diario?${q}`);
   const comp = useApi<Comparacao>("/retencao/comparacao");
   const meses = useApi<Coorte[]>(`/retencao/meses?${q}`);
   const curva = useApi<Curva>(`/retencao/curva?${q}`);
@@ -84,10 +83,8 @@ export default function VisaoGeral() {
           <li><R texto={t("vg.dadosWild")} /></li>
           {r && paisAtual?.primeira_data && paisAtual.ultima_data && <li><R texto={t("vg.dadosPais", { pais: nomePais(paisAtual, idioma, t("pais.desconhecido")), conv: num(r.conversas), pessoas: num(r.novos), a: dataLonga(paisAtual.primeira_data), b: dataLonga(paisAtual.ultima_data), total: num(totalConversas) })} /></li>}
           <li><R texto={t("vg.dadosPessoa")} /></li>
-          {r && <li><R texto={t("vg.dadosVoltar", { el: num(r.elegiveis), novos: num(r.novos) })} /></li>}
-          <li><R texto={t("vg.dadosPp")} /></li>
         </ul>
-        <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("vg.dadosMais")} /></p>
+        <p style={{ marginTop: "0.6rem" }}><Link href="/glossario"><R texto={t("vg.dadosMais")} /></Link></p>
       </Painel>
 
       <div className="kpis kpis3">
@@ -145,15 +142,6 @@ export default function VisaoGeral() {
         </Painel>
         <Painel nota="nt.hora" titulo={t("vg.horaTitulo")} pergunta={t("ex.horaPergunta")}>
           {hora.carregando ? carregando : hora.dados && hora.dados.total > 0 ? <MapaHora dados={hora.dados} /> : <p className="vazio">{t("vg.semDados")}</p>}
-        </Painel>
-      </div>
-
-      <div className="grade2">
-        <Painel nota="nt.uso" titulo={t("vg.usoTitulo")} pergunta={t("vg.usoPergunta")}>
-          {uso.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (uso.dados?.length ? <AreaUso dados={uso.dados} /> : <p className="vazio">{t("vg.semDados")}</p>)}
-        </Painel>
-        <Painel nota="nt.tema" titulo={t("vg.temaTitulo")} pergunta={t("vg.temaPergunta")}>
-          {temas.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : (temas.dados?.some((x) => x.taxa != null) ? <BarrasTema dados={temas.dados} /> : <p className="vazio"><R texto={t("vg.temaSemTexto")} /></p>)}
         </Painel>
       </div>
 

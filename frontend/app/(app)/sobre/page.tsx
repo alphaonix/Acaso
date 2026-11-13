@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { R, useI18n } from "@/lib/i18n";
 
@@ -27,26 +28,14 @@ export default function Sobre() {
       </section>
 
       <section className="cartao largo">
-        <h2>{t("so.palavras")}</h2>
-        <ul className="lista-sobre">
-          {(["so.g1", "so.g2", "so.g3", "so.g4", "so.g5", "so.g6", "so.g7", "so.g8"] as const).map((k) => <li key={k}><R texto={t(k)} /></li>)}
-        </ul>
-        <p className="dica"><R texto={t("so.indicadoresDica")} /></p>
-      </section>
-
-      <section className="cartao largo">
         <h2>{t("so.cuidados")}</h2>
         <ul className="lista-sobre">
           <li><R texto={t("so.c1")} /></li>
           <li><R texto={t("so.c2")} /></li>
           <li><R texto={t("so.c3")} /></li>
         </ul>
-      </section>
-
-      <section className="cartao largo">
-        <h2>{t("so.priv")}</h2>
-        <p><R texto={t("so.priv1")} /></p>
-        <p><R texto={t("so.priv2")} /></p>
+        <p className="dica"><R texto={t("so.indicadoresDica")} /></p>
+        <p><Link href="/glossario"><R texto={t("so.vejaGlossario")} /></Link></p>
       </section>
 
       <button className="btn" onClick={entrar}>{t("so.entendi")}</button>

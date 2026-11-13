@@ -10,7 +10,7 @@ const marcas = (topo: number) => { const passo = topo > 40 ? 10 : 5; return Arra
 const Dica = ({ linhas }: { linhas: React.ReactNode }) => <div className="tip-graf">{linhas}</div>;
 
 /* ---------------- Curva de retorno: % acumulada de quem voltou em ate d dias ---------------- */
-export function CurvaRetorno({ curva }: { curva: Curva }) {
+export function CurvaRetorno({ curva, marcos = false }: { curva: Curva; marcos?: boolean }) {
   const { t } = useI18n();
   const pts = curva.pontos.filter((p) => p.taxa != null)
     .map((p) => ({ dias: p.dias, taxa: p.taxa! * 100, faixa: [p.ic_lo! * 100, p.ic_hi! * 100], v: p.voltaram, n: p.usuarios, lo: p.ic_lo, hi: p.ic_hi }));
@@ -38,6 +38,9 @@ export function CurvaRetorno({ curva }: { curva: Curva }) {
         </ResponsiveContainer>
       </div>
       <p className="dica" style={{ textAlign: "center" }}>{t("co.curvaEixo")}</p>
+      {marcos && curva.voltou_24h?.taxa != null && curva.voltou_7d?.taxa != null && curva.voltou_30d?.taxa != null && (
+        <p style={{ textAlign: "center", marginTop: "0.5rem" }}><R texto={t("co.curvaMarcos", { a: pct(curva.voltou_24h.taxa), b: pct(curva.voltou_7d.taxa), c: pct(curva.voltou_30d.taxa) })} /></p>
+      )}
       {v7 && v30 && v30.voltaram > 0 && <p className="dica" style={{ marginTop: "0.4rem" }}><R texto={t("co.curvaNota", { n: num(v30.usuarios), p: pct(v7.voltaram / v30.voltaram) })} /></p>}
     </div>
   );

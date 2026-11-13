@@ -74,8 +74,8 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 ## Onde cada sugestão está no painel
 | Sugestão | Onde | Observação |
 |---|---|---|
-| Voltou em 24 horas e a curva de retorno | **Coortes** (3 cartões e a curva) | base: 2.039 pessoas com 30 dias de janela completa, por isso o 7 dias da curva (24,0%) difere do indicador principal (23,7%) |
-| Pessoas ativas no lugar de conversas, alerta de uso concentrado | **Visão geral** (bloco de concentração) e a linha "ativos" no uso diário da Visão geral | o alerta dispara quando as 10 pessoas mais ativas passam de 25% das conversas (hoje: 32,3%) |
+| Voltou em 24 horas e a curva de retorno | **Coortes** (a curva, com os marcos de 24 h, 7 e 30 dias) | base: 2.039 pessoas com 30 dias de janela completa, por isso o 7 dias da curva (24,0%) difere do indicador principal (23,7%) |
+| Pessoas ativas no lugar de conversas, alerta de uso concentrado | **Visão geral** (bloco de concentração) | o alerta dispara quando as 10 pessoas mais ativas passam de 25% das conversas (hoje: 32,3%) |
 | Quando usam | **Visão geral** (mapa de calor dia × hora, fuso do país) | expediente 35,5% (esperado 26,8%), madrugada 20,1% (esperado 33,3%), fim de semana 29,0% (esperado 28,6%) |
 | Dispositivo e navegador, com aviso | **O que faz voltar** (fim da tela) | o aviso de medida (IP + navegador) vem junto do gráfico |
 | Recusa por versão do modelo | **Visão geral** (comparação entre modelos, com a tabela) e o GPT-4 por mês | 13,1% (3.5-0301) a 2,5% (3.5-0125) |

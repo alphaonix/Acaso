@@ -495,3 +495,7 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .lista-dados { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.45rem; }
 .leg-listras { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--roxo) 45%, var(--superficie)) 0 3px, color-mix(in srgb, var(--roxo) 12%, var(--superficie)) 3px 6px) !important; }
 .comp-lista li.peq .barra { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--roxo) 45%, var(--superficie)) 0 3px, color-mix(in srgb, var(--roxo) 12%, var(--superficie)) 3px 6px); }
+.def-duas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 2rem; }
+@media (max-width: 860px) { .def-duas { grid-template-columns: minmax(0, 1fr); } }
+.priv-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+@media (max-width: 860px) { .priv-tres { grid-template-columns: minmax(0, 1fr); } }

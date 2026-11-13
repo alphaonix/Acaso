@@ -63,7 +63,7 @@ Prazo: 16/11/2026, 23h59.
 ## O que ainda está aberto
 1. **Precisão de tema e recusa** (regras de palavras): amostras prontas em `exports/amostra_validacao_*.csv` (local, fora do Git); falta a conferência manual e o cálculo da precisão. Afeta os achados 1 e 2.
 2. **Horas do parágrafo de IA** em `docs/DOCUMENTO.md` (§8).
-3. **Rodadas 5 a 9 do `docs/VALIDACAO.md`** (conferência dos números no DBeaver), dos três cartões novos (conversas, turnos médios, uso de GPT-4) e das métricas ampliadas (curva, concentração, uso por hora, recusa por versão, estratos, dispositivo, idioma × navegador). Elas ainda **não** estão no portão de qualidade: só entram depois da conferência.
+3. **Rodadas 5 a 9 do `docs/VALIDACAO.md`** (conferência dos números no DBeaver), dos cartões novos (conversas, recusa, voltou em 24 h, concentração) e das métricas ampliadas (curva, concentração, uso por hora, recusa por versão, estratos, dispositivo, idioma × navegador). Elas ainda **não** estão no portão de qualidade: só entram depois da conferência.
 4. **AWS:** o Terraform é esboço (`validate` ok, sem `plan`/`apply`); o preço do RDS vem de fonte secundária.
 5. **Fuso** de ~160 países, **cache** e **SSO** são extensões, descritas e não implementadas.
 6. **Tema e recusa fora do Brasil:** a semente só tem o texto das conversas do Brasil e as regras de palavras são em português. Retorno, modelo por versão, uso, horário e concentração já valem para todos os países; tema e recusa pedem o texto completo (`etl/download_full.py`) e regras por idioma, com validação própria.
