@@ -35,12 +35,14 @@ export function BotaoTema() {
 export function SeletorPais() {
   const { paises, pais, setPais } = useApp();
   const { t, idioma } = useI18n();
+  const [aberto, setAberto] = useState(false);   // fechado mostra so o pais; ao abrir a lista traz os usuarios de cada um
   return (
     <label className="seletor" title={t("topo.pais")}>
       <span className="sr-only">{t("topo.pais")}</span>
       <svg {...ico} width={16} height={16}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
-      <select value={pais} onChange={(e) => setPais(e.target.value)}>
-        {paises.map((p) => <option key={p.pais} value={p.pais}>{nomePais(p, idioma, t("pais.desconhecido"))} · {num(p.usuarios)} {t("topo.usuarios")}</option>)}
+      <select value={pais} onMouseDown={() => setAberto(true)} onBlur={() => setAberto(false)} onKeyDown={(e) => { if (e.key === "Escape") setAberto(false); }}
+        onChange={(e) => { setPais(e.target.value); setAberto(false); }}>
+        {paises.map((p) => <option key={p.pais} value={p.pais}>{nomePais(p, idioma, t("pais.desconhecido"))}{aberto ? ` · ${num(p.usuarios)} ${t("topo.usuarios")}` : ""}</option>)}
       </select>
     </label>
   );
