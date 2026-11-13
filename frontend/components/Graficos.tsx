@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, ErrorBar, Line, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "@/lib/api";
 import { useApp } from "@/lib/contexto";
@@ -294,7 +294,6 @@ export function CabecalhoPagina({ eyebrow, titulo, destaque, desc }: { eyebrow: 
 }
 
 /* ---------------- Comparacao entre paises: o pais selecionado frente aos maiores e a media geral ---------------- */
-const TOP_PAISES = 15;
 
 export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: string }) {
   const { t, idioma } = useI18n();
@@ -302,24 +301,26 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   const info = new Map(paises.map((p) => [p.pais, p]));
   const nome = (c: string) => { const p = info.get(c); return p ? nomePais(p, idioma, t("pais.desconhecido")) : c; };
   const geral = dados.geral;
-  // os maiores paises por usuarios elegiveis (comparacao com amostra boa) + o pais selecionado, mesmo que seja pequeno
-  const grandes = dados.paises.filter((p) => p.pais !== "Desconhecido").slice(0, TOP_PAISES);
-  const sel = dados.paises.find((p) => p.pais === pais);
-  // o pais selecionado e o Brasil (foco da analise) entram sempre, mesmo fora dos maiores
-  const extras = [sel, dados.paises.find((p) => p.pais === "Brazil")].filter((p, i, a): p is NonNullable<typeof p> => !!p && !grandes.some((g) => g.pais === p.pais) && a.findIndex((x) => x?.pais === p.pais) === i);
-  const lista = [...grandes, ...extras];
+  // lista FIXA: todos os paises com amostra minima, na mesma ordem para qualquer pais selecionado (so o destaque muda)
+  const lista = dados.paises.filter((p) => p.pais !== "Desconhecido");
+  const sel = lista.find((p) => p.pais === pais);
   const linhas = lista.map((p) => ({
     pais: p.pais, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi,
   })).sort((a, b) => b.taxa - a.taxa);
   const atual = linhas.find((l) => l.pais === pais);
   const dif = atual ? atual.taxa - geral.taxa * 100 : null;
   const max = Math.max(...linhas.map((l) => l.taxa + l.erro[1]), geral.taxa * 100);
+  const rolagem = useRef<HTMLDivElement>(null);
+  const posicao = linhas.findIndex((l) => l.pais === pais);
+  useEffect(() => { if (rolagem.current && posicao >= 0) rolagem.current.scrollTop = Math.max(0, posicao * 30 - 120); }, [pais, posicao]);
 
   return (
     <div>
       {atual && dif != null && (
         <p className="comp-resumo"><R texto={t("comp.resumo", { pais: atual.nome, taxa: pct(atual.taxa / 100), geral: pct(geral.taxa), dif: pp(dif) })} /></p>
       )}
+      {!sel && <p className="aviso alerta">{t("comp.semAmostra")}</p>}
+      <div className="comp-rolagem" ref={rolagem}>
       <div role="img" aria-label={t("comp.aria")}>
         <ResponsiveContainer width="100%" height={linhas.length * 30 + 56}>
           <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
@@ -340,13 +341,14 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
           </BarChart>
         </ResponsiveContainer>
       </div>
+      </div>
       <div className="legenda-graf">
         <span><i style={{ background: "var(--graf-1)" }} />{t("comp.selecionado")}</span>
         {pais !== "Brazil" && <span><i style={{ background: "color-mix(in srgb, var(--roxo) 62%, var(--superficie))" }} />{t("comp.brasil")}</span>}
         <span><i style={{ background: "color-mix(in srgb, var(--roxo) 32%, var(--superficie))" }} />{t("comp.outros")}</span>
         <span><i style={{ background: "var(--graf-3)", borderRadius: 2, height: "0.2rem", width: "0.9rem" }} />{t("comp.mediaGeral")}</span>
       </div>
-      <p className="dica" style={{ marginTop: "0.6rem" }}>{t("comp.nota", { top: TOP_PAISES, n: num(geral.elegiveis), v: num(geral.voltaram_7d) })}</p>
+      <p className="dica" style={{ marginTop: "0.6rem" }}>{t("comp.nota", { top: linhas.length, n: num(geral.elegiveis), v: num(geral.voltaram_7d) })}</p>
     </div>
   );
 }
