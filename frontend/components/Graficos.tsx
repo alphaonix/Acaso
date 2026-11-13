@@ -1,4 +1,5 @@
 "use client";
+import { bandeiraDe } from "@/lib/bandeiras";
 import { useEffect, useRef, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, ErrorBar, Line, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "@/lib/api";
@@ -300,6 +301,22 @@ export function CabecalhoPagina({ eyebrow, titulo, destaque, desc }: { eyebrow: 
 
 /* ---------------- Comparacao entre paises: o pais selecionado frente aos maiores e a media geral ---------------- */
 
+/** Rotulo do eixo: posicao (ranking pela estimativa), nome e bandeira do pais; o selecionado vai em destaque. */
+function TickPais({ x, y, nome, linhas, pais }: { x: number; y: number; nome: string; linhas: { pais: string; nome: string; iso2: string | null }[]; pais: string }) {
+  const i = linhas.findIndex((l) => l.nome === nome);
+  const l = linhas[i];
+  const B = bandeiraDe(l?.iso2);
+  const sel = l?.pais === pais;
+  const cor = sel ? "var(--texto)" : "var(--texto-suave)";
+  return (
+    <g>
+      <text x={x - 192} y={y} dy={4} textAnchor="start" fontSize={11} fill="var(--texto-mudo)" style={{ fontVariantNumeric: "tabular-nums" }}>{i + 1}º</text>
+      <text x={x - 30} y={y} dy={4} textAnchor="end" fontSize={11} fontWeight={sel ? 700 : 400} fill={cor}>{nome}</text>
+      {B ? <B x={x - 24} y={y - 7} width={20} height={14} /> : null}
+    </g>
+  );
+}
+
 export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: string }) {
   const { t, idioma } = useI18n();
   const { paises } = useApp();
@@ -310,7 +327,7 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
   const lista = dados.paises.filter((p) => p.pais !== "Desconhecido");
   const sel = lista.find((p) => p.pais === pais);
   const linhas = lista.map((p) => ({
-    pais: p.pais, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi,
+    pais: p.pais, iso2: info.get(p.pais)?.iso2 ?? null, nome: nome(p.pais), taxa: p.taxa * 100, erro: [(p.taxa - p.ic_lo) * 100, (p.ic_hi - p.taxa) * 100], n: p.elegiveis, v: p.voltaram_7d, lo: p.ic_lo, hi: p.ic_hi,
   })).sort((a, b) => b.taxa - a.taxa);
   const atual = linhas.find((l) => l.pais === pais);
   const dif = atual ? atual.taxa - geral.taxa * 100 : null;
@@ -334,7 +351,8 @@ export function ComparacaoPaises({ dados, pais }: { dados: Comparacao; pais: str
           <BarChart data={linhas} layout="vertical" margin={{ left: 4, right: 28, top: 22, bottom: 4 }}>
             <CartesianGrid stroke="var(--borda)" horizontal={false} />
             <XAxis type="number" unit="%" tick={EIXO} stroke="var(--borda)" tickLine={false} domain={[0, Math.ceil((max + 2) / 5) * 5]} ticks={marcas(Math.ceil((max + 2) / 5) * 5)} />
-            <YAxis type="category" dataKey="nome" tick={EIXO} stroke="var(--borda)" tickLine={false} width={130} interval={0} />
+            <YAxis type="category" dataKey="nome" stroke="var(--borda)" tickLine={false} width={196} interval={0}
+              tick={(p: { x: number; y: number; payload: { value: string } }) => <TickPais x={p.x} y={p.y} nome={p.payload.value} linhas={linhas} pais={pais} />} />
             <Tooltip cursor={{ fill: "var(--acento-fundo)" }} content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const l = payload[0].payload;

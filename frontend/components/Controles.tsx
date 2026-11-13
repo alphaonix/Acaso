@@ -1,7 +1,7 @@
 "use client";
-import * as Flags from "country-flag-icons/react/3x2";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/contexto";
+import { bandeiraDe } from "@/lib/bandeiras";
 import { num } from "@/lib/formato";
 import { IDIOMAS, useI18n } from "@/lib/i18n";
 import { nomePais } from "@/lib/pais";
@@ -33,13 +33,10 @@ export function BotaoTema() {
   );
 }
 
-type Bandeira = React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-const BANDEIRAS = Flags as unknown as Record<string, Bandeira>;
-
 /** Bandeira em SVG (pacote country-flag-icons, sem chamada externa); sem codigo ISO, um globo. */
 function Flag({ iso2 }: { iso2: string | null }) {
-  const B = iso2 ? BANDEIRAS[iso2.toUpperCase()] : undefined;
-  if (B) return <B className="bandeira" aria-hidden />;
+  const B = bandeiraDe(iso2);
+  if (B) return <B className="bandeira" aria-hidden={true} />;
   return <svg {...ico} className="bandeira bandeira-globo" width={16} height={16}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>;
 }
 
