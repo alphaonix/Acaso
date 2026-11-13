@@ -35,11 +35,11 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 **Conclusão:** **volume não é gente.** O "uso diário" por conversas engana; por pessoas é mais estável. O retorno quase não muda sem os 10 mais ativos (−0,3 pp), então a métrica principal está protegida.
 **O que fazemos:** sugerir **"pessoas ativas" no lugar de conversas** no gráfico de uso e um **alerta de uso concentrado ou possivelmente automatizado**.
 
-## 4. Quando usam: noite e fim de semana, não expediente
+## 4. Quando usam: diurno e começo da noite, sem diferença no fim de semana
 ![quando usam](figuras/eda4_quando_usam.png)
-**O que vemos:** só **35,5%** das conversas caem de segunda a sexta, das 9h às 18h; **20,1%** são das 22h às 6h; o pico é das 18h às 20h (6,5 a 6,8% por hora). **O sábado é o dia de maior volume** (1.811 conversas) e o domingo (1.557) fica no nível de um dia útil.
-**Conclusão:** o uso parece **lazer e estudo**, não produtividade de escritório. O efeito de "noite" ou "fim de semana" sobre o retorno é inconclusivo (BDR-004: fim de semana +1,8 pp [−2,9; +6,5]).
-**O que fazemos:** sugerir uma tela **"Quando usam"** (hora × dia, no fuso do país). Para o cliente: mensagens ao usuário fora do horário comercial.
+**O que vemos:** a comparação certa é com o uso **uniforme** (igual em todas as horas da semana). O expediente (seg a sex, 9h às 18h) é 45 das 168 horas (26,8%) e tem **35,5%** das conversas: **acima** do esperado. A madrugada (22h às 6h) é 8 de 24 horas (33,3%) e tem **20,1%**: **abaixo**. O fim de semana tem **29,0%** (esperado 28,6%): **sem diferença**. O pico é das 18h às 20h (6,5 a 6,8% por hora).
+**Conclusão:** o uso é **diurno e do começo da noite**, sem deslocamento para o fim de semana. (Uma versão anterior deste texto dizia "noite e fim de semana, não expediente", lendo os 35,5% sem a base uniforme: era uma leitura errada e foi corrigida.) O efeito de "noite" ou "fim de semana" sobre o retorno é inconclusivo (BDR-004: fim de semana +1,8 pp [−2,9; +6,5]).
+**O que fazemos:** a tela **"Quando usam"** (hora × dia, no fuso do país) compara cada faixa com o esperado. Para o cliente: escolher o horário de mensagens pelo pico real do mapa.
 
 ## 5. Dispositivo: mobile e desktop voltam igual, a Apple volta menos (e pode ser a medida)
 ![dispositivo](figuras/eda5_dispositivo.png)
@@ -75,10 +75,10 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 | Sugestão | Onde | Observação |
 |---|---|---|
 | Voltou em 24 horas e a curva de retorno | **Coortes** (3 cartões e a curva) | base: 2.039 pessoas com 30 dias de janela completa, por isso o 7 dias da curva (24,0%) difere do indicador principal (23,7%) |
-| Pessoas ativas no lugar de conversas, alerta de uso concentrado | **Explorar** (concentração) e a linha "ativos" no uso diário da Visão geral | o alerta dispara quando as 10 pessoas mais ativas passam de 25% das conversas (hoje: 32,3%) |
-| Quando usam | **Explorar** (mapa de calor dia × hora, fuso do país) | 35,5% no expediente e 20,1% na madrugada |
+| Pessoas ativas no lugar de conversas, alerta de uso concentrado | **Visão geral** (bloco de concentração) e a linha "ativos" no uso diário da Visão geral | o alerta dispara quando as 10 pessoas mais ativas passam de 25% das conversas (hoje: 32,3%) |
+| Quando usam | **Visão geral** (mapa de calor dia × hora, fuso do país) | expediente 35,5% (esperado 26,8%), madrugada 20,1% (esperado 33,3%), fim de semana 29,0% (esperado 28,6%) |
 | Dispositivo e navegador, com aviso | **Explorar** | o aviso de medida (IP + navegador) vem junto do gráfico |
-| Recusa por versão do modelo | **Explorar** (tabela) e o GPT-4 por mês | 13,1% (3.5-0301) a 2,5% (3.5-0125) |
+| Recusa por versão do modelo | **Visão geral** (comparação entre modelos, com a tabela) e o GPT-4 por mês | 13,1% (3.5-0301) a 2,5% (3.5-0125) |
 | Idioma do pedido × idioma do navegador | **Explorar**, rotulado como hipótese | no painel o cruzamento usa **todos** os navegadores (3 níveis); o −8,5 pp acima é só com navegador em português |
 | Saudação e recusa dentro de cada modelo | **O que faz voltar** (tabela com intervalo) | diferença simples, sem ajuste: −10,1 e −11,9 pp (saudação), −4,7 (inclui zero) e −14,1 pp (recusa) |
 

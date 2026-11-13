@@ -26,7 +26,7 @@ Sete conclusões, cada uma com figura, intervalo e o que fazer, em [`docs/EDA.md
 
   ![modelo no tempo](figuras/eda1_modelo_no_tempo.png)
 - **O uso é raso e concentrado.** 56% das conversas têm 1 turno e 60% das pessoas têm uma só conversa; o retorno vai de 20,2% (1 turno) a **43,0% (7 ou mais)**. **20 pessoas (0,8%) fazem 39% das conversas:** volume não é gente, e retirá-las mexe só 0,3 pp no retorno.
-- **Quando e onde.** Só 35,5% das conversas caem no expediente (seg a sex, 9h às 18h): o uso é de noite e de fim de semana. Mobile e desktop voltam igual (24,0% e 23,6%); o ecossistema Apple volta menos, mas **pode ser efeito da medida** (IP e navegador), e não agimos sobre isso.
+- **Quando e onde.** O expediente (seg a sex, 9h às 18h) concentra 35,5% das conversas, acima dos 26,8% esperados se o uso fosse uniforme; a madrugada tem 20,1% (esperado 33,3%) e o fim de semana 29,0% (esperado 28,6%): o uso é diurno e do começo da noite. Mobile e desktop voltam igual (24,0% e 23,6%); o ecossistema Apple volta menos, mas **pode ser efeito da medida** (IP e navegador), e não agimos sobre isso.
 - **Idioma:** 75,7% das conversas em português e 16,1% em inglês; quem escreve em um terceiro idioma, com o navegador em português, volta menos (hipótese a verificar, a detecção de idioma erra).
 ## 4. Os três achados e a decisão de cada um
 Efeito ajustado (AIPW, comparando pessoas parecidas), em pp de retorno, IC 95%, ordenado pelo tamanho:

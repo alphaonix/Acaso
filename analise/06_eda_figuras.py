@@ -141,7 +141,7 @@ with psycopg.connect(URL) as dw, dw.cursor() as cur:
     ax.grid(False)
     fig.colorbar(im, ax=ax, label="conversas", shrink=0.8)
     exp = mat[:5, 9:18].sum() / mat.sum() * 100
-    ax.set_title(f"Só {str(round(exp, 1)).replace(chr(46), chr(44))}% das conversas caem no expediente; o resto é noite e fim de semana", pad=18)
+    ax.set_title(f"O expediente tem {str(round(exp, 1)).replace(chr(46), chr(44))}% das conversas ({str(round(45 / 168 * 100, 1)).replace(chr(46), chr(44))}% se o uso fosse uniforme)", pad=18)
     salvar(fig, "eda4_quando_usam.png")
 
     # 5. dispositivo e navegador --------------------------------------------------------------------

@@ -7,7 +7,7 @@ import { useApi } from "@/lib/api";
 import { useApp } from "@/lib/contexto";
 import { R, useI18n } from "@/lib/i18n";
 import { nomePais } from "@/lib/pais";
-import { pp } from "@/lib/formato";
+import { dec, pct, pp } from "@/lib/formato";
 import type { Efeito, Estrato, FatorNivel } from "@/lib/tipos";
 
 type Filtro = "todos" | "alavanca" | "perfil";
@@ -17,12 +17,16 @@ export default function Fatores() {
   const { t, idioma } = useI18n();
   const efeitos = useApi<Efeito[]>(`/efeitos?pais=${encodeURIComponent(pais)}`);
   const turnos = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=turnos_da_primeira_conversa`);
+  const resumo = useApi<{ elegiveis: number }>(`/retencao/resumo?pais=${encodeURIComponent(pais)}`);
   const estratos = useApi<Estrato[]>(`/retencao/estratos?pais=${encodeURIComponent(pais)}`);
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const todos = efeitos.dados ?? [];
   const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro);
   const ef = (fator: string, inicio?: string) => todos.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta"), mo = ef("Modelo"), lo = ef("Tamanho da primeira resposta");
+  // impacto = parcela de pessoas com o fator x efeito (em pp); vale so se o efeito for causal
+  const elegiveis = resumo.dados?.elegiveis ?? 0;
+  const imp = (e?: Efeito) => { if (!e || !elegiveis) return null; const k = e.n_tratados / elegiveis, g = (x: number) => `${dec(Math.abs(x) * k)} pp`; const [a, b] = [Math.abs(e.ic_lo), Math.abs(e.ic_hi)].sort((x, y) => x - y); return { sh: pct(k), imp: g(e.efeito_pp), il: g(a), ih: g(b) }; };
   const ic = (e?: Efeito) => (e ? { e: pp(e.efeito_pp), lo: pp(e.ic_lo), hi: pp(e.ic_hi) } : null);
   const dif = (fator: string, fam: string) => estratos.dados?.find((e) => e.fator === fator && e.familia === fam)?.diferenca?.pp;
   const [s35, s4, r35, r4] = [dif("saudacao", "GPT-3.5"), dif("saudacao", "GPT-4"), dif("recusa", "GPT-3.5"), dif("recusa", "GPT-4")];
@@ -58,8 +62,8 @@ export default function Fatores() {
           </Painel>
           <Painel nota="nt.achados" titulo={t("fa.achadosTitulo")} pergunta={t("fa.achadosPergunta")}>
             <ol className="achados">
-              {sa && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p>{t("fa.a1d", { ...ic(sa)! })}</p></div></li>}
-              {re && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p>{t("fa.a2d", { ...ic(re)! })}</p></div></li>}
+              {sa && imp(sa) && <li><span className="num-achado">1</span><div><b>{t("fa.a1t")}</b><p>{t("fa.a1d", { ...ic(sa)!, ...imp(sa)! })}</p></div></li>}
+              {re && imp(re) && <li><span className="num-achado">2</span><div><b>{t("fa.a2t")}</b><p>{t("fa.a2d", { ...ic(re)!, ...imp(re)! })}</p></div></li>}
               {mo && lo && <li><span className="num-achado">3</span><div><b>{t("fa.a3t")}</b><p>{t("fa.a3d", { e1: ic(mo)!.e, lo1: ic(mo)!.lo, hi1: ic(mo)!.hi, e2: ic(lo)!.e })}</p></div></li>}
               {s35 != null && s4 != null && r35 != null && r4 != null && <li><span className="num-achado">4</span><div><b>{t("fa.a4t")}</b><p>{t("fa.a4d", { s35: pp(s35), s4: pp(s4), r35: pp(r35), r4: pp(r4) })}</p></div></li>}
             </ol>

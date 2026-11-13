@@ -91,6 +91,21 @@ export function EstratosModelo({ dados }: { dados: Estrato[] }) {
 }
 
 /* ---------------- Quando usam: mapa de calor dia da semana x hora ---------------- */
+
+/** Compara cada faixa com o que se esperaria se o uso fosse igual em todas as horas da semana
+ *  (expediente seg-sex 9h-18h = 45/168 das horas; madrugada 22h-6h = 8/24; fim de semana = 2/7). */
+export function faixasHora(d: UsoHora) {
+  const soma = (f: (c: UsoHora["celulas"][number]) => boolean) => d.celulas.filter(f).reduce((a, c) => a + c.conversas, 0);
+  const tot = d.total || 1;
+  const porHora = Array.from({ length: 24 }, (_, h) => soma((c) => c.hora === h));
+  const faixa = (obs: number, esp: number) => ({ obs, esp, juizo: (obs / esp > 1.1 ? "acima" : obs / esp < 0.9 ? "abaixo" : "igual") as "acima" | "abaixo" | "igual" });
+  return {
+    exp: faixa(soma((c) => c.dia_semana <= 5 && c.hora >= 9 && c.hora < 18) / tot, 45 / 168),
+    mad: faixa(soma((c) => c.hora >= 22 || c.hora < 6) / tot, 8 / 24),
+    fim: faixa(soma((c) => c.dia_semana >= 6) / tot, 2 / 7),
+    pico: porHora.indexOf(Math.max(...porHora)),
+  };
+}
 export function MapaHora({ dados }: { dados: UsoHora }) {
   const { t } = useI18n();
   const por = new Map(dados.celulas.map((c) => [`${c.dia_semana}-${c.hora}`, c.conversas]));
@@ -118,9 +133,11 @@ export function MapaHora({ dados }: { dados: UsoHora }) {
         <span className="hora-escala" aria-hidden="true" />
         <span>{t("ex.horaMais")}</span>
       </div>
-      {dados.pct_expediente != null && dados.pct_madrugada != null && (
-        <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("ex.horaResumo", { a: pct(dados.pct_expediente), b: pct(dados.pct_madrugada) })} /> {t("ex.horaFuso", { fuso: dados.fuso })} {dados.fuso_aproximado ? t("ex.horaAprox") : ""}</p>
-      )}
+      {dados.total > 0 && (() => {
+        const f = faixasHora(dados);
+        const j = (x: { juizo: "acima" | "abaixo" | "igual" }) => t(x.juizo === "acima" ? "ex.acima" : x.juizo === "abaixo" ? "ex.abaixo" : "ex.igual");
+        return <p className="dica" style={{ marginTop: "0.6rem" }}><R texto={t("ex.horaResumo", { a: pct(f.exp.obs), ea: pct(f.exp.esp), ja: j(f.exp), b: pct(f.mad.obs), eb: pct(f.mad.esp), jb: j(f.mad), c: pct(f.fim.obs), ec: pct(f.fim.esp), jc: j(f.fim), pico: f.pico })} /> {t("ex.horaFuso", { fuso: dados.fuso })} {dados.fuso_aproximado ? t("ex.horaAprox") : ""}</p>;
+      })()}
     </div>
   );
 }

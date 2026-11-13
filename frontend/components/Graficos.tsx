@@ -231,6 +231,7 @@ export function Decomposicao({ pais }: { pais: string }) {
         const escala = Math.max(Math.abs(c.mix), Math.abs(c.taxa), Math.abs(c.interacao), Math.abs(d.delta_pp!), 1);
         const itens: [string, number][] = [[t("co.decMix"), c.mix], [t("co.decTaxa"), c.taxa], [t("co.decInter"), c.interacao]];
         const dentro = Math.abs(c.taxa) >= Math.abs(c.mix) + Math.abs(c.interacao);
+        const mostraRet = d.niveis!.some((n) => (n.n_de ?? 0) >= 30 || (n.n_para ?? 0) >= 30);   // perfis com menos de 30 pessoas nao mostram retorno
         return (
           <>
             <div className="dec-controles">
@@ -259,15 +260,17 @@ export function Decomposicao({ pais }: { pais: string }) {
               <p className="dec-detalhe-titulo">{t("co.decNiveis")}</p>
               <div className="tabela-rolagem">
               <table className="tabela tabela-compacta">
-                <thead><tr><th>{t("co.decPerfil")}</th><th className="num">{t("co.decPeso", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decPeso", { m: mesAno(d.para!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.para!) })}</th></tr></thead>
+                <thead><tr><th>{t("co.decPerfil")}</th><th className="num">{t("co.decPeso", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decPeso", { m: mesAno(d.para!) })}</th>{mostraRet && <><th className="num">{t("co.decRet", { m: mesAno(d.de!) })}</th><th className="num">{t("co.decRet", { m: mesAno(d.para!) })}</th></>}</tr></thead>
                 <tbody>
                   {d.niveis!.map((n) => (
                     <tr key={n.nivel}><td>{tNivel(n.nivel, idioma)}</td><td className="num">{pct(n.peso_de)}</td><td className="num">{pct(n.peso_para)}</td>
-                      <td className="num">{n.n_de ? <>{pct(n.taxa_de)}<small className="n-menor">n={num(n.n_de)}</small></> : "—"}</td><td className="num">{n.n_para ? <>{pct(n.taxa_para)}<small className="n-menor">n={num(n.n_para)}</small></> : "—"}</td></tr>
+                      {mostraRet && <><td className="num">{(n.n_de ?? 0) >= 30 ? <>{pct(n.taxa_de)}<small className="n-menor">n={num(n.n_de)}</small></> : <small className="n-menor" title={t("co.decPequenoDica")}>{t("co.decPequeno")}</small>}</td><td className="num">{(n.n_para ?? 0) >= 30 ? <>{pct(n.taxa_para)}<small className="n-menor">n={num(n.n_para)}</small></> : <small className="n-menor" title={t("co.decPequenoDica")}>{t("co.decPequeno")}</small>}</td></>}
+                    </tr>
                   ))}
                 </tbody>
               </table>
               </div>
+              <p className="dica" style={{ marginTop: "0.4rem" }}>{t(mostraRet ? "co.decPequenoNota" : "co.decNenhum")}</p>
             </div>
           </>
         );
