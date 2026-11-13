@@ -117,10 +117,7 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; backg
 .nav a[aria-current="page"] { background: var(--roxo); color: var(--branco); }
 .acoes { margin-left: auto; display: flex; align-items: center; gap: 0.55rem; }
 .seletor { position: relative; display: flex; align-items: center; }
-.seletor > svg { position: absolute; left: 0.7rem; color: var(--texto-mudo); pointer-events: none; }
-.seletor select { font: inherit; font-size: 0.88rem; -webkit-appearance: none; appearance: none; padding: 0.46rem 2rem 0.46rem 2.1rem; max-width: 190px; text-overflow: ellipsis; border: 1px solid var(--borda); border-radius: 999px; color: var(--texto); cursor: pointer;
-  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238d8d9b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.8rem center; }
-.seletor select:hover { border-color: var(--acento-borda); }
+.seletor-btn { max-width: 200px; }
 .seg { display: inline-flex; padding: 2px; border: 1px solid var(--borda); border-radius: 999px; background: var(--superficie-2); }
 .seg button { font: inherit; font-size: 0.76rem; font-weight: 700; border: 0; background: transparent; color: var(--texto-suave); padding: 0.3rem 0.6rem; border-radius: 999px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--roxo); color: var(--branco); }
@@ -214,7 +211,7 @@ details > summary { cursor: pointer; font-weight: 600; color: var(--acento-texto
   .topo-int { flex-wrap: wrap; gap: 0.6rem 1rem; }
   .nav { order: 3; width: 100%; overflow-x: auto; border-radius: 14px; scrollbar-width: none; }
   .nav::-webkit-scrollbar { display: none; }
-  .seletor select { max-width: 160px; }
+  .seletor-btn { max-width: 160px; }
 }
 @media (max-width: 860px) {
   .login { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
@@ -233,7 +230,7 @@ details > summary { cursor: pointer; font-weight: 600; color: var(--acento-texto
 }
 @media (max-width: 560px) {
   .acoes { gap: 0.4rem; width: 100%; justify-content: flex-end; }
-  .seletor select { max-width: 130px; }
+  .seletor-btn { max-width: 130px; }
 }
 
 
@@ -442,6 +439,16 @@ body { background-image: var(--hero); background-attachment: fixed; }
 .dec-detalhe-titulo { font-weight: 700; color: var(--acento-texto); margin: 0 0 0.4rem; }
 .avatar { padding: 0; overflow: hidden; }
 .avatar-foto { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
-.seletor select { color: transparent; max-width: none; }
-.seletor option { color: var(--texto); background: var(--superficie); }
-.seletor-nome { position: absolute; left: 2.1rem; right: 2rem; font-size: 0.88rem; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+
+.seletor-btn { display: inline-flex; align-items: center; gap: 0.5rem; font: inherit; font-size: 0.88rem; padding: 0.46rem 0.8rem; border: 1px solid var(--borda); border-radius: 999px; background: var(--superficie); color: var(--texto); cursor: pointer; }
+.seletor-btn:hover { border-color: var(--acento-borda); }
+.seletor-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seletor-seta { color: var(--texto-mudo); flex: none; }
+.bandeira { width: 20px; height: 15px; border-radius: 2px; flex: none; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,0.12); }
+.bandeira-globo { box-shadow: none; color: var(--texto-mudo); }
+.seletor-lista { position: absolute; left: 0; top: 44px; z-index: 40; width: 320px; max-width: 86vw; max-height: 360px; overflow-y: auto; margin: 0; padding: 0.3rem; list-style: none; background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; box-shadow: var(--sombra-forte); outline: none; }
+.seletor-op { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.88rem; cursor: pointer; }
+.seletor-op.ativo { background: var(--acento-fundo); color: var(--acento-texto); }
+.seletor-op.atual .seletor-op-nome { font-weight: 700; }
+.seletor-op-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seletor-op-n { color: var(--texto-mudo); font-variant-numeric: tabular-nums; font-size: 0.8rem; }

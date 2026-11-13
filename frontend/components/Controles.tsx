@@ -1,4 +1,5 @@
 "use client";
+import * as Flags from "country-flag-icons/react/3x2";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/contexto";
 import { num } from "@/lib/formato";
@@ -32,24 +33,76 @@ export function BotaoTema() {
   );
 }
 
+type Bandeira = React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+const BANDEIRAS = Flags as unknown as Record<string, Bandeira>;
+
+/** Bandeira em SVG (pacote country-flag-icons, sem chamada externa); sem codigo ISO, um globo. */
+function Flag({ iso2 }: { iso2: string | null }) {
+  const B = iso2 ? BANDEIRAS[iso2.toUpperCase()] : undefined;
+  if (B) return <B className="bandeira" aria-hidden />;
+  return <svg {...ico} className="bandeira bandeira-globo" width={16} height={16}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>;
+}
+
+/** Lista propria (listbox acessivel): a bandeira aparece no campo e em cada pais; fechada mostra so o nome, aberta traz os usuarios. */
 export function SeletorPais() {
   const { paises, pais, setPais } = useApp();
   const { t, idioma } = useI18n();
+  const [aberto, setAberto] = useState(false);
+  const [ativo, setAtivo] = useState(0);
+  const raiz = useRef<HTMLDivElement>(null);
+  const lista = useRef<HTMLUListElement>(null);
+  const nome = (p: (typeof paises)[number]) => nomePais(p, idioma, t("pais.desconhecido"));
   const atual = paises.find((p) => p.pais === pais);
-  const nome = atual ? nomePais(atual, idioma, t("pais.desconhecido")) : "";
-  // O campo fechado mostra so o nome do pais (rotulo por cima, select com texto transparente); a lista aberta traz os usuarios de cada um.
+
+  const abrir = () => { setAtivo(Math.max(0, paises.findIndex((p) => p.pais === pais))); setAberto(true); };
+  const escolher = (i: number) => { if (paises[i]) setPais(paises[i].pais); setAberto(false); raiz.current?.querySelector("button")?.focus(); };
+
+  useEffect(() => {
+    if (!aberto) return;
+    lista.current?.focus();
+    const fora = (e: MouseEvent) => { if (!raiz.current?.contains(e.target as Node)) setAberto(false); };
+    document.addEventListener("mousedown", fora);
+    return () => document.removeEventListener("mousedown", fora);
+  }, [aberto]);
+  useEffect(() => { if (aberto) lista.current?.children[ativo]?.scrollIntoView({ block: "nearest" }); }, [aberto, ativo]);
+
+  const tecla = (e: React.KeyboardEvent) => {
+    const n = paises.length;
+    if (e.key === "ArrowDown") { e.preventDefault(); setAtivo((a) => Math.min(n - 1, a + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setAtivo((a) => Math.max(0, a - 1)); }
+    else if (e.key === "Home") { e.preventDefault(); setAtivo(0); }
+    else if (e.key === "End") { e.preventDefault(); setAtivo(n - 1); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); escolher(ativo); }
+    else if (e.key === "Escape" || e.key === "Tab") { setAberto(false); raiz.current?.querySelector("button")?.focus(); }
+    else if (e.key.length === 1) {                       // digitar a inicial salta para o primeiro pais com ela
+      const k = e.key.toLowerCase();
+      const i = paises.findIndex((p, idx) => idx > ativo && nome(p).toLowerCase().startsWith(k));
+      const j = i >= 0 ? i : paises.findIndex((p) => nome(p).toLowerCase().startsWith(k));
+      if (j >= 0) setAtivo(j);
+    }
+  };
+
   return (
-    <label className="seletor" title={t("topo.pais")}>
-      <span className="sr-only">{t("topo.pais")}</span>
-      <svg {...ico} width={16} height={16}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
-      <select value={pais} onChange={(e) => setPais(e.target.value)} style={{ width: `calc(${nome.length}ch + 5.2rem)` }}>
-        {paises.map((p) => <option key={p.pais} value={p.pais}>{nomePais(p, idioma, t("pais.desconhecido"))} · {num(p.usuarios)} {t("topo.usuarios")}</option>)}
-      </select>
-      <span className="seletor-nome" aria-hidden="true">{nome}</span>
-    </label>
+    <div className="seletor" ref={raiz}>
+      <button type="button" className="seletor-btn" title={t("topo.pais")} aria-label={`${t("topo.pais")}: ${atual ? nome(atual) : ""}`}
+        aria-haspopup="listbox" aria-expanded={aberto} onClick={() => (aberto ? setAberto(false) : abrir())}>
+        <Flag iso2={atual?.iso2 ?? null} />
+        <span className="seletor-nome">{atual ? nome(atual) : ""}</span>
+        <svg {...ico} width={12} height={12} strokeWidth={3} className="seletor-seta"><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+      {aberto && (
+        <ul className="seletor-lista" role="listbox" tabIndex={-1} ref={lista} aria-label={t("topo.pais")} aria-activedescendant={`pais-op-${ativo}`} onKeyDown={tecla}>
+          {paises.map((p, i) => (
+            <li key={p.pais} id={`pais-op-${i}`} role="option" aria-selected={p.pais === pais} className={`seletor-op${i === ativo ? " ativo" : ""}${p.pais === pais ? " atual" : ""}`}
+              onMouseEnter={() => setAtivo(i)} onClick={() => escolher(i)}>
+              <Flag iso2={p.iso2} /><span className="seletor-op-nome">{nome(p)}</span><span className="seletor-op-n">{num(p.usuarios)} {t("topo.usuarios")}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
-
 export function MenuUsuario({ onSair }: { onSair: () => void }) {
   const { usuario } = useApp();
   const { t } = useI18n();
