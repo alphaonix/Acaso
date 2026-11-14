@@ -212,6 +212,8 @@ Mais importante: **rode o recálculo independente** (seção 9), que refaz a Sil
 
 **Código:** [`etl/camadas/gold/`](../etl/camadas/gold/) (comandos em [`sql.py`](../etl/camadas/gold/sql.py)). Tudo em SQL, lendo só a Silver. É a **única** camada que a API enxerga.
 **Regra comum:** taxa e margem de erro (intervalo de Wilson, 95%) só aparecem com **30 ou mais pessoas** (`AMOSTRA_MINIMA`); abaixo disso ficam `NULL` e a tela avisa.
+**Onde a taxa e a margem de erro são calculadas:** só `agg_retorno_semana` e `agg_retorno_fator` guardam a taxa e o intervalo já prontos. As demais tabelas (por exemplo `agg_recusa_modelo`, `agg_estrato`, `agg_curva_retorno`, `agg_concentracao`) guardam **só contagens**; a taxa e o intervalo de Wilson (com a mesma regra de 30 pessoas) são calculados **na API** (`backend/app/main.py`, função `_com_taxa`, que usa as mesmas funções SQL `gold.wilson_lo/hi`). A tela só formata.
+
 **Por que Wilson:** é estável com poucas pessoas e com taxas perto de 0% ou 100%, onde a aproximação normal falha. Está em `gold.wilson_lo` e `gold.wilson_hi` (migração 001).
 **Limite geral:** Wilson supõe que cada pessoa é independente; como a "pessoa" é aproximada, as margens de erro podem ser otimistas.
 

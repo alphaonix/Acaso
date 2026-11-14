@@ -12,7 +12,7 @@
 | Arquivo | O que faz |
 |---|---|
 | [`limpar.py`](limpar.py) | esvazia as tabelas da gold |
-| [`sql.py`](sql.py) | os comandos SQL, um por tabela (a margem de erro é o intervalo de Wilson, `gold.wilson_lo/hi`) |
+| [`sql.py`](sql.py) | os comandos SQL, um por tabela. Só `agg_retorno_semana` e `agg_retorno_fator` já guardam taxa e margem de erro (intervalo de Wilson, `gold.wilson_lo/hi`); as outras guardam contagens e a API calcula a taxa |
 | [`construir.py`](construir.py) | executa os comandos na ordem e grava o catálogo de indicadores (`CATALOGO`, em `comum/definicoes.py`) |
 | [`efeitos.py`](efeitos.py) | compara pessoas parecidas (AIPW, validação cruzada em 5 partes, E-value) e grava `gold.efeito_fator` (só Brasil, 16 efeitos) |
 | [`auditoria.py`](auditoria.py) | completa o funil por país com os números da gold |
