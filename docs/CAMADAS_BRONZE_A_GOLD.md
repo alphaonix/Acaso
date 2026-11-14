@@ -5,7 +5,7 @@ Este documento é para **ler o código e conferir os números**, camada por cama
 
 > Complementa [`COMO_FUNCIONA.md`](COMO_FUNCIONA.md) (que acompanha **uma pessoa** passo a passo) e [`VALIDACAO.md`](VALIDACAO.md)
 > (consultas para conferir no DBeaver e no Power BI). Aqui o foco é a **lógica das transformações** e a **conciliação de ponta a ponta**.
-> Conexão para as consultas: DBeaver em `localhost:5433`, banco `retencao`, usuário `etl`, senha `etl`.
+> Conexão para as consultas: DBeaver em `localhost:5433`, banco `retencao`, usuário `auditor`, senha `auditor` (somente leitura).
 
 ## Sumário
 1. [Mapa do fluxo e dos arquivos](#1-mapa-do-fluxo-e-dos-arquivos)

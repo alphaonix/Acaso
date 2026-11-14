@@ -50,7 +50,7 @@ docker compose --profile test run --rm --build testes-api     # 29 testes da dec
 Cobrem cada regra de borda da definição (sessão de 30 min, janela de 7 dias, elegibilidade, limpeza, tema, recusa) e **reproduzem o incidente** do PDF; detalhes e a prova por mutação em [`docs/TESTES.md`](docs/TESTES.md).
 A sensibilidade das premissas (reproduzível) está em [`docs/SENSIBILIDADE.md`](docs/SENSIBILIDADE.md): `python analise/05_sensibilidade_definicoes.py` com o compose ativo.
 
-## Explorar as camadas (DBeaver: `localhost:5433`, banco `retencao`, usuário `etl`, senha `etl`)
+## Explorar as camadas (DBeaver: `localhost:5433`, banco `retencao`, usuário `auditor`, senha `auditor` (somente leitura))
 `bronze.wildchat` é UMA tabela com o WildChat-1M inteiro, como veio (todos os países; as linhas do Brasil trazem o texto das conversas em `conversation`, JSON, e `arquivo_origem` diz de qual arquivo da semente cada linha veio).
 `silver.fato_conversa` e `silver.fato_usuario` são derivadas dela, sem texto. `gold.*` é o que a tela lê.
 Para ver uma linha do bruto virar silver: `SELECT * FROM bronze.wildchat WHERE country = 'Brazil' LIMIT 20;` e depois `SELECT * FROM silver.fato_conversa WHERE conversation_hash = '<hash>';`.

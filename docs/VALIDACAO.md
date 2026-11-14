@@ -35,7 +35,7 @@ Preencha a coluna "Bateu?" e anote divergências no log no fim. Isso alimenta o 
 diferentes. "Contagem" de coluna booleana conta linhas, não verdadeiros. Soma de tamanho não é métrica; usar média/mediana.
 Por isso cada indicador do dashboard declara unidade, fórmula e denominador (ver BDR-002).
 
-## Rodada 4: conferir a carga no DBeaver (conexão `localhost:5433`, banco `retencao`, usuário `etl`)
+## Rodada 4: conferir a carga no DBeaver (conexão `localhost:5433`, banco `retencao`, usuário `auditor`, somente leitura)
 O ETL já confere sozinho 14 itens (`ops.qa_resultado`), mas a validação independente é sua. Rode cada consulta e compare:
 
 | # | Consulta | Esperado |

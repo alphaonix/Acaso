@@ -1,7 +1,7 @@
 # Como o dado vira o número da tela (passo a passo, com conferência)
 
 Leia na ordem. Cada etapa tem: **a regra em uma frase**, **uma consulta para você conferir no DBeaver** (`localhost:5433`, banco
-`retencao`, usuário `etl`) e **o resultado esperado** (números do Brasil, salvo quando dito). Nada aqui pede confiança: tudo se confere.
+`retencao`, usuário `auditor`, somente leitura) e **o resultado esperado** (números do Brasil, salvo quando dito). Nada aqui pede confiança: tudo se confere.
 As mesmas conferências rodam sozinhas a cada carga (64 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
 
 ```
