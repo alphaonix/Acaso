@@ -23,3 +23,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# sementes adulteradas geradas pela simulacao de cenarios (reproduziveis; nao versionar)
+data/cenarios/

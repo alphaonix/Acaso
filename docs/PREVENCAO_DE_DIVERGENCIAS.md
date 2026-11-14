@@ -43,8 +43,8 @@ e o que ainda **não** está coberto.
    | **BRONZE** | o dado de entrada mudou de padrão: linhas do país (±30%), endereços distintos por linha (±20%), linhas sem endereço, sem horário ou sem navegador (±5 p.p.) | problema da fonte, **não do ETL**: confira os arquivos de origem antes de mexer no código |
    | **SILVER** | entrada normal, mas a limpeza descartou outra proporção (±5 p.p.), as pessoas por conversa mudaram (±20%) ou a proporção de elegíveis mudou (±10 p.p.) | `etl/camadas/silver/sql.py` e `auditoria.registro_excluido` |
    | **SEM CAUSA TÉCNICA** | todo o funil estável e a taxa mudou | pode ser mudança real de comportamento: confirme com a fonte |
-   O diagnóstico mostra o funil inteiro (antes → agora) com `!!` nas etapas que mudaram, e fica em `auditoria.anomalia`. É **alerta** (a carga é publicada com status `alerta`), não bloqueio. Para ver funcionando sem tocar no banco: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia --simular Brazil bronze` (também `silver`, `gold` e `transformacao`).
-8. **Testes automáticos e CI.** 158 testes (109 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
+   O diagnóstico mostra o funil inteiro (antes → agora) com `!!` nas etapas que mudaram, e fica em `auditoria.anomalia`. Há dois tipos: **TAXA** (a taxa saltou) e **ENTRADA** (a taxa quase não mexeu, mas o dado de entrada mudou de padrão: por exemplo, 60% das linhas sem endereço encolhem o país inteiro sem mudar a taxa; só olhar a taxa deixaria passar). É **alerta** (a carga é publicada com status `alerta`), não bloqueio. Para ver funcionando sem tocar no banco: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia --simular Brazil bronze` (também `silver`, `gold` e `transformacao`).
+8. **Testes automáticos e CI.** 160 testes (111 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
 
 ## 3. O que cada proteção pega (cenários)
 | O que pode dar errado | Quem pega | Verificado? |
@@ -58,11 +58,25 @@ e o que ainda **não** está coberto.
 | Alguém edita a silver ou a gold por fora (DBeaver, script solto) | trava de escrita: o comando é recusado | **demonstrado** com o usuário `etl`: "Camada protegida: UPDATE em gold.pais só é permitido ao ETL" |
 | Alguém desliga a trava (dono do banco) e altera 1 pessoa da silver | verificação de integridade: impressão digital e `voltaram_7d[Brazil]` (530 → 531) | **demonstrado**: a verificação manual acusou 7 conferências; a carga seguinte registrou o alerta (`alerta`), reconstruiu e a verificação voltou a 61 de 61 |
 | Camada com linhas a mais ou a menos por fora | contagem e impressão digital (integridade) + bronze = silver + excluídas | teste automático (linha apagada, acrescentada, trocada) |
-| A taxa de um país salta (25% → 97%) depois de uma carga | anomalia: z-test contra a carga anterior + funil por camada | teste automático das 5 origens e **demonstrado** com defeitos plantados na memória em cada camada (a origem certa foi apontada nas 4) |
+| A taxa de um país salta (25% → 97%) depois de uma carga | anomalia: z-test contra a carga anterior + funil por camada | teste automático das 5 origens e **simulação ponta a ponta** (`simular-cenarios`): semente adulterada e defeitos plantados no código de cada camada, num banco descartável; a origem certa foi apontada nos 4 cenários (veja a tabela abaixo) |
 | Resultado diferente a cada execução | deriva com a mesma semente | duas cargas seguidas: 0 mudanças |
 | Efeito estatístico mudou | impressão da `gold.efeito_fator` e medida `efeitos_brasil` | por deriva |
 | Carga que falha no meio | transação única: rollback | demonstrado, dados intactos |
 | Código quebrado chega ao GitHub | CI | **ainda não executado** |
+
+### Simulação ponta a ponta do detector de anomalia
+```bash
+docker compose --profile operacao run --rm simular-cenarios      # cerca de 12 minutos; usa o banco descartável retencao_cenarios, nunca o real
+```
+Para cada cenário roda uma carga normal (referência) e uma com defeito (sem derrubar a carga, para ver também o portão). A semente oficial não é tocada; as sementes adulteradas ficam em `data/cenarios/` (fora do git). Resultado na última execução:
+| Cenário | Defeito plantado | Taxa do Brasil | Origem apontada | Conferências do portão que também falharam |
+|---|---|---|---|---|
+| bronze | semente nova com 60% das conversas do Brasil sem endereço | 23,7% → 22,5% (quase igual!) | **BRONZE** (tipo ENTRADA) | 10 |
+| silver | semente saudável + regra de elegibilidade errada na silver | 23,7% → 61,8% | **SILVER** | 8 |
+| gold | semente saudável + agregação da gold triplica os que voltaram | 23,7% → 71,2% | **GOLD** | 5 |
+| transformação | mesma semente oficial + regra de elegibilidade errada | 23,7% → 61,8% | **TRANSFORMAÇÃO** | 4 |
+
+A primeira execução errou o cenário **bronze** (não apontou nada, porque a taxa quase não mudou). A simulação encontrou a falha do detector; ele ganhou o tipo ENTRADA e passou nos 4.
 
 ## 4. Como investigar quando um número parecer errado
 Conexão: DBeaver em `localhost:5433`, banco `retencao`, usuário `auditor` (somente leitura, senha padrão `auditor` no ambiente local).

@@ -137,7 +137,7 @@ Esta correção **já está implementada e testada** neste projeto: `etl/camadas
 4. **Pós-incidente sem culpados** (linha do tempo, causa, o que detectou, o que atrasou).
 
 **Para não voltar a acontecer** (as quatro camadas do item 4.1):
-- **Teste que reproduz o incidente** (já escrito, `etl/tests/test_incidente.py`) e testes de contrato dos parâmetros da definição (gap 30 min, janela 7 dias, lavagem 30 dias). 158 testes em `docs/TESTES.md`.
+- **Teste que reproduz o incidente** (já escrito, `etl/tests/test_incidente.py`) e testes de contrato dos parâmetros da definição (gap 30 min, janela 7 dias, lavagem 30 dias). 160 testes em `docs/TESTES.md`.
 - **Reconciliação automática:** toda semana, calcular o retorno também por uma definição simples e estável (IP, como o relatório do time) direto da bruta e comparar com o dashboard.
   Alerta se a diferença passar de ~5 pontos ou se `novos` variar mais de 30% de uma semana para outra.
 - **Indicadores de saúde da identidade** no monitoramento: razão `usuario_id distintos ÷ hashed_ip distintos` por dia (na nossa base é 1,06 com a definição adotada e sobe para 1,21 se o user-agent bruto entrar na identidade; alerta acima de ~1,3) e a lista de user-agents novos.

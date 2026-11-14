@@ -62,6 +62,19 @@ def test_origem_bronze_quando_a_fonte_mudou_de_padrao():
     assert any(s.camada == "bronze" and s.suspeito and "sem endereco" in s.etapa for s in a.sinais)
 
 
+def test_entrada_mudou_de_padrao_mesmo_sem_a_taxa_mudar():
+    """Achado da simulacao de cenarios: 60% das linhas sem endereco encolhem o pais todo (2.000 -> 800 elegiveis), mas a taxa fica em ~25%.
+    Olhar so a taxa deixaria passar; o detector aponta a entrada."""
+    a = _origem(medidas(nulos_ip=6000, ips=1500, conv=4000, pessoas=1200, eleg=800, volt=200))     # 25% -> 25%
+    assert a.tipo == "ENTRADA" and a.origem == "BRONZE" and abs(a.taxa_atual - a.taxa_ref) < 0.001
+    assert any(s.camada == "bronze" and s.suspeito and "sem endereco" in s.etapa for s in a.sinais)
+    assert "DADO DE ENTRADA MUDOU DE PADRAO" in "\n".join(anomalia.relatorio(a))
+
+
+def test_taxa_estavel_com_entrada_estavel_nao_alerta():
+    assert anomalia.detectar(medidas(eleg=1900, volt=475), REF, False) == []      # menos elegiveis e a taxa igual, mas a entrada nao mudou de padrao
+
+
 def test_origem_silver_quando_a_entrada_e_normal_e_a_limpeza_muda():
     """Bronze igual; a silver passa a descartar 40% das conversas: o defeito esta na limpeza."""
     a = _origem(medidas(conv=6000, pessoas=1800, eleg=700, volt=500))
