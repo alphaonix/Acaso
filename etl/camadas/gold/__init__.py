@@ -8,8 +8,9 @@ Arquivos desta pasta:  limpar.py  sql.py  construir.py  efeitos.py  auditoria.py
 """
 from .auditoria import auditar_gold
 from .construir import construir_gold
+from .diagnosticar import diagnosticar_gold
 from .efeitos import construir_efeitos
 from .limpar import limpar_gold
 from .validar import validar_gold
 
-__all__ = ["construir_gold", "construir_efeitos", "auditar_gold", "validar_gold", "limpar_gold"]
+__all__ = ["construir_gold", "construir_efeitos", "auditar_gold", "diagnosticar_gold", "validar_gold", "limpar_gold"]

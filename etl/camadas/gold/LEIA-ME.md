@@ -17,6 +17,7 @@
 | [`efeitos.py`](efeitos.py) | compara pessoas parecidas (AIPW, validação cruzada em 5 partes, E-value) e grava `gold.efeito_fator` (só Brasil, 16 efeitos) |
 | [`auditoria.py`](auditoria.py) | completa o funil por país com os números da gold |
 | [`validar.py`](validar.py) | 27 conferências (veja abaixo) |
+| [`diagnosticar.py`](diagnosticar.py) | linhas e "impressão digital" de cada tabela da gold, mais os números de negócio do Brasil, para a detecção de deriva |
 | [`__init__.py`](__init__.py) | expõe `construir_gold`, `construir_efeitos`, `auditar_gold`, `validar_gold` |
 
 ## Validações (`validar.py`)

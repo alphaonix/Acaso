@@ -3,9 +3,10 @@
 A receita esta na funcao `carga` (leia-a de cima para baixo):
 
   preparar   migra o banco, cria as contas de acesso e abre o registro da execucao
-  BRONZE     construir_bronze  ->  validar_bronze          (o dado como veio, vindo dos arquivos da semente)
-  SILVER     construir_silver  ->  auditar_silver  ->  validar_silver   (limpeza, pessoa, visitas, retorno, elegibilidade)
-  GOLD       construir_gold  ->  construir_efeitos  ->  auditar_gold  ->  validar_gold   (resumos que a tela le)
+  BRONZE     construir_bronze  ->  validar_bronze  ->  medir    (o dado como veio; confere o contrato da semente antes)
+  SILVER     construir_silver  ->  auditar_silver  ->  validar_silver  ->  medir   (limpeza, pessoa, visitas, retorno, elegibilidade)
+  GOLD       construir_gold  ->  construir_efeitos  ->  auditar_gold  ->  validar_gold  ->  medir   (resumos que a tela le)
+  "medir"    grava as medidas da camada no historico e compara com a carga anterior (deriva: numeros que mudaram sem a semente mudar)
   publicar   COMMIT (ou ROLLBACK, se alguma validacao falhar)
 
 As tres camadas sao reconstruidas por inteiro em UMA transacao: a API nunca ve um estado pela metade, e se qualquer validacao
@@ -20,10 +21,11 @@ from pathlib import Path
 import duckdb
 
 from camadas import bronze, gold, silver
-from comum import acesso, banco, qualidade
+from comum import acesso, banco, deriva, diagnostico, qualidade
 
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
-ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"
+ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"           # conferencia falhou: desfaz a carga
+DERIVA_ESTRITA = os.environ.get("DERIVA_ESTRITA", "0") == "1"   # deriva (numeros mudaram sem a semente mudar): alerta; com 1, tambem desfaz
 VERSAO = os.environ.get("CODE_VERSION", "dev")
 
 
@@ -38,8 +40,18 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
         print(f"[qa] {'OK ' if r.passou else 'FALHOU'} [{r.transicao}] {r.verificacao}: esperado {r.esperado}, obtido {r.obtido}", flush=True)
     falhas = [r for r in resultados if not r.passou]
     alertas.extend(falhas)
-    if falhas and ESTRITO:
-        raise PortaoFalhou(f"{len(falhas)} verificacao(oes) da camada {camada} falharam")
+    graves = [r for r in falhas if r.transicao != "deriva" or DERIVA_ESTRITA]      # deriva so derruba a carga se DERIVA_ESTRITA=1
+    if graves and ESTRITO:
+        raise PortaoFalhou(f"{len(graves)} verificacao(oes) da camada {camada} falharam")
+
+
+def medir(ops, exec_id: int, camada: str, metricas: list) -> list[qualidade.Resultado]:
+    """Grava as medidas da camada no historico (auditoria.metrica) e compara com a carga anterior (deriva)."""
+    diagnostico.gravar_metricas(ops, exec_id, metricas)
+    resultado, linhas = deriva.comparar(ops, exec_id, camada)
+    for linha in linhas:
+        print(linha, flush=True)
+    return [resultado]
 
 
 def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
@@ -51,7 +63,7 @@ def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
     for arquivo, n in bronze.construir_bronze(ops, dw, con, exec_id, SEMENTE).items():
         print(f"[bronze] {arquivo}: {n} linhas carregadas em {bronze.TABELA}", flush=True)
     estado["bronze_s"] = time.time() - t0
-    conferir(ops, exec_id, "bronze", bronze.validar_bronze(dw, exec_id), alertas)
+    conferir(ops, exec_id, "bronze", bronze.validar_bronze(dw, exec_id) + medir(ops, exec_id, "bronze", bronze.diagnosticar_bronze(dw)), alertas)
 
     print("== SILVER: limpeza, pessoa, visitas, retorno, elegibilidade ==", flush=True)
     t1 = time.time()
@@ -62,13 +74,13 @@ def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
           f"(bronze {estado['bronze_s']:.0f}s, silver {time.time() - t1:.0f}s)", flush=True)
     aud = silver.auditar_silver(dw, exec_id)
     print(f"[auditoria] {aud['excluidas']} linhas excluidas registradas; {aud['exemplos_antes_depois']} exemplos antes/depois", flush=True)
-    conferir(ops, exec_id, "silver", silver.validar_silver(dw, exec_id), alertas)
+    conferir(ops, exec_id, "silver", silver.validar_silver(dw, exec_id) + medir(ops, exec_id, "silver", silver.diagnosticar_silver(dw)), alertas)
 
     print("== GOLD: resumos que a tela le ==", flush=True)
     gold.construir_gold(dw)
     print(f"[estimar] {gold.construir_efeitos(dw)} efeitos gravados em gold.efeito_fator", flush=True)
     gold.auditar_gold(dw, exec_id)
-    conferir(ops, exec_id, "gold", gold.validar_gold(dw, exec_id), alertas)
+    conferir(ops, exec_id, "gold", gold.validar_gold(dw, exec_id) + medir(ops, exec_id, "gold", gold.diagnosticar_gold(dw)), alertas)
     return alertas
 
 

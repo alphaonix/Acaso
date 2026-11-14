@@ -3,8 +3,15 @@
   silver_interna a silver e coerente; o retorno, a elegibilidade e a 1a vez sao RECALCULADOS a partir das conversas
   validados      os numeros principais do Brasil continuam iguais aos que conferi a mao (Power BI e DBeaver; docs/VALIDACAO.md)
 Cada linha: (grupo, o que confere, valor esperado, SQL que devolve um unico valor). Se algo diferir, a carga e desfeita."""
+import os
+
 from comum.definicoes import GAP_SESSAO_MIN, JANELA_RETORNO_DIAS, LAVAGEM_DIAS
 from comum.qualidade import Resultado, executar
+
+from .recalculo_independente import divergencias
+
+# Paises do recalculo independente (pandas, a partir da bronze). Padrao: so o Brasil (rapido e leve). RECALCULO_PAISES=todos confere os 202.
+_PAISES = os.environ.get("RECALCULO_PAISES", "Brazil")
 
 # Recalculo do retorno: parte so das conversas (silver.fato_conversa), numera as sessoes de novo e compara com o que a
 # silver guardou em fato_usuario. Qualquer divergencia em voltou_7d, elegivel ou primeira vez derruba a carga.
@@ -61,5 +68,17 @@ VERIFICACOES = [
 ]
 
 
+def _independente(dw) -> list[tuple]:
+    """Recalculo independente (Python) a partir da bronze, comparado pessoa a pessoa com a silver. Cada item e uma conferencia (esperado 0)."""
+    paises = None if _PAISES.strip().lower() == "todos" else [p.strip() for p in _PAISES.split(",")]
+    r = divergencias(dw, paises)
+    escopo = "todos os paises" if paises is None else ", ".join(paises)
+    nomes = {"pessoas_em_um_lado_so": "pessoas que existem so no recalculo ou so na silver", "voltou_7d": "divergencias em voltou_7d",
+             "voltou_24h": "divergencias em voltou_24h", "elegivel": "divergencias em elegivel",
+             "primeira_vez": "divergencias na primeira vez", "convs_total": "divergencias no total de conversas"}
+    return [("silver_independente", f"Recalculo independente em Python a partir da bronze ({escopo}): {nome}", "0", lambda dw, k=k: r[k])
+            for k, nome in nomes.items()]
+
+
 def validar_silver(dw, execucao_id: int) -> list[Resultado]:
-    return executar(dw, VERIFICACOES, execucao_id)
+    return executar(dw, VERIFICACOES + _independente(dw), execucao_id)

@@ -63,6 +63,7 @@ services:
       MIGRATIONS_DIR: /migrations
     volumes:
       - ./db/migrations:/migrations:ro
+      - ./data/seed:/data/seed:ro      # o teste do contrato confere a semente real do repositorio
     command: ["python", "-m", "pytest", "-q", "tests"]
 
   testes-api:                # decomposicao mix x taxa (funcao pura)

@@ -1,6 +1,6 @@
 -- "Audite um usuario": mostra, conversa a conversa, como a silver chegou em sessao, voltou_7d e elegivel para UM usuario.
 -- Uso:  SELECT * FROM auditoria.audite_usuario('00a3cf656f92');
--- Os limites (30 min de sessao e 7 dias de janela) sao os mesmos de etl/comum/definicoes.py; horarios no fuso do pais.
+-- Os limites (30 min de sessao e 7 dias de janela) sao os mesmos de etl/pipeline/definicoes.py; horarios no fuso do pais.
 CREATE OR REPLACE FUNCTION auditoria.audite_usuario(p_usuario text)
 RETURNS TABLE (n int, pais text, inicio_local timestamp, fim_local timestamp, min_desde_fim_anterior int, sessao int,
                dias_desde_a_primeira numeric, dentro_da_janela_7d boolean, voltou_7d_silver boolean, elegivel_silver boolean)

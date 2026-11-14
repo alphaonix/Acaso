@@ -4,6 +4,9 @@ e comparacao com o que ficou na silver. Mesmas regras de negocio (30 min, 7 dias
 Rode com o compose ativo (a silver ja carregada), a partir da raiz do projeto (PowerShell):
   docker compose run --rm --no-deps -v "${PWD}\analise\08_recalculo_independente.py:/tmp/r.py:ro" etl python /tmp/r.py
 Esperado: "pessoas so no Python: 0 | so na silver: 0" e zero divergencias em voltou_7d, voltou_24h, elegivel, primeira_vez e convs_total.
+Sai com codigo 1 se houver qualquer divergencia (usado pelo CI do GitHub).
+Este script le os ARQUIVOS da semente e nao importa nada de etl/: e a terceira verificacao, a mais independente
+(1: SQL da silver; 2: silver/validar.py recalcula as visitas; 3: recalculo em Python a partir da bronze; este: a partir dos arquivos).
 Leva cerca de 10 segundos e nao grava nada no banco."""
 import os, hashlib, re, time
 import duckdb, pandas as pd, numpy as np, psycopg
@@ -59,6 +62,8 @@ print("[comparacao] divergencias em voltou_7d:", int((both.voltou7 != both.volto
       "| primeira_vez:", int((both.primeira != both.primeira_s).sum()),
       "| convs_total:", int((both.n != both.n_s).sum()))
 print("[comparacao] pessoas comparadas:", len(both))
+total_div = int((m["_merge"] != "both").sum() + (both.voltou7 != both.voltou7_s).sum() + (both.voltou24 != both.voltou24_s).sum()
+                + (both.elegivel != both.elegivel_s).sum() + (both.primeira != both.primeira_s).sum() + (both.n != both.n_s).sum())
 
 # semana de 13/11/2023 no Brasil (fuso de Sao Paulo), como na tela
 b = br.copy()
@@ -66,3 +71,6 @@ loc = b["primeira"].dt.tz_convert("America/Sao_Paulo")
 b["semana"] = (loc - pd.to_timedelta(loc.dt.weekday, unit="D")).dt.normalize().dt.date.astype(str)
 w = b[b.semana == "2023-11-13"]
 print(f"[python] semana 2023-11-13 Brasil: novos={len(w)} elegiveis={int(w.elegivel.sum())} voltaram={int((w.elegivel & w.voltou7).sum())}")
+
+print(f"[resultado] {'OK: nenhuma divergencia' if total_div == 0 else 'FALHOU: ' + str(total_div) + ' divergencias'}")
+raise SystemExit(0 if total_div == 0 else 1)

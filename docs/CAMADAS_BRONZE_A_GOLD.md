@@ -282,7 +282,7 @@ SELECT round(((SELECT 100.0*v/n FROM r WHERE recusa) - (SELECT 100.0*v/n FROM r 
 
 **`silver/auditoria.py` e `gold/auditoria.py`** gravam, a cada carga, em `auditoria.*` (a da silver logo depois de construir a silver; a da gold completa o funil por país com os números da gold): linhas por camada, **cada linha excluída com o motivo** (`registro_excluido`), valores vazios antes e depois, exemplos "antes e depois" e o funil por país. Não guarda texto nem endereço.
 
-As **53 conferências** ficam em cada camada (`bronze/validar.py` 5, `silver/validar.py` 21, `gold/validar.py` 27) e rodam **logo depois de cada camada ser construída**, dentro da transação; `comum/qualidade.py` só executa e grava. Se uma falhar, a carga para ali e desfaz tudo (não espera as camadas seguintes). Seis grupos:
+As **62 conferências** ficam em cada camada (`bronze/validar.py` 5, `silver/validar.py` 27 contando o recálculo independente, `gold/validar.py` 27, mais 1 de deriva por camada) e rodam **logo depois de cada camada ser construída**, dentro da transação; `comum/qualidade.py` só executa e grava. Se uma falhar, a carga para ali e desfaz tudo (não espera as camadas seguintes). Seis grupos:
 
 | Grupo | O que protege | Exemplo |
 |---|---|---|
@@ -326,7 +326,7 @@ As **53 conferências** ficam em cada camada (`bronze/validar.py` 5, `silver/val
 | 18–19 | Gold curva (30 dias) · Silver `janela_30d` | iguais | 164.829 · 164.829 |
 | 20 | Gold fator modelo: elegíveis | 174.629 | 174.629 |
 | 21–22 | Gold `modelo_mes` · `uso_hora`: conversas | 837.972 | 837.972 |
-| 23–25 | Conferências da última carga | 53 de 53 · status `ok` | 53 de 53 · `ok` |
+| 23–25 | Conferências da última carga | todas · status `ok` | 62 de 62 · `ok` (na hora da conferência eram 53; depois entraram o recálculo independente e a deriva) |
 
 ### 9.2 Recálculo independente (`analise/08_recalculo_independente.py`)
 O script lê **os arquivos da semente**, reimplementa as regras em Python/pandas (sem usar nenhum SQL do pipeline) e compara com a Silver **pessoa por pessoa**.

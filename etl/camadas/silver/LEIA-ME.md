@@ -15,7 +15,9 @@
 | [`sql.py`](sql.py) | os comandos SQL, um por passo (veja abaixo) |
 | [`construir.py`](construir.py) | executa os passos na ordem; devolve estatísticas (lidas, excluídas...) |
 | [`auditoria.py`](auditoria.py) | grava no schema `auditoria` cada linha excluída (com o motivo), vazios antes e depois, exemplos antes/depois e o funil por país |
-| [`validar.py`](validar.py) | 21 conferências (veja abaixo) |
+| [`validar.py`](validar.py) | 27 conferências (veja abaixo) |
+| [`recalculo_independente.py`](recalculo_independente.py) | refaz pessoa, visitas, retorno e elegibilidade **em Python, a partir da bronze**, e compara pessoa por pessoa com a silver |
+| [`diagnosticar.py`](diagnosticar.py) | medidas da camada, com "impressão digital" de todas as pessoas e conversas, para a detecção de deriva |
 | [`__init__.py`](__init__.py) | expõe `construir_silver`, `auditar_silver`, `validar_silver` |
 
 As regras (30 minutos de visita, 7 dias, 30 dias de lavagem, palavras de tema e recusa) ficam em [`../../comum/definicoes.py`](../../comum/definicoes.py).
@@ -33,6 +35,7 @@ As regras (30 minutos de visita, 7 dias, 30 dias de lavagem, palavras de tema e 
 ## Validações (`validar.py`)
 - **bronze_silver (3):** bronze = silver + excluídas; toda conversa aponta para uma linha da bronze; país nulo = "Desconhecido" + excluídas.
 - **silver_interna (8):** soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez **recalculados** a partir das conversas = os da silver; "voltou em 24 h" implica "voltou em 7 dias".
+- **silver_independente (6):** o recálculo em Python, a partir da bronze, bate com a silver (por padrão no Brasil; `RECALCULO_PAISES=todos` confere todos os países).
 - **validados (10):** os números do Brasil continuam iguais aos que conferi à mão (11.621 conversas, 2.530 pessoas, 2.234 elegíveis, 23,72%, 911 recusas, os 11 temas…).
 
 ## Para conferir no DBeaver

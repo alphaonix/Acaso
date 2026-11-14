@@ -11,10 +11,12 @@
 ## Arquivos, na ordem em que rodam
 | Arquivo | O que faz |
 |---|---|
+| [`contrato.py`](contrato.py) | antes de tudo: confere se os Parquet têm as colunas e os tipos esperados; se não, a carga para com uma mensagem clara |
 | [`registrar_lotes.py`](registrar_lotes.py) | para cada arquivo: calcula o sha256 (impressão digital), conta as linhas e grava em `ops.bronze_lote` |
 | [`limpar.py`](limpar.py) | esvazia `bronze.wildchat` (dentro da transação: se a carga falhar, os dados antigos voltam) |
 | [`carregar.py`](carregar.py) | o DuckDB lê o Parquet, as estruturas aninhadas viram JSON, vai para um CSV temporário e entra no Postgres com `COPY` |
 | [`validar.py`](validar.py) | 5 conferências: a bronze bate com os arquivos |
+| [`diagnosticar.py`](diagnosticar.py) | medidas da camada (linhas por arquivo e país, vazios, período), gravadas em `auditoria.metrica` para comparar com a carga anterior |
 | [`__init__.py`](__init__.py) | `construir_bronze()` junta os três primeiros passos; `validar_bronze()` roda as conferências |
 
 A **tabela** é criada pelas migrações (`db/migrations/004_bronze.sql` e `005_bronze_tabela_unica.sql`), não por estes arquivos.

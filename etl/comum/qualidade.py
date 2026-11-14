@@ -14,12 +14,16 @@ class Resultado:
 
 
 def executar(dw, verificacoes: list[tuple], execucao_id: int) -> list[Resultado]:
-    """Roda cada (grupo, descricao, esperado, sql) e compara o valor unico devolvido com o esperado."""
+    """Roda cada (grupo, descricao, esperado, sql) e compara o valor unico devolvido com o esperado.
+    Em vez do SQL pode vir uma funcao `f(dw)` que devolve o valor (usado pelo recalculo independente, feito em Python)."""
     resultados = []
     with dw.cursor() as cur:
         for transicao, descricao, esperado, sql in verificacoes:
-            cur.execute(sql, {"exec": execucao_id})
-            obtido = str(cur.fetchone()[0])
+            if callable(sql):
+                obtido = str(sql(dw))
+            else:
+                cur.execute(sql, {"exec": execucao_id})
+                obtido = str(cur.fetchone()[0])
             resultados.append(Resultado(transicao, descricao, esperado, obtido, obtido == esperado))
     return resultados
 

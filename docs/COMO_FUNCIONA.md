@@ -2,7 +2,7 @@
 
 Leia na ordem. Cada etapa tem: **a regra em uma frase**, **uma consulta para você conferir no DBeaver** (`localhost:5433`, banco
 `retencao`, usuário `etl`) e **o resultado esperado** (números do Brasil, salvo quando dito). Nada aqui pede confiança: tudo se confere.
-As mesmas conferências rodam sozinhas a cada carga (53 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
+As mesmas conferências rodam sozinhas a cada carga (62 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
 
 ```
 arquivos (semente)  →  BRONZE (cópia)  →  SILVER (limpa, 1 linha por conversa e por usuário)  →  GOLD (resumos)  →  tela
@@ -90,20 +90,22 @@ Resumos prontos por país, semana e fator (`gold.agg_retorno_semana`, `gold.agg_
 (`gold.efeito_fator`). A gold tem as mesmas 837.972 conversas da silver, só agrupadas. Cada taxa vem com intervalo de confiança de
 95% (Wilson) e é escondida quando a amostra é menor que 30.
 
-## 12. As 53 conferências do portão (transição → o que protege)
+## 12. As 62 conferências do portão (transição → o que protege)
 | transição | n | exemplo |
 |---|---|---|
 | bronze_arquivos | 5 | linhas da bronze = linhas dos arquivos de origem |
 | bronze_silver | 3 | bronze = silver + excluídas |
 | silver_interna | 8 | soma das conversas por usuário = conversas; **retorno, elegibilidade e primeira vez recalculados a partir das conversas = os da silver**; voltou em 24 h implica voltou em 7 dias |
-| silver_gold | 21 | a gold soma o que a silver tem (inclui curva de retorno, concentração, uso por hora, modelo por mês, estratos e dispositivo) |
+| silver_independente | 6 | **recálculo em Python a partir da bronze** (outro código, outra linguagem) bate com a silver, pessoa por pessoa |
+| silver_gold | 24 | a gold soma o que a silver tem (inclui curva de retorno, concentração, uso por hora, modelo por mês, estratos e dispositivo) |
 | efeitos | 3 | intervalo contém a estimativa; nenhum grupo com menos de 30 |
 | validados | 10 | números do Brasil conferidos à mão (Power BI e DBeaver) |
+| deriva | 3 | **sem mudar a semente, os números da camada não mudam** em relação à carga anterior (uma por camada) |
 
-O recálculo da linha `silver_interna` parte só das conversas e refaz as sessões, então não repete a conta da silver. Hoje ele dá **0
-divergências nos 197.319 usuários**. Ele confirma que a implementação segue a regra; se a regra em si está certa, o passo 9 deixa você
-conferir à mão.
-
+O recálculo da linha `silver_interna` parte só das conversas e refaz as sessões. O da linha `silver_independente` parte da **bronze** e refaz
+também o código da pessoa, o navegador e o início, em Python. Hoje os dois dão **0 divergências**. Eles confirmam que a implementação segue a
+regra; se a regra em si está certa, o passo 9 deixa você conferir à mão. A estratégia completa de prevenção está em
+[`PREVENCAO_DE_DIVERGENCIAS.md`](PREVENCAO_DE_DIVERGENCIAS.md).
 ## 13. Limites a declarar
 - Usuário = IP + navegador/sistema é uma aproximação (o BDR-001 mostra o impacto de cada alternativa).
 - Fuso único por país: aproximado para países com mais de um fuso (a tela avisa).

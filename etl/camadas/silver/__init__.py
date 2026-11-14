@@ -7,7 +7,8 @@ Arquivos desta pasta:  limpar.py  sql.py  construir.py  auditoria.py  validar.py
 """
 from .auditoria import auditar_silver
 from .construir import construir_silver
+from .diagnosticar import diagnosticar_silver
 from .limpar import limpar_silver
 from .validar import validar_silver
 
-__all__ = ["construir_silver", "auditar_silver", "validar_silver", "limpar_silver"]
+__all__ = ["construir_silver", "auditar_silver", "diagnosticar_silver", "validar_silver", "limpar_silver"]

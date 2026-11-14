@@ -1,0 +1,34 @@
+# Integracao continua: toda mudanca (push ou pull request) roda os testes e a carga completa com o portao de qualidade.
+# Sem verde, nao se faz merge (configure a protecao do branch `main` exigindo os dois jobs).
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    name: Testes automaticos (ETL e API)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testes do ETL (banco descartavel, inclui contrato da semente e prevencao de divergencias)
+        run: docker compose --profile test run --rm --build testes-etl
+      - name: Testes da API
+        run: docker compose --profile test run --rm --build testes-api
+
+  carga-completa:
+    name: Carga completa (ETL com portao de qualidade, API e tela)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sobe tudo (o build do frontend ja confere os tipos do TypeScript)
+        run: docker compose up --build -d
+      - name: A ultima carga do ETL tem de estar com status ok
+        run: |
+          curl -fsS http://localhost:8000/api/saude | tee saude.json
+          python3 -c "import json; d = json.load(open('saude.json')); assert d['ultima_execucao_etl']['status'] == 'ok', d"
+      - name: Recalculo independente a partir dos arquivos da semente (0 divergencias)
+        run: docker compose run --rm --no-deps -v "$PWD/analise/08_recalculo_independente.py:/tmp/r.py:ro" etl python /tmp/r.py
+      - name: Mostra o log do ETL se algo falhar
+        if: failure()
+        run: docker compose logs etl | tail -n 120
