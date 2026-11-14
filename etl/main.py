@@ -21,6 +21,7 @@ from pathlib import Path
 import duckdb
 
 from camadas import bronze, gold, silver
+import verificacao
 from comum import acesso, banco, deriva, diagnostico, qualidade
 
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
@@ -40,7 +41,8 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
         print(f"[qa] {'OK ' if r.passou else 'FALHOU'} [{r.transicao}] {r.verificacao}: esperado {r.esperado}, obtido {r.obtido}", flush=True)
     falhas = [r for r in resultados if not r.passou]
     alertas.extend(falhas)
-    graves = [r for r in falhas if r.transicao != "deriva" or DERIVA_ESTRITA]      # deriva so derruba a carga se DERIVA_ESTRITA=1
+    # deriva so derruba a carga se DERIVA_ESTRITA=1; integridade (alguem mexeu fora do ETL) e so alerta: a carga reconstroi tudo e cura o dado
+    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
     if graves and ESTRITO:
         raise PortaoFalhou(f"{len(graves)} verificacao(oes) da camada {camada} falharam")
 
@@ -57,6 +59,10 @@ def medir(ops, exec_id: int, camada: str, metricas: list) -> list[qualidade.Resu
 def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
     """Constroi e valida as tres camadas, nesta ordem. Devolve as validacoes que falharam (vazio = tudo certo)."""
     alertas: list = []
+
+    print("== INTEGRIDADE: o que esta publicado e igual ao que a ultima carga deixou? ==", flush=True)
+    conferir(ops, exec_id, "integridade", verificacao.estado_publicado(ops, dw, exec_id), alertas)   # ANTES de reconstruir: depois nao haveria o que comparar
+    dw.execute("SET LOCAL etl.carga = 'on'")      # so a partir daqui as camadas podem ser escritas (trava da migracao 025); vale ate o COMMIT/ROLLBACK
 
     print("== BRONZE: o dado como veio ==", flush=True)
     t0 = time.time()
@@ -88,6 +94,7 @@ def main() -> int:
     ops = banco.conectar(autocommit=True)       # historico (execucao, lotes, conferencias): vale na hora, sobrevive a uma carga que falhe
     banco.migrar(ops)
     acesso.garantir_conta_avaliacao(ops)
+    ops.execute("SELECT auditoria.proteger_camadas()")      # liga a trava de escrita nas tabelas das camadas (so cria onde falta)
     exec_id = banco.abrir_execucao(ops, VERSAO)
     dw = None
     estado: dict = {}

@@ -31,6 +31,8 @@ jobs:
         run: docker compose run --rm --no-deps -v "$PWD/analise/08_recalculo_independente.py:/tmp/r.py:ro" etl python /tmp/r.py
       - name: API x Gold (a API devolve o que a gold tem) e conciliacao entre camadas
         run: docker compose --profile test run --rm testes-integracao
+      - name: Integridade (as camadas estao como a carga deixou e a trava de escrita esta ligada)
+        run: docker compose --profile operacao run --rm verificar-integridade
       - name: Mostra o log do ETL se algo falhar
         if: failure()
         run: docker compose logs etl | tail -n 120

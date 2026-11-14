@@ -12,11 +12,12 @@ e o que ainda **não** está coberto.
 | **Silver** | cada linha excluída e o motivo; vazios antes e depois; exemplos antes/depois; funil por país; pessoas, elegíveis e retornos por país; temas; navegadores; **impressão digital** de todas as pessoas e conversas | `auditoria.registro_excluido`, `nulos`, `antes_depois`, `fluxo_pais`, `metrica` | `silver/validar.py` (8 + 3 + 10) e o **recálculo independente** (6) |
 | **Gold** | linhas e **impressão digital** de cada uma das 14 tabelas; números de negócio do Brasil; efeitos | `auditoria.metrica` | `gold/validar.py` (27) |
 | **Entre cargas** | o que mudou em relação à carga anterior | `auditoria.mudancas_entre_cargas` | **deriva** (1 por camada) |
+| **Depois da carga** | se alguém alterou bronze, silver ou gold por fora do ETL | `auditoria.verificacao` | **trava de escrita** (barra) e **verificação de integridade** (percebe) |
 | **Cada execução** | início, fim, status, versão do código, resultado de cada conferência | `ops.etl_execucao`, `ops.qa_resultado` | o painel do portão |
 
 "Impressão digital" é uma soma de hashes das linhas: se **uma única** pessoa, conversa ou linha de resumo mudar, a impressão muda.
 
-## 2. As seis proteções, da entrada à saída
+## 2. As sete proteções, da entrada à saída
 1. **Contrato da semente** (`camadas/bronze/contrato.py`). Antes de carregar, confere as colunas e os tipos dos dois Parquet. Coluna a menos, tipo trocado, coluna nova ou arquivo ausente: a carga **para** com uma mensagem clara, em vez de quebrar no meio ou carregar números errados.
 2. **Conferências de conservação em cada camada.** "A soma de baixo é a de cima": bronze = silver + excluídas, soma das conversas por pessoa = conversas, cada resumo da gold = o que a silver tem. São 62 por carga (`camadas/*/validar.py`).
 3. **Números validados à mão.** Os 10 números principais do Brasil (11.621 conversas, 2.530 pessoas, 2.234 elegíveis, 23,72%…) estão escritos no código; se uma regra mudar, eles quebram.
@@ -28,7 +29,12 @@ e o que ainda **não** está coberto.
    - **mesma semente** (mesmos sha256): os números têm de ser **iguais**; qualquer diferença quer dizer que uma regra, um parâmetro ou o código mudou, ou que o resultado não é reprodutível;
    - **semente nova**: só se aponta variação maior que 20%.
    Por padrão a deriva gera **alerta** (a carga é publicada e o status fica `alerta`); com `DERIVA_ESTRITA=1` ela desfaz a carga. Na carga seguinte a comparação parte da que gerou o alerta, então o alerta aparece uma vez por mudança.
-6. **Testes automáticos e CI.** 128 testes (79 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
+6. **Trava de escrita e verificação de integridade** (migração `025`, `etl/verificacao.py`). As conferências acima só olham **no momento da carga**. E se alguém mexer na silver ou na gold **depois**?
+   - **Barra:** `UPDATE`, `INSERT`, `DELETE` e `TRUNCATE` em qualquer tabela de bronze, silver e gold são **recusados** fora da carga (a carga avisa com `SET LOCAL etl.carga = 'on'`, que vale só até o fim da transação). O erro diz: "Camada protegida… só é permitido ao ETL". A trava é instalada em toda tabela das camadas, inclusive as criadas no futuro.
+   - **Percebe:** a verificação mede de novo as 3 camadas (1.332 medidas, com a impressão digital de **todas** as linhas) e compara com o que a última carga gravou. Linha alterada, apagada ou **a mais**, em qualquer camada, muda a impressão digital. Confere também se a trava continua ligada.
+   - **Quando roda:** no início de **toda carga**, antes de reconstruir (a carga cura a alteração, mas o alerta fica: status `alerta`), e quando você quiser: `docker compose --profile operacao run --rm verificar-integridade` (refaz também as conferências de conservação no banco vivo e sai com erro se algo divergir). Cada verificação fica em `auditoria.verificacao`.
+   - **Acesso de consulta:** use o usuário `auditor` (somente leitura) no DBeaver, em vez de `etl`.
+7. **Testes automáticos e CI.** 139 testes (90 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
 
 ## 3. O que cada proteção pega (cenários)
 | O que pode dar errado | Quem pega | Verificado? |
@@ -39,13 +45,16 @@ e o que ainda **não** está coberto.
 | Bug na derivação (navegador, código da pessoa, início) | recálculo independente e testes | teste automático com erro plantado (voltou_7d, elegivel, voltou_24h) |
 | Bug no agrupamento da gold | conferências de conservação (silver_gold) | 24 conferências por carga |
 | A API devolve número diferente da gold (conta de taxa, filtro, ordem) | teste de integração API × gold | **demonstrado**: 1 número da gold alterado, 5 testes quebraram |
+| Alguém edita a silver ou a gold por fora (DBeaver, script solto) | trava de escrita: o comando é recusado | **demonstrado** com o usuário `etl`: "Camada protegida: UPDATE em gold.pais só é permitido ao ETL" |
+| Alguém desliga a trava (dono do banco) e altera 1 pessoa da silver | verificação de integridade: impressão digital e `voltaram_7d[Brazil]` (530 → 531) | **demonstrado**: a verificação manual acusou 7 conferências; a carga seguinte registrou o alerta (`alerta`), reconstruiu e a verificação voltou a 61 de 61 |
+| Camada com linhas a mais ou a menos por fora | contagem e impressão digital (integridade) + bronze = silver + excluídas | teste automático (linha apagada, acrescentada, trocada) |
 | Resultado diferente a cada execução | deriva com a mesma semente | duas cargas seguidas: 0 mudanças |
 | Efeito estatístico mudou | impressão da `gold.efeito_fator` e medida `efeitos_brasil` | por deriva |
 | Carga que falha no meio | transação única: rollback | demonstrado, dados intactos |
 | Código quebrado chega ao GitHub | CI | **ainda não executado** |
 
 ## 4. Como investigar quando um número parecer errado
-Conexão: DBeaver em `localhost:5433`, banco `retencao`, usuário `etl`.
+Conexão: DBeaver em `localhost:5433`, banco `retencao`, usuário `auditor` (somente leitura, senha padrão `auditor` no ambiente local).
 ```sql
 -- 1) O que mudou entre as duas últimas cargas? (vazio = nada)
 SELECT * FROM auditoria.mudancas_entre_cargas ORDER BY camada, metrica, escopo;
@@ -68,6 +77,12 @@ SELECT motivo, count(*) FROM auditoria.registro_excluido GROUP BY 1;
 -- 6) Uma pessoa, passo a passo
 SELECT * FROM auditoria.audite_usuario('1cb966329f48');
 ```
+```sql
+-- 7) Alguém alterou as camadas depois da carga? (histórico das verificações; divergencias > 0 = sim)
+SELECT id, feita_em, origem, carga_verificada, conferencias, divergencias, detalhe FROM auditoria.verificacao ORDER BY id DESC;
+-- 8) A trava de escrita está ligada em todas as tabelas? (protegida = false é alerta)
+SELECT * FROM auditoria.protecao_camadas ORDER BY 1, 2;
+```
 E, por fora do banco, o recálculo a partir dos arquivos (sai com erro se houver qualquer divergência):
 ```bash
 docker compose run --rm --no-deps -v "${PWD}\analise\08_recalculo_independente.py:/tmp/r.py:ro" etl python /tmp/r.py
@@ -82,6 +97,8 @@ docker compose run --rm --no-deps -v "${PWD}\analise\08_recalculo_independente.p
 
 ## 6. Limites declarados (o que ainda não está coberto)
 - **Parâmetro errado em ambos os lados:** o recálculo independente usa os mesmos parâmetros de `comum/definicoes.py` (30 min, 7 dias, 30 dias). Ele confirma que o **código** segue a regra, não que a **regra** é boa. Quem pega um parâmetro alterado são os números validados e a deriva.
+- **Quem é dono do banco pode desligar a trava:** ela barra o acidente. Quem desliga de propósito é pego pela verificação, mas só quando ela roda (a cada carga ou sob demanda); nada a executa sozinha entre cargas, nem avisa por e-mail. Alterar `auditoria.metrica` junto com a tabela esconderia a mudança: em produção, só o ETL deve ter permissão de escrita (papel `auditor` para consulta; na AWS, IAM e papéis separados).
+- **Migração que altera dado de camada** precisa de `SET LOCAL etl.carga = 'on'`, senão a trava a recusa depois da primeira carga.
 - **Tela × API:** a API × gold é testada automaticamente (`backend/tests/test_api_x_gold.py`, 401 conferências em 6 países, não nos 202), mas **não há teste automático do que a tela desenha**: o painel só mostra o que a API devolve, e isso foi conferido à mão.
 - **Números validados à mão:** precisam ser atualizados por uma pessoa, depois de conferir, quando uma definição muda de propósito.
 - **Deriva por padrão só alerta:** `DERIVA_ESTRITA=1` a torna bloqueante (decisão de quem opera).

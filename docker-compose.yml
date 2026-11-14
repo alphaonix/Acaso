@@ -52,6 +52,15 @@ services:
     ports:
       - "3000:3000"
 
+  verificar-integridade:     # confere sob demanda se bronze/silver/gold ainda estao como a ultima carga deixou (sai com erro se nao)
+    profiles: ["operacao"]
+    build: ./etl
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-etl}:${POSTGRES_PASSWORD:-etl}@db:5432/${POSTGRES_DB:-retencao}
+    command: ["python", "verificacao.py"]
+
   # ---- testes automatizados (nao sobem com `docker compose up`; rode com o perfil "test") ----
   testes-etl:                # definicoes (sessao, retorno, elegibilidade, tema, recusa), limpeza e gold, num banco descartavel
     profiles: ["test"]
