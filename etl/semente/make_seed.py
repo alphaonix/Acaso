@@ -4,12 +4,12 @@
   data/seed/wildchat_outros_paises.parquet  demais paises, so metadados (SEM texto) + primeira_resposta_ts  ~35 MB
 
 Por que existe: o repositorio precisa subir com `docker compose up` sem baixar 3 GB nem rodar Python a mao
-(ver docs/adr/ADR-002). Rode so quando quiser regenerar a semente:  python etl/make_seed.py
+(ver docs/adr/ADR-002). Rode so quando quiser regenerar a semente:  python etl/semente/make_seed.py
 """
 from pathlib import Path
 import duckdb
 
-RAIZ = Path(__file__).resolve().parents[1]
+RAIZ = Path(__file__).resolve().parents[2]   # raiz do projeto (este arquivo fica em etl/semente/)
 BRUTO = RAIZ / "data" / "raw" / "wildchat_todos.parquet"
 SEMENTE = RAIZ / "data" / "seed"
 SEMENTE.mkdir(parents=True, exist_ok=True)

@@ -5,18 +5,21 @@ O pais vira um filtro no dashboard e na analise (country), entao nada e descarta
 Uso:
     pip install huggingface_hub pyarrow
     huggingface-cli login        # cole um token (Settings > Access Tokens)
-    python etl/download_full.py
+    python etl/semente/download_full.py
 
 Antes: abra https://huggingface.co/datasets/allenai/WildChat-1M e aceite os termos, se pedir.
 Cada arquivo e baixado, copiado para a saida e apagado, entao o disco nao enche (a saida
 final tem alguns GB).
 """
 import os
+from pathlib import Path
+
 import pyarrow.parquet as pq
 from huggingface_hub import HfApi, hf_hub_download
 
 REPO = "allenai/WildChat-1M"
-SAIDA = r"C:\Users\wande\Desktop\Acaso\data\raw\wildchat_todos.parquet"
+SAIDA = str(Path(__file__).resolve().parents[2] / "data" / "raw" / "wildchat_todos.parquet")   # raiz do projeto/data/raw
+os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
 
 api = HfApi()
 arquivos = sorted(f for f in api.list_repo_files(REPO, repo_type="dataset") if f.endswith(".parquet"))

@@ -68,8 +68,8 @@ Os textos que vêm do banco (nomes de indicadores, fatores e conferências) são
 | Pasta | Conteúdo |
 |---|---|
 | `data/seed/` | Semente da base bruta (Brasil completo, com texto + demais países só com metadados), gerada da base completa |
-| `data/raw/` | Base bruta completa (3 GB), **fora do Git**; origem da semente (`etl/download_full.py`, `etl/make_seed.py`) |
-| `etl/` | Carga bruta → analítica em camadas (`main.py`, `pipeline/`), estimativa dos efeitos, portão de qualidade e `tests/` |
+| `data/raw/` | Base bruta completa (3 GB), **fora do Git**; origem da semente (`etl/semente/download_full.py`, `etl/semente/make_seed.py`) |
+| `etl/` | Carga em camadas: `main.py` (a receita), `camadas/bronze`, `camadas/silver` e `camadas/gold` (cada uma com construir, validar e um `LEIA-ME.md`), `comum/` (banco, contas, regras), `semente/` e `tests/`. Comece por [`etl/LEIA-ME.md`](etl/LEIA-ME.md) |
 | `db/migrations/` | Esquema da base analítica (bronze, silver, gold, ops, auditoria) e papel somente leitura da API |
 | `backend/` | API FastAPI (lê só a gold e o `ops`) e `tests/` |
 | `frontend/` | Dashboard Next.js (React, Recharts), PT/EN, tema claro e escuro |

@@ -132,7 +132,7 @@ def calcular(dw) -> list[tuple]:
     return [l for l in linhas if l is not None]
 
 
-def estimar(dw) -> int:
+def construir_efeitos(dw) -> int:
     """Calcula e grava gold.efeito_fator (dentro da transacao `dw`). Devolve o numero de efeitos."""
     linhas = calcular(dw)
     with dw.cursor() as cur:

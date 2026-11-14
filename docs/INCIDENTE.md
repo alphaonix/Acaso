@@ -126,7 +126,7 @@ const { rows } = await db.query(
   [inicio, fim, pais],
 );
 ```
-Esta correção **já está implementada e testada** neste projeto: `etl/pipeline/silver.py` (identidade, sessão, retorno, elegibilidade) e `etl/tests/test_incidente.py`
+Esta correção **já está implementada e testada** neste projeto: `etl/camadas/silver/ (construir.py e sql.py)` (identidade, sessão, retorno, elegibilidade) e `etl/tests/test_incidente.py`
 (o teste dourado: atualizar o navegador não cria outro usuário e a "primeira vez" é o início da conversa, em fuso do país).
 
 ## 4. O que mais fazer além de corrigir, e como evitar a recorrência

@@ -17,8 +17,8 @@ Brasil completo 22,2 MB; outros países sem texto 35,3 MB (826.368 linhas, inclu
 caracteres de texto por conversa seriam 190 MB (não cabe). Total 11.621 + 826.368 = 837.989, igual à base.
 
 ## Decisão
-Opção 3. `etl/make_seed.py` gera `data/seed/*.parquet` a partir da base completa (`data/raw/`, fora do Git).
-`docker compose up` lê a semente. O download completo continua disponível em `etl/download_full.py`.
+Opção 3. `etl/semente/make_seed.py` gera `data/seed/*.parquet` a partir da base completa (`data/raw/`, fora do Git).
+`docker compose up` lê a semente. O download completo continua disponível em `etl/semente/download_full.py`.
 
 ## Consequências
 - Países além do Brasil não têm tema, recusa nem tamanhos (sem texto): a tela diz "indisponível".

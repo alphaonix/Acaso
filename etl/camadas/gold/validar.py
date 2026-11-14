@@ -1,0 +1,65 @@
+"""Conferencias da GOLD, em dois grupos:
+  silver_gold  a tela mostra o que a silver tem (as somas da gold batem com as da silver)
+  efeitos      os efeitos estimados sao coerentes (intervalo contem a estimativa, nenhum grupo com menos de 30 pessoas)
+Cada linha: (grupo, o que confere, valor esperado, SQL que devolve um unico valor). Se algo diferir, a carga e desfeita."""
+from comum.qualidade import Resultado, executar
+
+VERIFICACOES = [
+    ("silver_gold", "Gold = silver: elegiveis por semana somam os elegiveis (Brasil)", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_retorno_semana WHERE pais = 'Brazil') - (SELECT count(*) FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel)"),
+    ("silver_gold", "Usuarios por pais: gold.pais = silver.fato_usuario", "0",
+     "SELECT count(*) FROM (SELECT pais, count(*) AS n FROM silver.fato_usuario GROUP BY pais) s FULL JOIN gold.pais g USING (pais) WHERE s.n IS DISTINCT FROM g.usuarios"),
+    ("silver_gold", "Conversas por pais: gold.pais = silver.fato_conversa", "0",
+     "SELECT count(*) FROM (SELECT pais, count(*) AS n FROM silver.fato_conversa GROUP BY pais) s FULL JOIN gold.pais g USING (pais) WHERE s.n IS DISTINCT FROM g.conversas"),
+    ("silver_gold", "Novos por semana (gold) somam os usuarios da silver, todos os paises", "0",
+     "SELECT (SELECT sum(novos) FROM gold.agg_retorno_semana) - (SELECT count(*) FROM silver.fato_usuario)"),
+    ("silver_gold", "Fator modelo: elegiveis somam os elegiveis da silver, todos os paises", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_retorno_fator WHERE fator = 'modelo') - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel)"),
+    ("silver_gold", "Uso diario (gold): conversas por dia somam as conversas da silver, todos os paises", "0",
+     "SELECT (SELECT sum(conversas) FROM gold.agg_uso_dia) - (SELECT count(*) FROM silver.fato_conversa)"),
+    ("silver_gold", "Retorno mensal por fator (modelo): elegiveis somam os elegiveis da silver, todos os paises", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_retorno_mes_fator WHERE fator = 'modelo') - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel)"),
+    ("silver_gold", "Retorno por semana (gold): elegiveis somam os elegiveis da silver, todos os paises", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_retorno_semana) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel)"),
+    ("silver_gold", "Curva de retorno: usuarios do ponto final = usuarios com janela de 30 dias na silver, todos os paises", "0",
+     "SELECT (SELECT sum(usuarios) FROM gold.agg_curva_retorno WHERE dias = 30) - (SELECT count(*) FROM silver.fato_usuario WHERE janela_30d)"),
+    ("silver_gold", "Curva de retorno: nunca decresce com os dias (pontos fora de ordem)", "0",
+     "SELECT count(*) FROM gold.agg_curva_retorno a JOIN gold.agg_curva_retorno b ON a.pais = b.pais AND b.dias > a.dias AND b.voltaram < a.voltaram"),
+    ("silver_gold", "Curva em 7 dias = retorno em 7 dias da silver entre quem tem janela de 30 dias (diferenca de usuarios)", "0",
+     "SELECT (SELECT sum(voltaram) FROM gold.agg_curva_retorno WHERE dias = 7) - (SELECT count(*) FROM silver.fato_usuario WHERE janela_30d AND voltou_7d)"),
+    ("silver_gold", "Concentracao: conversas por faixa somam as conversas da silver, todos os paises", "0",
+     "SELECT (SELECT sum(conversas) FROM gold.agg_concentracao) - (SELECT count(*) FROM silver.fato_conversa)"),
+    ("silver_gold", "Concentracao: usuarios por faixa somam os usuarios da silver, todos os paises", "0",
+     "SELECT (SELECT sum(usuarios) FROM gold.agg_concentracao) - (SELECT count(DISTINCT usuario_id) FROM silver.fato_conversa)"),
+    ("silver_gold", "Retorno sem os 10 mais ativos: nunca excede o total (paises com mais retornados fora do top 10 do que no total)", "0",
+     "SELECT count(*) FROM gold.pais WHERE voltaram_sem_top10 > voltaram_7d OR elegiveis_sem_top10 > usuarios_elegiveis"),
+    ("silver_gold", "Voltou em 24 h (gold.pais) = silver entre os elegiveis, e nunca passa do retorno em 7 dias (diferenca)", "0",
+     "SELECT abs((SELECT sum(voltaram_24h) FROM gold.pais) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND voltou_24h)) + (SELECT count(*) FROM gold.pais WHERE voltaram_24h > voltaram_7d)"),
+    ("silver_gold", "Retornaram em 7 dias (gold.pais) = retorno da silver, todos os paises (diferenca)", "0",
+     "SELECT (SELECT sum(voltaram_7d) FROM gold.pais) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND voltou_7d)"),
+    ("silver_gold", "Uso por hora: conversas somam as conversas da silver, todos os paises", "0",
+     "SELECT (SELECT sum(conversas) FROM gold.agg_uso_hora) - (SELECT count(*) FROM silver.fato_conversa)"),
+    ("silver_gold", "Modelo por mes: conversas somam as conversas da silver, todos os paises", "0",
+     "SELECT (SELECT sum(conversas) FROM gold.agg_modelo_mes) - (SELECT count(*) FROM silver.fato_conversa)"),
+    ("silver_gold", "Recusa por modelo: conversas com texto somam as conversas com recusa conhecida na silver", "0",
+     "SELECT (SELECT sum(conversas_texto) FROM gold.agg_recusa_modelo) - (SELECT count(*) FROM silver.fato_conversa WHERE recusa IS NOT NULL)"),
+    ("silver_gold", "Modelo por versao: conversas somam as conversas da silver, todos os paises", "0",
+     "SELECT (SELECT sum(conversas) FROM gold.agg_recusa_modelo) - (SELECT count(*) FROM silver.fato_conversa)"),
+    ("silver_gold", "Retorno por versao do modelo: elegiveis somam os elegiveis da silver, todos os paises", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_recusa_modelo) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel)"),
+    ("silver_gold", "Retorno por versao do modelo: voltaram em 7 dias somam os da silver, todos os paises", "0",
+     "SELECT (SELECT sum(voltaram_7d) FROM gold.agg_recusa_modelo) - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND voltou_7d)"),
+    ("silver_gold", "Estratos de recusa: elegiveis somam os elegiveis com recusa conhecida na silver", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_estrato WHERE fator = 'recusa') - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel AND recusa IS NOT NULL)"),
+    ("silver_gold", "Fator dispositivo: elegiveis somam os elegiveis da silver, todos os paises", "0",
+     "SELECT (SELECT sum(elegiveis) FROM gold.agg_retorno_fator WHERE fator = 'dispositivo') - (SELECT count(*) FROM silver.fato_usuario WHERE elegivel)"),
+    ("efeitos", "Efeitos estimados (Brasil): ha pelo menos um", "True", "SELECT count(*) > 0 FROM gold.efeito_fator WHERE pais = 'Brazil'"),
+    ("efeitos", "Efeitos: IC contem a estimativa em todas as linhas", "0",
+     "SELECT count(*) FROM gold.efeito_fator WHERE NOT (ic_lo <= efeito_pp AND efeito_pp <= ic_hi)"),
+    ("efeitos", "Efeitos: nenhum grupo com menos de 30 usuarios", "0",
+     "SELECT count(*) FROM gold.efeito_fator WHERE n_tratados < 30 OR n_controle < 30"),
+]
+
+
+def validar_gold(dw, execucao_id: int) -> list[Resultado]:
+    return executar(dw, VERIFICACOES, execucao_id)

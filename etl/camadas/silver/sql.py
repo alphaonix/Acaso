@@ -1,4 +1,5 @@
-"""BRONZE -> SILVER, em SQL no Postgres, dentro da transacao de carga: a silver nasce das tabelas bronze (nao dos arquivos).
+"""Os comandos SQL da SILVER (bronze -> silver), um por passo. Rodam no Postgres, dentro da transacao de carga.
+A silver nasce da tabela bronze (nao dos arquivos).
 Silver nao guarda texto de conversa: so variaveis derivadas. Regras em definicoes.py; razoes em docs/bdr/BDR-001 e BDR-003.
 
 Passos (cada um vira uma tabela temporaria, que some no fim da transacao):
@@ -7,7 +8,7 @@ Passos (cada um vira uma tabela temporaria, que some no fim da transacao):
   conv     deriva por conversa: navegador/sistema, usuario_id, duracao, tamanhos, recusa e tema (so Brasil)
   usuarios sessoes (intervalo > 30 min), 1a experiencia, retorno em 7 dias e elegibilidade
 """
-from .definicoes import (GAP_SESSAO_MIN, IDIOMA_PADRAO, JANELA_RETORNO_DIAS, LAVAGEM_DIAS, PAIS_COM_TEXTO, PAIS_ISO,
+from comum.definicoes import (GAP_SESSAO_MIN, IDIOMA_PADRAO, JANELA_RETORNO_DIAS, LAVAGEM_DIAS, PAIS_COM_TEXTO, PAIS_ISO,
                          RECUSA_SQL, TEMA_SQL, TEMAS, UA_NORM_SQL, meta_pais)
 
 SQL_BRUTO = """
@@ -94,31 +95,3 @@ SELECT usuario_id, pais, primeira_vez_utc, semana, hora, dia_semana, modelo, idi
        convs_total, voltou_7d, elegivel, voltou_24h, dias_ate_voltar, janela_30d, idioma_navegador
 FROM usuarios
 """
-
-
-def construir(dw) -> dict:
-    """Dentro da transacao `dw` (silver ja esvaziada e bronze ja carregada). Devolve estatisticas de qualidade."""
-    with dw.cursor() as cur:
-        cur.execute("SET LOCAL work_mem = '256MB'")   # ordenacoes/janelas sobre ~840 mil linhas
-        cur.execute(SQL_BRUTO)
-        lidas, sem_inicio, sem_ip, pais_nulo = cur.execute(
-            """SELECT count(*), count(*) FILTER (WHERE start_ts IS NULL), count(*) FILTER (WHERE hashed_ip IS NULL),
-                      count(*) FILTER (WHERE pais = 'Desconhecido') FROM bruto""").fetchone()
-        cur.execute(SQL_CONV0)
-        carregadas = cur.execute("SELECT count(*) FROM conv0").fetchone()[0]
-        aptas = cur.execute("SELECT count(*) FROM bruto WHERE start_ts IS NOT NULL AND hashed_ip IS NOT NULL").fetchone()[0]
-
-        # dimensoes: tema e pais (fuso por pais; ver PAISES_META e a premissa de fuso unico)
-        cur.executemany("INSERT INTO silver.dim_tema (tema_id, tema) VALUES (%s, %s)", TEMAS)
-        dim_pais = []
-        for (p,) in cur.execute("SELECT DISTINCT pais FROM conv0 ORDER BY pais").fetchall():
-            nome, fuso, aprox = meta_pais(p)
-            dim_pais.append((p, nome, fuso, aprox, IDIOMA_PADRAO.get(p, "en"), p == PAIS_COM_TEXTO, PAIS_ISO.get(p)))
-        cur.executemany("""INSERT INTO silver.dim_pais (pais, nome_exibicao, fuso, fuso_aproximado, idioma_padrao, tem_texto, iso2)\n                           VALUES (%s, %s, %s, %s, %s, %s, %s)""", dim_pais)
-
-        cur.execute(SQL_CONV)
-        cur.execute(SQL_USUARIOS)
-        cur.execute(SQL_INSERE_CONVERSA)
-        cur.execute(SQL_INSERE_USUARIO)
-    return dict(lidas=lidas, sem_inicio=sem_inicio, sem_ip=sem_ip, pais_nulo=pais_nulo,
-                duplicadas=aptas - carregadas, carregadas=carregadas)

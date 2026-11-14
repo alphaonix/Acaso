@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from psycopg.types.json import Jsonb
 
-from pipeline import gold, silver
+from camadas import gold, silver
 
 UTC = timezone.utc
 UA_CHROME_119 = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
@@ -63,9 +63,9 @@ def rodar(dw, convs: list[C], com_gold: bool = False) -> None:
     """Insere as conversas (mais as ancoras) na bronze e roda a silver (e, se pedido, a gold)."""
     ancoras = [C("ancora-ini", t(INICIO_DADOS)), C("ancora-fim", t(FIM_DADOS))]
     inserir(dw, ancoras + convs)
-    silver.construir(dw)
+    silver.construir_silver(dw)
     if com_gold:
-        gold.construir(dw)
+        gold.construir_gold(dw)
 
 
 def linhas(dw, sql: str, params=None) -> list[tuple]:

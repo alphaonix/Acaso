@@ -1,7 +1,7 @@
 # BDR-004: análise dos efeitos no retorno em 7 dias (causa x seleção)
 
 Status: resultados estáveis (reprodutíveis entre cargas); validação independente pendente (docs/VALIDACAO.md, rodada 5).
-Código: `etl/pipeline/estimar.py` (grava `gold.efeito_fator`) e `analise/04_sensibilidade.py`.
+Código: `etl/camadas/gold/efeitos.py` (grava `gold.efeito_fator`) e `analise/04_sensibilidade.py`.
 
 > **Correção de uma versão anterior deste documento.** A primeira versão trazia números que mudavam a cada carga
 > (recusa -10,4; -10,8; -9,6): a validação cruzada dependia da ordem em que o banco devolvia as linhas. Agora as linhas

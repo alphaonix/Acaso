@@ -13,7 +13,7 @@ import psycopg
 
 RAIZ = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "etl"))
-from pipeline.definicoes import GAP_SESSAO_MIN, JANELA_RETORNO_DIAS, LAVAGEM_DIAS, UA_NORM_SQL  # noqa: E402
+from comum.definicoes import GAP_SESSAO_MIN, JANELA_RETORNO_DIAS, LAVAGEM_DIAS, UA_NORM_SQL  # noqa: E402
 
 URL = "postgresql://etl:etl@localhost:5433/retencao"
 PAIS = "Brazil"

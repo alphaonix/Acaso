@@ -1,7 +1,7 @@
-"""Silver -> Gold: agregados, catalogo e lista de paises. Tudo em SQL no Postgres (o mesmo SQL esta no catalogo).
+"""Os comandos SQL da GOLD (silver -> gold): agregados, catalogo e lista de paises. Tudo em SQL no Postgres.
 Taxa e IC (Wilson 95%) so aparecem com amostra >= AMOSTRA_MINIMA; abaixo disso ficam NULL e a tela avisa.
 """
-from .definicoes import AMOSTRA_MINIMA, CATALOGO
+from comum.definicoes import AMOSTRA_MINIMA, CATALOGO
 
 M = AMOSTRA_MINIMA
 
@@ -200,19 +200,3 @@ INSERT INTO gold.agg_modelo_mes (pais, mes, conversas, conversas_gpt4)
 SELECT f.pais, date_trunc('month', timezone(d.fuso, f.inicio_utc))::date, count(*), count(*) FILTER (WHERE f.modelo LIKE 'gpt-4%')
 FROM silver.fato_conversa f JOIN silver.dim_pais d ON d.pais = f.pais GROUP BY 1, 2
 """
-def construir(dw) -> None:
-    """Dentro da transacao `dw`."""
-    with dw.cursor() as cur:
-        cur.execute(SQL_PAIS)
-        cur.execute(SQL_RETORNO_SEMANA)
-        cur.execute(SQL_RETORNO_FATOR)
-        cur.execute(SQL_USO_DIA)
-        cur.execute(SQL_RETORNO_MES_FATOR)
-        cur.execute(SQL_PROBLEMAS)
-        for sql in (SQL_CURVA, SQL_ESTRATO, SQL_RECUSA_MODELO, SQL_CONCENTRACAO, SQL_CONCENTRACAO_PAIS, SQL_RETORNO_SEM_TOP10, SQL_USO_HORA, SQL_MODELO_MES):
-            cur.execute(sql)
-        cur.executemany(
-            """INSERT INTO gold.catalogo_indicador (indicador_id, nome, pergunta, unidade, denominador, formula,
-               sql_referencia, fonte, periodo_referencia, amostra_minima)
-               VALUES (%(indicador_id)s, %(nome)s, %(pergunta)s, %(unidade)s, %(denominador)s, %(formula)s,
-                       %(sql_referencia)s, %(fonte)s, %(periodo_referencia)s, %(amostra_minima)s)""", CATALOGO)

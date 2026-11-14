@@ -32,10 +32,10 @@ Opção 2, em Python + SQL, sem orquestrador. **Tudo no Postgres** e numa única
   `api_ro` só tem `gold` e `ops` (testado: leitura de `bronze` é negada).
 - **Idempotência e atomicidade:** as três camadas são esvaziadas e recarregadas numa única transação; a API nunca vê um estado
   pela metade (ela enxerga o estado anterior até o `COMMIT`).
-- **Portão de qualidade:** `etl/pipeline/qa.py` compara a carga com os números validados por conferência independente (Power BI e
+- **Portão de qualidade:** `etl/camadas/*/validar.py (as validações de cada camada)` compara a carga com os números validados por conferência independente (Power BI e
   DBeaver; `docs/VALIDACAO.md`): 20 verificações, incluindo linhas da bronze = linhas dos arquivos, integridade do JSON e a
   distribuição de usuários por tema. Se algo divergir, `QA_ESTRITO=1` faz rollback e o ETL termina com erro (a API não sobe).
-- **Definições em um lugar só:** `etl/pipeline/definicoes.py` (usuário, sessão, tema, recusa, parâmetros) e o SQL do gold.
+- **Definições em um lugar só:** `etl/comum/definicoes.py` (usuário, sessão, tema, recusa, parâmetros) e o SQL do gold.
 
 ## Consequências
 - **Tabela única (revisão de 12/11):** os dois arquivos da semente continuam separados (tamanho, ADR-002), mas a bronze os junta em

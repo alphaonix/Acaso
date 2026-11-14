@@ -1,8 +1,9 @@
-"""Auditoria e linhagem entre camadas (schema `auditoria`, ADR-005). Roda DENTRO da transacao de carga, depois da gold, e
+"""Auditoria e linhagem da SILVER (schema `auditoria`, ADR-005). Roda DENTRO da transacao de carga, logo depois de construir a silver, e
 registra: quantas conversas ha em cada camada (view auditoria.camadas), o que foi excluido da bronze para a silver (linha a linha), os valores vazios
 (nulos) antes e depois, exemplos de antes e depois de cada tratamento, e o funil por pais.
 Nao grava texto de conversa nem IP: so contagens, nomes de coluna e identificadores tecnicos (bronze_id, hash da conversa).
 Usa as tabelas temporarias `bruto` e `conv0` criadas pela silver (ainda vivas na mesma transacao).
+As colunas do funil que vem da gold (gold_usuarios, gold_conversas) sao completadas depois, em camadas/gold/auditoria.py.
 """
 
 # (codigo, coluna na bronze, coluna na silver, SQL bronze -> (linhas, nulos), SQL silver -> (linhas, nulos) ou None, acao, tratamento)
@@ -97,8 +98,8 @@ SQLS_ANTES_DEPOIS = [
 ]
 
 
-def registrar(dw, exec_id: int) -> dict:
-    """Dentro da transacao `dw`, depois da gold. Devolve um resumo para o log do ETL."""
+def auditar_silver(dw, exec_id: int) -> dict:
+    """Dentro da transacao `dw`, logo depois de construir a silver. Devolve um resumo para o log do ETL."""
     p = {"e": exec_id}
     with dw.cursor() as cur:
         # so a ULTIMA carga fica (o historico das cargas esta em ops.etl_execucao); na mesma transacao: se a carga falhar, volta o anterior

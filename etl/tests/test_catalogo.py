@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import pytest
 
-from pipeline.definicoes import CATALOGO
+from comum.definicoes import CATALOGO
 
 from .helpers import C, linhas, rodar, t
 

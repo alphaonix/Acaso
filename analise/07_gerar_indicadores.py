@@ -5,11 +5,11 @@ import sys
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "etl"))
-from pipeline.definicoes import AMOSTRA_MINIMA, CATALOGO  # noqa: E402
+from comum.definicoes import AMOSTRA_MINIMA, CATALOGO  # noqa: E402
 
 CAB = """# Indicadores: definição, fórmula, denominador e consulta de referência
 
-Gerado a partir de `etl/pipeline/definicoes.py` (`CATALOGO`), a fonte única que também alimenta o botão "i" do dashboard (que mostra só a fórmula).
+Gerado a partir de `etl/comum/definicoes.py` (`CATALOGO`), a fonte única que também alimenta o botão "i" do dashboard (que mostra só a fórmula).
 A consulta de referência usa o parâmetro `:pais` e as tabelas do banco analítico (ver `docs/arquitetura.md`).
 """
 

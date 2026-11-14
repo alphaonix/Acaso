@@ -2,7 +2,7 @@
 se alguem mudar a definicao do indicador, o teste correspondente quebra e a mudanca deixa de passar despercebida."""
 from datetime import timedelta
 
-from pipeline.definicoes import GAP_SESSAO_MIN, JANELA_RETORNO_DIAS, LAVAGEM_DIAS
+from comum.definicoes import GAP_SESSAO_MIN, JANELA_RETORNO_DIAS, LAVAGEM_DIAS
 
 from .helpers import C, rodar, t, usuario
 

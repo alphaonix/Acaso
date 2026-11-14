@@ -1,5 +1,5 @@
 """Sensibilidade dos efeitos (BDR-004): os achados mudam com a semente, o numero de dobras ou sem usuarios extremos?
-Le o silver via Postgres local (docker compose up) e reutiliza etl/pipeline/estimar.py SEM gravar nada.
+Le o silver via Postgres local (docker compose up) e reutiliza etl/camadas/gold/efeitos.py SEM gravar nada.
 Uso:  python analise/04_sensibilidade.py
 """
 import pathlib
@@ -8,7 +8,7 @@ import sys
 import psycopg
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "etl"))
-from pipeline import estimar as E  # noqa: E402
+from camadas.gold import efeitos as E  # noqa: E402
 
 URL = "postgresql://etl:etl@localhost:5433/retencao"
 FOCO = ["Recusa na primeira resposta", "Turnos da primeira conversa", "Tamanho do primeiro pedido", "Modelo",

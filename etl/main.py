@@ -1,157 +1,104 @@
-"""ETL em camadas: bronze -> silver -> gold, tudo no Postgres, com portao de qualidade (ADR-004).
+"""ETL em camadas: bronze -> silver -> gold, tudo no Postgres, com validacao ao fim de CADA camada (ADR-004).
 
-  1. migrar      aplica db/migrations/*.sql em ordem
-  2. registrar   registra cada arquivo da semente (sha256, linhas, tabela de destino) em ops.bronze_lote  [linhagem]
-  3. bronze      carrega o dado bruto, sem alterar, na tabela bronze.wildchat (DuckDB le o Parquet; COPY grava no Postgres)
-  4. silver      SQL no Postgres LENDO a bronze: limpeza, usuario, sessao, variaveis da 1a experiencia (BDR-001/003)
-  5. gold        agregados, lista de paises e catalogo de indicadores (SQL no Postgres, lendo a silver)
-  6. estimar     efeitos ajustados com IC (gold.efeito_fator)
-  7. auditoria   linhagem entre camadas (schema auditoria): contagens, linhas excluidas, nulos, antes/depois, funil por pais
-  8. qualidade   confere por transicao entre camadas e contra os numeros validados; se falhar (QA_ESTRITO=1), ROLLBACK e erro
-Bronze, silver e gold sao reconstruidas por inteiro em UMA transacao: a API nunca ve um estado pela metade.
+A receita esta na funcao `carga` (leia-a de cima para baixo):
+
+  preparar   migra o banco, cria as contas de acesso e abre o registro da execucao
+  BRONZE     construir_bronze  ->  validar_bronze          (o dado como veio, vindo dos arquivos da semente)
+  SILVER     construir_silver  ->  auditar_silver  ->  validar_silver   (limpeza, pessoa, visitas, retorno, elegibilidade)
+  GOLD       construir_gold  ->  construir_efeitos  ->  auditar_gold  ->  validar_gold   (resumos que a tela le)
+  publicar   COMMIT (ou ROLLBACK, se alguma validacao falhar)
+
+As tres camadas sao reconstruidas por inteiro em UMA transacao: a API nunca ve um estado pela metade, e se qualquer validacao
+falhar (modo estrito) nada e publicado. Cada camada tem a sua pasta em camadas/ (com um LEIA-ME.md); o que e comum a todas
+(banco, contas, regras de negocio, portao de qualidade) fica em comum/. Como a semente foi gerada: semente/.
 """
-import hashlib
 import json
 import os
-import secrets
-import sys
 import time
 from pathlib import Path
 
 import duckdb
-import psycopg
 
-from pipeline import auditoria, bronze, estimar, gold, qa, silver
-from pipeline.seguranca import hash_senha
+from camadas import bronze, gold, silver
+from comum import acesso, banco, qualidade
 
-DATABASE_URL = os.environ["DATABASE_URL"]
-MIGRACOES = Path(os.environ.get("MIGRATIONS_DIR", "/migrations"))
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
 ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"
 VERSAO = os.environ.get("CODE_VERSION", "dev")
 
 
-def conectar(autocommit: bool, tentativas: int = 30) -> psycopg.Connection:
-    for _ in range(tentativas):
-        try:
-            return psycopg.connect(DATABASE_URL, autocommit=autocommit)
-        except psycopg.OperationalError:
-            time.sleep(1)
-    sys.exit("ETL: banco indisponivel")
+class PortaoFalhou(Exception):
+    """Uma validacao de camada falhou no modo estrito: a carga e desfeita."""
 
 
-def migrar(ops: psycopg.Connection) -> None:
-    ops.execute("CREATE TABLE IF NOT EXISTS public.schema_migrations (arquivo text PRIMARY KEY, aplicada_em timestamptz DEFAULT now())")
-    feitas = {r[0] for r in ops.execute("SELECT arquivo FROM public.schema_migrations")}
-    for sql in sorted(MIGRACOES.glob("*.sql")):
-        if sql.name not in feitas:
-            print(f"[migrar] {sql.name}", flush=True)
-            ops.execute(sql.read_text(encoding="utf-8"))
-            ops.execute("INSERT INTO public.schema_migrations (arquivo) VALUES (%s)", (sql.name,))
+def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultado], alertas: list) -> None:
+    """Grava o resultado das validacoes da camada, mostra no log e, se alguma falhou no modo estrito, interrompe a carga."""
+    qualidade.gravar(ops, exec_id, resultados)
+    for r in resultados:
+        print(f"[qa] {'OK ' if r.passou else 'FALHOU'} [{r.transicao}] {r.verificacao}: esperado {r.esperado}, obtido {r.obtido}", flush=True)
+    falhas = [r for r in resultados if not r.passou]
+    alertas.extend(falhas)
+    if falhas and ESTRITO:
+        raise PortaoFalhou(f"{len(falhas)} verificacao(oes) da camada {camada} falharam")
 
 
-def garantir_conta_avaliacao(ops: psycopg.Connection) -> None:
-    """Sincroniza as contas de acesso com o ambiente. NENHUMA conta nem senha real fica no repositorio.
-      DASH_USERS     'email|Nome|url-da-foto;email|Nome' (a foto e opcional; padrao: uma conta generica de avaliacao)
-      DASH_PASSWORD  se definida (em .env), vale para todas as contas e e a fonte de verdade;
-                     se vazia, cada conta NOVA recebe uma senha aleatoria, mostrada UMA vez no log do ETL
-                     (docker compose logs etl); conta que ja existe mantem a senha.
-    Contas que nao estao na lista sao removidas (nenhuma senha antiga sobra no banco)."""
-    padrao = "avaliacao@exemplo.com|Avaliação"
-    senha_env = os.environ.get("DASH_PASSWORD") or None
-    contas = []
-    for item in (os.environ.get("DASH_USERS") or padrao).split(";"):
-        email, _, resto = item.partition("|")
-        nome, _, foto = resto.partition("|")
-        email = email.strip().lower()
-        foto = foto.strip()
-        if email:
-            contas.append((email, nome.strip() or email.split("@")[0].replace(".", " ").title(), foto if foto.startswith("https://") else None))
-    for email, nome, foto in contas:
-        existe = ops.execute("SELECT 1 FROM ops.usuario_dashboard WHERE email = %s", (email,)).fetchone() is not None
-        if senha_env:
-            senha = senha_env
-        elif existe:
-            ops.execute("UPDATE ops.usuario_dashboard SET nome = %s, foto_url = %s WHERE email = %s", (nome, foto, email))
-            continue
-        else:
-            senha = secrets.token_urlsafe(9)
-            print(f"[acesso] SENHA GERADA para {email}: {senha}   (mostrada so agora; para definir a sua, use DASH_PASSWORD no .env)", flush=True)
-        ops.execute("""INSERT INTO ops.usuario_dashboard (email, nome, senha_hash, foto_url) VALUES (%s, %s, %s, %s)
-                       ON CONFLICT (email) DO UPDATE SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, foto_url = EXCLUDED.foto_url""",
-                    (email, nome, hash_senha(senha), foto))
-    ops.execute("DELETE FROM ops.usuario_dashboard WHERE NOT (email = ANY(%s))", ([c[0] for c in contas],))
-    print(f"[acesso] contas ativas: {', '.join(c[0] for c in contas)}", flush=True)
+def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
+    """Constroi e valida as tres camadas, nesta ordem. Devolve as validacoes que falharam (vazio = tudo certo)."""
+    alertas: list = []
 
-def registrar_lotes(ops: psycopg.Connection, con: duckdb.DuckDBPyConnection, exec_id: int) -> None:
-    for nome, tabela in bronze.DESTINOS.items():
-        arq = SEMENTE / nome
-        if not arq.exists():
-            sys.exit(f"ETL: semente ausente: {arq} (rode python etl/make_seed.py)")
-        sha = hashlib.sha256(arq.read_bytes()).hexdigest()
-        linhas = con.execute(f"SELECT count(*) FROM read_parquet('{arq.as_posix()}')").fetchone()[0]
-        ops.execute("""INSERT INTO ops.bronze_lote (execucao_id, arquivo, sha256, linhas, tamanho_bytes, tabela_destino)
-                       VALUES (%s, %s, %s, %s, %s, %s)""", (exec_id, nome, sha, linhas, arq.stat().st_size, tabela))
-        print(f"[bronze] {nome}: {linhas} linhas, sha256 {sha[:12]} -> {tabela}", flush=True)
+    print("== BRONZE: o dado como veio ==", flush=True)
+    t0 = time.time()
+    for arquivo, n in bronze.construir_bronze(ops, dw, con, exec_id, SEMENTE).items():
+        print(f"[bronze] {arquivo}: {n} linhas carregadas em {bronze.TABELA}", flush=True)
+    estado["bronze_s"] = time.time() - t0
+    conferir(ops, exec_id, "bronze", bronze.validar_bronze(dw, exec_id), alertas)
 
+    print("== SILVER: limpeza, pessoa, visitas, retorno, elegibilidade ==", flush=True)
+    t1 = time.time()
+    dados = silver.construir_silver(dw)
+    estado.update(dados)
+    print(f"[silver] lidas={dados['lidas']} carregadas={dados['carregadas']} sem_inicio={dados['sem_inicio']} "
+          f"sem_ip={dados['sem_ip']} duplicadas={dados['duplicadas']} pais_nulo={dados['pais_nulo']} "
+          f"(bronze {estado['bronze_s']:.0f}s, silver {time.time() - t1:.0f}s)", flush=True)
+    aud = silver.auditar_silver(dw, exec_id)
+    print(f"[auditoria] {aud['excluidas']} linhas excluidas registradas; {aud['exemplos_antes_depois']} exemplos antes/depois", flush=True)
+    conferir(ops, exec_id, "silver", silver.validar_silver(dw, exec_id), alertas)
 
-def limpar(dw: psycopg.Connection) -> None:
-    """Esvazia as tres camadas dentro da transacao (a API so ve o estado antigo ate o COMMIT)."""
-    with dw.cursor() as cur:
-        cur.execute("""TRUNCATE bronze.wildchat,
-                       gold.pais, gold.agg_retorno_semana, gold.agg_retorno_fator, gold.agg_uso_dia, gold.agg_retorno_mes_fator, gold.problema_qualidade, gold.agg_curva_retorno, gold.agg_estrato, gold.agg_recusa_modelo, gold.agg_concentracao, gold.agg_uso_hora, gold.agg_modelo_mes, gold.efeito_fator, gold.catalogo_indicador,
-                       silver.fato_conversa, silver.fato_usuario, silver.dim_tema, silver.dim_pais RESTART IDENTITY""")
-
-
-def finalizar(ops, exec_id, status, lidas=None, carregadas=None, obs=None) -> None:
-    ops.execute("UPDATE ops.etl_execucao SET finalizado_em = now(), status = %s, linhas_lidas = %s, linhas_carregadas = %s, observacao = %s WHERE id = %s",
-                (status, lidas, carregadas, obs, exec_id))
+    print("== GOLD: resumos que a tela le ==", flush=True)
+    gold.construir_gold(dw)
+    print(f"[estimar] {gold.construir_efeitos(dw)} efeitos gravados em gold.efeito_fator", flush=True)
+    gold.auditar_gold(dw, exec_id)
+    conferir(ops, exec_id, "gold", gold.validar_gold(dw, exec_id), alertas)
+    return alertas
 
 
 def main() -> int:
-    ops = conectar(autocommit=True)
-    migrar(ops)
-    garantir_conta_avaliacao(ops)
-    exec_id = ops.execute("INSERT INTO ops.etl_execucao (versao_codigo) VALUES (%s) RETURNING id", (VERSAO,)).fetchone()[0]
+    ops = banco.conectar(autocommit=True)       # historico (execucao, lotes, conferencias): vale na hora, sobrevive a uma carga que falhe
+    banco.migrar(ops)
+    acesso.garantir_conta_avaliacao(ops)
+    exec_id = banco.abrir_execucao(ops, VERSAO)
     dw = None
+    estado: dict = {}
     try:
-        con = duckdb.connect()
-        registrar_lotes(ops, con, exec_id)
-        dw = conectar(autocommit=False)
-        limpar(dw)
-        t0 = time.time()
-        for arquivo, n in bronze.carregar(dw, con, SEMENTE).items():
-            print(f"[bronze] {arquivo}: {n} linhas carregadas em {bronze.TABELA}", flush=True)
-        t1 = time.time()
-        dados = silver.construir(dw)
-        print(f"[silver] lidas={dados['lidas']} carregadas={dados['carregadas']} sem_inicio={dados['sem_inicio']} "
-              f"sem_ip={dados['sem_ip']} duplicadas={dados['duplicadas']} pais_nulo={dados['pais_nulo']} "
-              f"(bronze {t1 - t0:.0f}s, silver {time.time() - t1:.0f}s)", flush=True)
-        gold.construir(dw)
-        print(f"[estimar] {estimar.estimar(dw)} efeitos gravados em gold.efeito_fator", flush=True)
-        aud = auditoria.registrar(dw, exec_id)
-        print(f"[auditoria] {aud['excluidas']} linhas excluidas registradas; {aud['exemplos_antes_depois']} exemplos antes/depois", flush=True)
-        resultados = qa.verificar(dw, exec_id)
-        qa.gravar(ops, exec_id, resultados)
-        falhas = [r for r in resultados if not r.passou]
-        for r in resultados:
-            print(f"[qa] {'OK ' if r.passou else 'FALHOU'} [{r.transicao}] {r.verificacao}: esperado {r.esperado}, obtido {r.obtido}", flush=True)
-        obs = json.dumps(dados)
-        if falhas and ESTRITO:
-            dw.rollback()
-            finalizar(ops, exec_id, "falhou", dados["lidas"], 0, f"{len(falhas)} verificacao(oes) falharam; nada publicado. {obs}")
-            print("ETL: portao de qualidade FALHOU; carga revertida.", flush=True)
-            return 1
+        con = duckdb.connect()                  # DuckDB so le os Parquet da semente
+        dw = banco.conectar(autocommit=False)   # as tres camadas: so valem se a carga inteira terminar bem
+        alertas = carga(ops, dw, con, exec_id, estado)
         dw.commit()
-        finalizar(ops, exec_id, "alerta" if falhas else "ok", dados["lidas"], dados["carregadas"], obs)
-        print(f"ETL concluido ({'com alertas' if falhas else 'ok'}).", flush=True)
+        banco.finalizar_execucao(ops, exec_id, "alerta" if alertas else "ok", estado["lidas"], estado["carregadas"],
+                                 json.dumps({k: v for k, v in estado.items() if k != "bronze_s"}))
+        print(f"ETL concluido ({'com alertas' if alertas else 'ok'}).", flush=True)
         return 0
+    except PortaoFalhou as e:
+        dw.rollback()
+        banco.finalizar_execucao(ops, exec_id, "falhou", estado.get("lidas"), 0, f"{e}; nada publicado.")
+        print("ETL: portao de qualidade FALHOU; carga revertida.", flush=True)
+        return 1
     except Exception as e:
         if dw is not None:
             dw.rollback()
-        finalizar(ops, exec_id, "erro", obs=str(e)[:500])
+        banco.finalizar_execucao(ops, exec_id, "erro", obs=str(e)[:500])
         raise
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

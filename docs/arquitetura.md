@@ -3,7 +3,7 @@
 ## Fluxo da base bruta até a tela
 ```mermaid
 flowchart LR
-  A[WildChat-1M bruto<br/>838 mil conversas] -->|etl/make_seed.py| B[Semente no repositorio<br/>Brasil completo + outros paises sem texto]
+  A[WildChat-1M bruto<br/>838 mil conversas] -->|etl/semente/make_seed.py| B[Semente no repositorio<br/>Brasil completo + outros paises sem texto]
   B -->|etl/main.py<br/>DuckDB le o Parquet| C[(Postgres<br/>bronze -> silver -> gold)]
   C -->|usuario somente leitura| D[API FastAPI]
   D -->|JSON| E[Frontend Next.js]
@@ -80,7 +80,7 @@ O seletor de país, o idioma (PT/EN) e o tema (claro/escuro) ficam no cabeçalho
 independente do pais. Paises sem texto na semente (todos exceto Brasil) nao tem tema, recusa nem tamanhos: a tela
 diz "indisponivel" e explica. Comparacao entre paises usa a mesma definicao e mostra IC de cada um.
 Conversas sem pais (1.060) ficam como "Desconhecido" e fora da comparacao.
-**Nome do pais na lingua da tela:** `dim_pais.iso2` (codigo ISO 3166-1, 201 dos 202; so "Desconhecido" nao tem) vai para o frontend, que escreve o nome em PT ou EN com `Intl.DisplayNames`. Um pais novo so precisa do codigo em `PAIS_ISO` (`etl/pipeline/definicoes.py`); uma conferencia do portao acusa o que ficar sem codigo. O fuso por pais (`PAISES_META`) hoje cobre cerca de 40 paises; os demais usam UTC e aparecem como "aproximado" (limite declarado).
+**Nome do pais na lingua da tela:** `dim_pais.iso2` (codigo ISO 3166-1, 201 dos 202; so "Desconhecido" nao tem) vai para o frontend, que escreve o nome em PT ou EN com `Intl.DisplayNames`. Um pais novo so precisa do codigo em `PAIS_ISO` (`etl/comum/definicoes.py`); uma conferencia do portao acusa o que ficar sem codigo. O fuso por pais (`PAISES_META`) hoje cobre cerca de 40 paises; os demais usam UTC e aparecem como "aproximado" (limite declarado).
 
 ## Privacidade: o que o dashboard mostra e nunca mostra
 Mostra: agregados (contagens, taxas, efeitos com IC), por pais, semana, modelo, idioma, tema, faixa de horario.

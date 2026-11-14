@@ -14,7 +14,7 @@ Este documento é para **ler o código e conferir os números**, camada por cama
 4. [Camada Bronze](#4-camada-bronze)
 5. [Camada Silver](#5-camada-silver)
 6. [Camada Gold](#6-camada-gold)
-7. [Efeitos (`estimar.py`, grava na Gold)](#7-efeitos-estimarpy-grava-na-gold)
+7. [Efeitos (`gold/efeitos.py`, grava na Gold)](#7-efeitos-goldefeitospy-grava-na-gold)
 8. [Auditoria e portão de qualidade](#8-auditoria-e-portão-de-qualidade)
 9. [Validação de ponta a ponta (resultados de 14/11/2026)](#9-validação-de-ponta-a-ponta-resultados-de-14112026)
 10. [Limitações e pontos de atenção, consolidados](#10-limitações-e-pontos-de-atenção-consolidados)
@@ -28,28 +28,30 @@ Este documento é para **ler o código e conferir os números**, camada por cama
 flowchart LR
   HF[Hugging Face<br/>allenai/WildChat-1M] -->|download_full.py<br/>feito uma vez, à mão| RAW[data/raw/wildchat_todos.parquet<br/>3 GB, fora do Git]
   RAW -->|make_seed.py| SEED[data/seed/*.parquet<br/>no Git]
-  SEED -->|bronze.py<br/>DuckDB + COPY| B[(bronze.wildchat)]
-  B -->|silver.py<br/>SQL no Postgres| S[(silver.fato_conversa<br/>silver.fato_usuario)]
-  S -->|gold.py<br/>SQL no Postgres| G[(gold.*)]
-  S -->|estimar.py<br/>pandas + sklearn| G
+  SEED -->|camadas/bronze<br/>DuckDB + COPY| B[(bronze.wildchat)]
+  B -->|camadas/silver<br/>SQL no Postgres| S[(silver.fato_conversa<br/>silver.fato_usuario)]
+  S -->|camadas/gold<br/>SQL no Postgres| G[(gold.*)]
+  S -->|gold/efeitos.py<br/>pandas + sklearn| G
   G --> API[API FastAPI<br/>usuário somente leitura]
   API --> WEB[Painel]
-  S -.->|auditoria.py| A[(auditoria.*)]
-  B & S & G -.->|qa.py<br/>53 conferências| Q{Portão}
+  S -.->|silver/auditoria.py<br/>gold/auditoria.py| A[(auditoria.*)]
+  B -.->|bronze/validar.py<br/>5 conferências| Q{Portão}
+  S -.->|silver/validar.py<br/>21 conferências| Q
+  G -.->|gold/validar.py<br/>27 conferências| Q
 ```
 
 | Arquivo | Papel | Roda quando |
 |---|---|---|
-| `etl/download_full.py` | baixa o WildChat-1M inteiro do Hugging Face | uma vez, à mão |
-| `etl/make_seed.py` | separa o bruto em 2 arquivos pequenos (a "semente") | uma vez, à mão |
-| `etl/main.py` | maestro: migra, registra, carrega, constrói, confere, publica | todo `docker compose up` |
-| `etl/pipeline/bronze.py` | Parquet → tabela `bronze.wildchat` | dentro do `main.py` |
-| `etl/pipeline/silver.py` + `definicoes.py` | limpeza, "pessoa", visitas, retorno, elegibilidade, tema, recusa | dentro do `main.py` |
-| `etl/pipeline/gold.py` | resumos que a tela lê | dentro do `main.py` |
-| `etl/pipeline/estimar.py` | efeitos ajustados (também grava na Gold) | dentro do `main.py` |
-| `etl/pipeline/auditoria.py` | linhagem: o que foi excluído e por quê | dentro do `main.py` |
-| `etl/pipeline/qa.py` | 53 conferências; falhou, desfaz tudo | dentro do `main.py` |
+| `etl/semente/download_full.py` | baixa o WildChat-1M inteiro do Hugging Face | uma vez, à mão |
+| `etl/semente/make_seed.py` | separa o bruto em 2 arquivos pequenos (a "semente") | uma vez, à mão |
+| `etl/main.py` | a receita: prepara, constrói e valida cada camada, publica | todo `docker compose up` |
+| `etl/comum/` (`banco.py`, `acesso.py`, `definicoes.py`, `qualidade.py`) | conexão e migrações, contas, regras de negócio, executor das conferências | usado por todas as camadas |
+| `etl/camadas/bronze/` (`registrar_lotes`, `limpar`, `carregar`, `validar`) | Parquet → tabela `bronze.wildchat` e as 5 conferências dela | dentro do `main.py` |
+| `etl/camadas/silver/` (`limpar`, `sql`, `construir`, `auditoria`, `validar`) | limpeza, "pessoa", visitas, retorno, elegibilidade, tema, recusa; linhagem; 21 conferências | dentro do `main.py` |
+| `etl/camadas/gold/` (`limpar`, `sql`, `construir`, `efeitos`, `auditoria`, `validar`) | resumos que a tela lê, efeitos ajustados, 27 conferências | dentro do `main.py` |
 | `analise/08_recalculo_independente.py` | recalcula a Silver por outro caminho (pandas) e compara | quando você quiser validar |
+
+Cada pasta de camada tem um `LEIA-ME.md` curto, e `etl/LEIA-ME.md` mostra a receita inteira.
 
 ---
 
@@ -78,18 +80,20 @@ flowchart LR
 ## 3. O maestro: `main.py`, migrações e transação
 
 **O que o código faz, em ordem**
-1. **`conectar`:** tenta conectar ao banco até 30 vezes, esperando 1 segundo entre as tentativas.
+1. **`banco.conectar`** (`etl/comum/banco.py`): tenta conectar ao banco até 30 vezes, esperando 1 segundo entre as tentativas.
 2. **Abre duas conexões:**
    - `ops` (autocommit): cada comando vale na hora. Guarda o **histórico** (execução, lotes, conferências), que precisa sobreviver mesmo a uma carga que falhe.
    - `dw` (transação): o trabalho das três camadas, que só vale se tudo terminar bem.
-3. **`migrar`:** garante a tabela `public.schema_migrations` e aplica, em ordem alfabética, só os arquivos de `db/migrations/` que **ainda não estão nela**. Primeira subida: os 23 arquivos. Depois: nenhum (a menos que exista um novo).
-4. **`garantir_conta_avaliacao`:** cria ou atualiza as contas de acesso do `.env`.
-5. **Abre a execução:** `INSERT INTO ops.etl_execucao` com status `rodando`.
-6. **`registrar_lotes`:** para cada arquivo da semente, calcula o sha256 (lê o arquivo inteiro), conta as linhas com o DuckDB e grava em `ops.bronze_lote`.
-7. **`limpar`:** `TRUNCATE` em todas as tabelas de bronze, silver e gold, na transação `dw`.
-8. Chama, na ordem: `bronze.carregar` → `silver.construir` → `gold.construir` → `estimar.estimar` → `auditoria.registrar` → `qa.verificar`.
-9. **Se alguma conferência falhar (modo estrito):** `ROLLBACK` e status `falhou`; nada é publicado. Se tudo passar: `COMMIT` e status `ok`.
-
+3. **`banco.migrar`:** garante a tabela `public.schema_migrations` e aplica, em ordem alfabética, só os arquivos de `db/migrations/` que **ainda não estão nela**. Primeira subida: os 23 arquivos. Depois: nenhum (a menos que exista um novo).
+4. **`acesso.garantir_conta_avaliacao`** (`etl/comum/acesso.py`): cria ou atualiza as contas de acesso do `.env`.
+5. **`banco.abrir_execucao`:** `INSERT INTO ops.etl_execucao` com status `rodando`.
+6. **A receita (`carga` em `main.py`), camada por camada.** Cada camada **limpa → constrói → valida**, e a validação roda logo depois da construção:
+   | Camada | O que roda, em ordem |
+   |---|---|
+   | Bronze | `registrar_lotes` (sha256, linhas, `ops.bronze_lote`) → `limpar_bronze` (`TRUNCATE`) → `carregar` → `validar_bronze` (5 conferências) |
+   | Silver | `construir_silver` (já começa com `limpar_silver`) → `auditar_silver` → `validar_silver` (21) |
+   | Gold | `construir_gold` (já começa com `limpar_gold`) → `construir_efeitos` → `auditar_gold` → `validar_gold` (27) |
+7. **Se alguma conferência falhar (modo estrito):** a carga **para naquela camada**, `ROLLBACK`, status `falhou`; nada é publicado. Se tudo passar: `COMMIT` e status `ok`.
 **Por que essa abordagem**
 - **Reconstruir tudo a cada carga** (em vez de somar ao que já existe) garante que a mesma semente sempre dá o mesmo resultado, e elimina a classe de erros de "dado antigo misturado com novo".
 - **Uma só transação** significa que a API nunca vê um estado pela metade.
@@ -108,7 +112,7 @@ Teste feito: um arquivo SQL com "criar tabela" seguido de divisão por zero **n�
 
 ## 4. Camada Bronze
 
-**Código:** [`etl/pipeline/bronze.py`](../etl/pipeline/bronze.py) · **Tabela:** `bronze.wildchat`
+**Código:** [`etl/camadas/bronze/`](../etl/camadas/bronze/) (o arquivo principal é [`carregar.py`](../etl/camadas/bronze/carregar.py)) · **Tabela:** `bronze.wildchat`
 
 **O que o código faz**
 1. Coloca o fuso do DuckDB em UTC (`SET TimeZone='UTC'`) para os horários não mudarem na leitura.
@@ -128,7 +132,7 @@ Teste feito: um arquivo SQL com "criar tabela" seguido de divisão por zero **n�
 **Limitações**
 - Duplicatas e valores vazios continuam (as 17 cópias exatas e as 1.060 linhas sem país estão aqui).
 - Contém o **texto** das conversas do Brasil; por isso só o ETL a enxerga (o usuário `api_ro` não tem privilégio nenhum na Bronze).
-- Depende do formato dos Parquet da semente; se a semente mudar de colunas, o `bronze.py` precisa mudar junto.
+- Depende do formato dos Parquet da semente; se a semente mudar de colunas, o `carregar.py` precisa mudar junto.
 
 **Como validar**
 ```sql
@@ -145,7 +149,7 @@ FROM bronze.wildchat WHERE country = 'Brazil' LIMIT 5;                          
 
 ## 5. Camada Silver
 
-**Código:** [`etl/pipeline/silver.py`](../etl/pipeline/silver.py) e [`etl/pipeline/definicoes.py`](../etl/pipeline/definicoes.py) · **Tabelas:** `silver.fato_conversa`, `silver.fato_usuario`, `silver.dim_pais`, `silver.dim_tema`
+**Código:** [`etl/camadas/silver/`](../etl/camadas/silver/) (comandos em [`sql.py`](../etl/camadas/silver/sql.py), ordem em [`construir.py`](../etl/camadas/silver/construir.py)) e [`etl/comum/definicoes.py`](../etl/comum/definicoes.py) · **Tabelas:** `silver.fato_conversa`, `silver.fato_usuario`, `silver.dim_pais`, `silver.dim_tema`
 Todo o trabalho é SQL **dentro do Postgres**; o Python só envia os comandos. Os passos criam tabelas temporárias (`bruto`, `conv0`, `conv`, `usuarios`) que somem no fim da transação.
 
 ### 5.1 `bruto`: achatar a Bronze (nenhuma linha sai)
@@ -206,7 +210,7 @@ Mais importante: **rode o recálculo independente** (seção 9), que refaz a Sil
 
 ## 6. Camada Gold
 
-**Código:** [`etl/pipeline/gold.py`](../etl/pipeline/gold.py). Tudo em SQL, lendo só a Silver. É a **única** camada que a API enxerga.
+**Código:** [`etl/camadas/gold/`](../etl/camadas/gold/) (comandos em [`sql.py`](../etl/camadas/gold/sql.py)). Tudo em SQL, lendo só a Silver. É a **única** camada que a API enxerga.
 **Regra comum:** taxa e margem de erro (intervalo de Wilson, 95%) só aparecem com **30 ou mais pessoas** (`AMOSTRA_MINIMA`); abaixo disso ficam `NULL` e a tela avisa.
 **Por que Wilson:** é estável com poucas pessoas e com taxas perto de 0% ou 100%, onde a aproximação normal falha. Está em `gold.wilson_lo` e `gold.wilson_hi` (migração 001).
 **Limite geral:** Wilson supõe que cada pessoa é independente; como a "pessoa" é aproximada, as margens de erro podem ser otimistas.
@@ -239,9 +243,9 @@ SELECT count(*) FILTER (WHERE janela_30d) FROM silver.fato_usuario;             
 
 ---
 
-## 7. Efeitos (`estimar.py`, grava na Gold)
+## 7. Efeitos (`gold/efeitos.py`, grava na Gold)
 
-**Código:** [`etl/pipeline/estimar.py`](../etl/pipeline/estimar.py) · **Tabela:** `gold.efeito_fator` (16 linhas, só Brasil)
+**Código:** [`etl/camadas/gold/efeitos.py`](../etl/camadas/gold/efeitos.py) · **Tabela:** `gold.efeito_fator` (16 linhas, só Brasil)
 
 **O que o código faz**
 1. Lê as pessoas **elegíveis** do Brasil (2.234), **ordenadas por `usuario_id`** (para o resultado não mudar de uma carga para outra).
@@ -274,9 +278,9 @@ SELECT round(((SELECT 100.0*v/n FROM r WHERE recusa) - (SELECT 100.0*v/n FROM r 
 
 ## 8. Auditoria e portão de qualidade
 
-**`auditoria.py`** grava, a cada carga, em `auditoria.*`: linhas por camada, **cada linha excluída com o motivo** (`registro_excluido`), valores vazios antes e depois, exemplos "antes e depois" e o funil por país. Não guarda texto nem endereço.
+**`silver/auditoria.py` e `gold/auditoria.py`** gravam, a cada carga, em `auditoria.*` (a da silver logo depois de construir a silver; a da gold completa o funil por país com os números da gold): linhas por camada, **cada linha excluída com o motivo** (`registro_excluido`), valores vazios antes e depois, exemplos "antes e depois" e o funil por país. Não guarda texto nem endereço.
 
-**`qa.py`** roda as **53 conferências** dentro da transação. Seis grupos:
+As **53 conferências** ficam em cada camada (`bronze/validar.py` 5, `silver/validar.py` 21, `gold/validar.py` 27) e rodam **logo depois de cada camada ser construída**, dentro da transação; `comum/qualidade.py` só executa e grava. Se uma falhar, a carga para ali e desfaz tudo (não espera as camadas seguintes). Seis grupos:
 
 | Grupo | O que protege | Exemplo |
 |---|---|---|
@@ -290,7 +294,7 @@ SELECT round(((SELECT 100.0*v/n FROM r WHERE recusa) - (SELECT 100.0*v/n FROM r 
 **Por que essa abordagem:** as conferências são **leis de conservação** (a soma de baixo tem de dar a de cima) mais **números validados à mão**. Se uma regra mudar sem ninguém perceber, a carga falha.
 
 **Limitações**
-- O "recálculo independente" do `qa.py` é independente **na lógica das visitas**, mas parte de `silver.fato_conversa`: não testa a derivação do `usuario_id`, do navegador e do início, que acontece **antes**. Por isso criei o `analise/08_recalculo_independente.py`, que parte dos **arquivos da semente**.
+- O "recálculo independente" de `silver/validar.py` é independente **na lógica das visitas**, mas parte de `silver.fato_conversa`: não testa a derivação do `usuario_id`, do navegador e do início, que acontece **antes**. Por isso criei o `analise/08_recalculo_independente.py`, que parte dos **arquivos da semente**.
 - Os "números validados" são valores escritos no código. Se uma definição mudar de propósito, é preciso atualizá-los, e só deve-se fazer isso depois de conferir à mão (`docs/VALIDACAO.md`).
 - As conferências garantem **coerência**, não **verdade**: não dizem se a definição de "pessoa" é boa.
 
@@ -368,11 +372,11 @@ Marque conforme for conferindo.
 
 - [ ] Rodei as consultas da seção 9.1 no DBeaver e os números batem.
 - [ ] Rodei `analise/08_recalculo_independente.py` e vi **0 divergências**.
-- [ ] Li `bronze.py` e entendi o caminho Parquet → DuckDB → CSV → `COPY`.
-- [ ] Li `silver.py` e `definicoes.py` e concordo com: 30 minutos, 7 dias, 30 dias de lavagem, início = 1ª resposta.
+- [ ] Li `camadas/bronze/carregar.py` e entendi o caminho Parquet → DuckDB → CSV → `COPY`.
+- [ ] Li `camadas/silver/sql.py` e `comum/definicoes.py` e concordo com: 30 minutos, 7 dias, 30 dias de lavagem, início = 1ª resposta.
 - [ ] Auditei uma pessoa com `SELECT * FROM auditoria.audite_usuario('1cb966329f48');` e conferi as conversas dela na Bronze.
 - [ ] Conferi a semana de 13/11/2023 (55 / 55 / 16 / 29,1%) contra as pessoas da Silver.
-- [ ] Li `gold.py` e conferi que cada tabela agrega o que diz.
-- [ ] Li `estimar.py` e `docs/bdr/BDR-004-analise-de-efeitos.md` e entendi por que só 2 efeitos resistem à correção.
+- [ ] Li `camadas/gold/sql.py` e conferi que cada tabela agrega o que diz.
+- [ ] Li `camadas/gold/efeitos.py` e `docs/bdr/BDR-004-analise-de-efeitos.md` e entendi por que só 2 efeitos resistem à correção.
 - [ ] Conferi as amostras manuais de tema e recusa (`exports/amostra_validacao_*.csv`) e registrei a precisão.
 - [ ] Decidi o que fazer com cada ponto da seção 10 (corrigir, aceitar ou documentar).

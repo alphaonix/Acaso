@@ -3,7 +3,7 @@ ATENCAO: os testes de tema e recusa FIXAM o comportamento atual das regras (regr
 A precisao vem da amostra manual (exports/amostra_validacao_*.csv, docs/VALIDACAO.md)."""
 import pytest
 
-from pipeline.definicoes import UA_NORM_SQL
+from comum.definicoes import UA_NORM_SQL
 
 from .helpers import C, UA_ANDROID, UA_CHROME_119, UA_CHROME_120, UA_FIREFOX, linhas, rodar, t, uid, usuario
 

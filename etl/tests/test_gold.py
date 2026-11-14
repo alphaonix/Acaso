@@ -1,7 +1,7 @@
 """Gold: intervalo de confianca (Wilson), amostra minima e agregados conferidos contra a silver."""
 import pytest
 
-from pipeline.definicoes import AMOSTRA_MINIMA
+from comum.definicoes import AMOSTRA_MINIMA
 
 from .helpers import C, linhas, rodar, t
 
