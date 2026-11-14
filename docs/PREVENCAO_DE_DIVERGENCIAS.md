@@ -28,7 +28,7 @@ e o que ainda **não** está coberto.
    - **mesma semente** (mesmos sha256): os números têm de ser **iguais**; qualquer diferença quer dizer que uma regra, um parâmetro ou o código mudou, ou que o resultado não é reprodutível;
    - **semente nova**: só se aponta variação maior que 20%.
    Por padrão a deriva gera **alerta** (a carga é publicada e o status fica `alerta`); com `DERIVA_ESTRITA=1` ela desfaz a carga. Na carga seguinte a comparação parte da que gerou o alerta, então o alerta aparece uma vez por mudança.
-6. **Testes automáticos e CI.** 108 testes (79 do ETL, 29 da API) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
+6. **Testes automáticos e CI.** 128 testes (79 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
 
 ## 3. O que cada proteção pega (cenários)
 | O que pode dar errado | Quem pega | Verificado? |
@@ -38,6 +38,7 @@ e o que ainda **não** está coberto.
 | Alguém muda uma **regra ou parâmetro** (por exemplo, visita de 30 para 45 minutos) | números validados e deriva | **demonstrado**: com 45 minutos, o retorno do Brasil foi de 23,72% para 22,02%, as duas conferências falharam (a deriva apontou 234 medidas diferentes), a carga foi desfeita e os dados ficaram intactos |
 | Bug na derivação (navegador, código da pessoa, início) | recálculo independente e testes | teste automático com erro plantado (voltou_7d, elegivel, voltou_24h) |
 | Bug no agrupamento da gold | conferências de conservação (silver_gold) | 24 conferências por carga |
+| A API devolve número diferente da gold (conta de taxa, filtro, ordem) | teste de integração API × gold | **demonstrado**: 1 número da gold alterado, 5 testes quebraram |
 | Resultado diferente a cada execução | deriva com a mesma semente | duas cargas seguidas: 0 mudanças |
 | Efeito estatístico mudou | impressão da `gold.efeito_fator` e medida `efeitos_brasil` | por deriva |
 | Carga que falha no meio | transação única: rollback | demonstrado, dados intactos |
@@ -81,7 +82,7 @@ docker compose run --rm --no-deps -v "${PWD}\analise\08_recalculo_independente.p
 
 ## 6. Limites declarados (o que ainda não está coberto)
 - **Parâmetro errado em ambos os lados:** o recálculo independente usa os mesmos parâmetros de `comum/definicoes.py` (30 min, 7 dias, 30 dias). Ele confirma que o **código** segue a regra, não que a **regra** é boa. Quem pega um parâmetro alterado são os números validados e a deriva.
-- **API e tela × Gold:** não há teste automático comparando o que a API devolve com a Gold, nem o que a tela mostra com a API. O cálculo da taxa e da margem de erro na API (`_com_taxa`) está coberto só pela conferência manual.
+- **Tela × API:** a API × gold é testada automaticamente (`backend/tests/test_api_x_gold.py`, 401 conferências em 6 países, não nos 202), mas **não há teste automático do que a tela desenha**: o painel só mostra o que a API devolve, e isso foi conferido à mão.
 - **Números validados à mão:** precisam ser atualizados por uma pessoa, depois de conferir, quando uma definição muda de propósito.
 - **Deriva por padrão só alerta:** `DERIVA_ESTRITA=1` a torna bloqueante (decisão de quem opera).
 - **Impressões digitais** são somas de hashes de 64 bits: uma colisão é improvável, mas não impossível.

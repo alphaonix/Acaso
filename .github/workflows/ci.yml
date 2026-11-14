@@ -29,6 +29,8 @@ jobs:
           python3 -c "import json; d = json.load(open('saude.json')); assert d['ultima_execucao_etl']['status'] == 'ok', d"
       - name: Recalculo independente a partir dos arquivos da semente (0 divergencias)
         run: docker compose run --rm --no-deps -v "$PWD/analise/08_recalculo_independente.py:/tmp/r.py:ro" etl python /tmp/r.py
+      - name: API x Gold (a API devolve o que a gold tem) e conciliacao entre camadas
+        run: docker compose --profile test run --rm testes-integracao
       - name: Mostra o log do ETL se algo falhar
         if: failure()
         run: docker compose logs etl | tail -n 120

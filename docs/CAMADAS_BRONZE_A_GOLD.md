@@ -350,7 +350,7 @@ O script lê **os arquivos da semente**, reimplementa as regras em Python/pandas
 ### 9.4 O que a validação **não** cobre
 - Se a definição de "pessoa" é uma boa aproximação da realidade (só a análise de sensibilidade mede isso).
 - A **precisão** das regras de tema e recusa (depende da conferência manual das amostras `exports/amostra_validacao_*.csv`).
-- Os números da camada de **API e tela**: o próprio painel mostra os mesmos valores da Gold (por exemplo, 23,7% e "530 de 2.234"), mas não há aqui um teste automático API × Gold.
+- Os números da camada de **API e tela**: o próprio painel mostra os mesmos valores da Gold (por exemplo, 23,7% e "530 de 2.234"), e isso é conferido por teste automático (`backend/tests/test_api_x_gold.py`; relatório visual em `exports/fluxo_dos_dados.html`).
 
 ---
 
