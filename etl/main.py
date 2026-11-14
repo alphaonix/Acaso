@@ -22,7 +22,7 @@ import duckdb
 
 from camadas import bronze, gold, silver
 import verificacao
-from comum import acesso, banco, deriva, diagnostico, qualidade
+from comum import acesso, anomalia, banco, deriva, diagnostico, qualidade
 
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
 ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"           # conferencia falhou: desfaz a carga
@@ -42,7 +42,7 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
     falhas = [r for r in resultados if not r.passou]
     alertas.extend(falhas)
     # deriva so derruba a carga se DERIVA_ESTRITA=1; integridade (alguem mexeu fora do ETL) e so alerta: a carga reconstroi tudo e cura o dado
-    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
+    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade", "anomalia") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
     if graves and ESTRITO:
         raise PortaoFalhou(f"{len(graves)} verificacao(oes) da camada {camada} falharam")
 
@@ -87,6 +87,9 @@ def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
     print(f"[estimar] {gold.construir_efeitos(dw)} efeitos gravados em gold.efeito_fator", flush=True)
     gold.auditar_gold(dw, exec_id)
     conferir(ops, exec_id, "gold", gold.validar_gold(dw, exec_id) + medir(ops, exec_id, "gold", gold.diagnosticar_gold(dw)), alertas)
+
+    print("== ANOMALIAS: alguma taxa mudou demais em relacao a carga anterior? De que camada veio? ==", flush=True)
+    conferir(ops, exec_id, "anomalia", anomalia.verificar(ops, exec_id), alertas)
     return alertas
 
 

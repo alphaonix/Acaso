@@ -56,6 +56,8 @@ def diferencas(ops, dw, carga: int) -> tuple[list[str], int]:
         if chave not in agora:
             difs.append(f"{nome}: existia na carga {carga} e sumiu")
         elif chave not in gravadas:
+            if not any(c[:2] == chave[:2] for c in gravadas):
+                continue          # medida criada por uma versao nova do codigo (a carga anterior nem media isso): nao e alteracao por fora
             difs.append(f"{nome}: apareceu depois da carga {carga}")
         elif not _igual(gravadas[chave], agora[chave]):
             difs.append(f"{nome}: carga {carga} deixou {gravadas[chave][1] or gravadas[chave][0]}, agora esta {agora[chave][1] or agora[chave][0]}")

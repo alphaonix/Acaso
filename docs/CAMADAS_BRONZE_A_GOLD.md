@@ -282,7 +282,7 @@ SELECT round(((SELECT 100.0*v/n FROM r WHERE recusa) - (SELECT 100.0*v/n FROM r 
 
 **`silver/auditoria.py` e `gold/auditoria.py`** gravam, a cada carga, em `auditoria.*` (a da silver logo depois de construir a silver; a da gold completa o funil por país com os números da gold): linhas por camada, **cada linha excluída com o motivo** (`registro_excluido`), valores vazios antes e depois, exemplos "antes e depois" e o funil por país. Não guarda texto nem endereço.
 
-As **64 conferências** (2 de integridade, feitas antes de reconstruir; veja `docs/PREVENCAO_DE_DIVERGENCIAS.md`) ficam em cada camada (`bronze/validar.py` 5, `silver/validar.py` 27 contando o recálculo independente, `gold/validar.py` 27, mais 1 de deriva por camada) e rodam **logo depois de cada camada ser construída**, dentro da transação; `comum/qualidade.py` só executa e grava. Se uma falhar, a carga para ali e desfaz tudo (não espera as camadas seguintes). Seis grupos:
+As **65 conferências** (2 de integridade, feitas antes de reconstruir; veja `docs/PREVENCAO_DE_DIVERGENCIAS.md`) ficam em cada camada (`bronze/validar.py` 5, `silver/validar.py` 27 contando o recálculo independente, `gold/validar.py` 27, mais 1 de deriva por camada) e rodam **logo depois de cada camada ser construída**, dentro da transação; `comum/qualidade.py` só executa e grava. Se uma falhar, a carga para ali e desfaz tudo (não espera as camadas seguintes). Seis grupos:
 
 | Grupo | O que protege | Exemplo |
 |---|---|---|

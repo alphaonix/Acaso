@@ -13,6 +13,8 @@ _IMPRESSAO = " UNION ALL ".join(f"SELECT '{t}', NULL, coalesce(sum(hashtextexten
 CONSULTAS = [
     ("linhas", _LINHAS),
     ("impressao", _IMPRESSAO),
+    ("pais_elegiveis", "SELECT pais, usuarios_elegiveis, NULL FROM gold.pais"),        # por pais: o diagnostico de anomalia compara com a silver
+    ("pais_voltaram", "SELECT pais, voltaram_7d, NULL FROM gold.pais"),
     ("brasil_elegiveis", "SELECT NULL, usuarios_elegiveis, NULL FROM gold.pais WHERE pais = 'Brazil'"),
     ("brasil_voltaram_7d", "SELECT NULL, voltaram_7d, NULL FROM gold.pais WHERE pais = 'Brazil'"),
     ("brasil_retorno_7d", "SELECT NULL, round(voltaram_7d::numeric / usuarios_elegiveis, 6), NULL FROM gold.pais WHERE pais = 'Brazil'"),

@@ -1,10 +1,10 @@
 # Testes automatizados
 
 Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** Os testes fixam cada regra de borda da
-definição (BDR-001) e reproduzem o incidente do PDF (seção 4.2). São 119 testes de unidade (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco já carregado, **só leem**).
+definição (BDR-001) e reproduzem o incidente do PDF (seção 4.2). São 138 testes de unidade (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco já carregado, **só leem**).
 
 ```bash
-docker compose --profile test run --rm --build testes-etl     # 90 testes: sessão, retorno, elegibilidade, limpeza, tema, recusa, gold, catálogo, incidente, análise ampliada, prevenção de divergências, trava de escrita e integridade
+docker compose --profile test run --rm --build testes-etl     # 109 testes: sessão, retorno, elegibilidade, limpeza, tema, recusa, gold, catálogo, incidente, análise ampliada, prevenção de divergências, trava de escrita e integridade
 docker compose --profile test run --rm --build testes-api     # 29 testes: decomposição mix x taxa
 docker compose --profile test run --rm --build testes-integracao   # 20 testes: API x Gold e camadas entre si (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo      # gera exports/fluxo_dos_dados.html (caminho do dado + todas as conferências)
@@ -25,6 +25,7 @@ termina em `ROLLBACK` e o banco é apagado no fim.
 | `test_catalogo.py` | o **SQL de referência de cada indicador** (o que o glossário e `docs/INDICADORES.md` mostram) dá o mesmo número que a gold (inclui voltou em 24 h e 30 dias, concentração dos 10 mais ativos e recusa por versão): a fórmula documentada e a consulta executada não se separam (BDR-002) |
 | `test_analise_ampliada.py` | **voltou em 24 h** (24 h exatas conta; +1 s não, mas conta em 7 dias) e `dias_ate_voltar`; voltou em 24 h implica voltou em 7 dias; **janela de 30 dias** nas duas bordas; a curva de retorno só usa quem tem janela completa e nunca decresce; idioma do navegador; fatores `idioma_x_navegador` e `dispositivo`; **concentração** por faixa e peso dos 10 mais ativos; **uso por hora no fuso do país** (01:30 UTC de quarta = 22:30 de terça em São Paulo); recusa, retorno e GPT-4 por versão do modelo e por mês; **país sem texto** tem retorno por versão e não tem recusa |
 | `test_prevencao.py` | **o recálculo independente (Python, a partir da bronze) bate com a silver e pega um erro plantado** (voltou_7d, elegivel, voltou_24h); **contrato da semente** (coluna a menos, tipo trocado, coluna nova, arquivo ausente, e a semente real do repositório); **deriva** (sem carga anterior, mesma semente igual, mesma semente com mudança, semente nova só aponta variação grande, ignora carga que falhou, ignora medida nova); medidas por camada reprodutíveis e a impressão digital muda quando uma pessoa muda; o executor aceita função no lugar do SQL |
+| `test_anomalia.py` | **a taxa salta e o sistema diz de onde veio**: carga igual e variação pequena não alertam; amostra pequena não é avaliada; 25% → 97% e queda são detectadas; origem **GOLD** (gold ≠ silver), **TRANSFORMAÇÃO** (mesma entrada, resultado diferente), **BRONZE** (60% das linhas sem endereço), **SILVER** (limpeza ou elegibilidade mudou) e **SEM CAUSA** (funil estável); "(vazio)" da bronze = "Desconhecido" da silver; a simulação aponta a camada onde o defeito foi plantado; grava em `auditoria.anomalia` |
 | `test_integridade.py` | **ninguém altera as camadas por fora sem ser barrado ou percebido**: UPDATE, DELETE, INSERT e TRUNCATE em bronze, silver e gold fora da carga são recusados; durante a carga passam; a trava é instalada uma vez (idempotente); trava desligada é detectada; uma pessoa alterada, uma conversa apagada, um número da gold alterado, uma linha da bronze trocada ou uma linha acrescentada mudam a impressão digital e a verificação aponta |
 | `backend/tests/test_api_x_gold.py` + `conciliacao.py` | **a API devolve o que a gold tem**: cada endpoint de dados, em 6 países (Brasil, os 2 maiores, Portugal, Desconhecido e um com menos de 30 elegíveis), é comparado linha a linha com a gold (401 conferências); taxa e margem de Wilson são **recalculadas em Python** e comparadas com as da API; somas por semana, mês, versão e faixa têm de bater com `gold.pais` (dois caminhos, mesmo número); 14 conferências entre bronze, silver e gold; rotas sem login dão 401; **um erro plantado é detectado** (provado também alterando 1 número da gold: 5 testes quebraram) |
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios); só o mix; só a taxa; nada mudou; nível que aparece em um mês só |
@@ -43,7 +44,7 @@ Alterei a definição de propósito e rodei a suíte; cada alteração foi **det
 
 ## Camadas de proteção
 1. **Estes testes** (código): a regra não muda sem quebrar um teste.
-2. **O portão do ETL** (dados): a cada carga, 64 conferências comparam a base com os números validados (Power BI e DBeaver) e entre as camadas;
+2. **O portão do ETL** (dados): a cada carga, 65 conferências comparam a base com os números validados (Power BI e DBeaver) e entre as camadas;
    se algo falhar, a carga é revertida e o dashboard continua no estado anterior.
 
 ## Como uma mudança chega à produção (desenho)

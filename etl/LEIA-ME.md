@@ -12,7 +12,7 @@ etl/
 │   └── gold/                os resumos que a tela lê     (LEIA-ME.md dentro)
 ├── comum/                   o que todas as camadas usam: banco, contas, regras de negócio, portão de qualidade
 ├── semente/                 como os arquivos de entrada foram gerados (feito uma vez, à mão; não roda no Docker)
-└── tests/                   90 testes automáticos aqui (mais 49 na API; veja docs/TESTES.md)
+└── tests/                   109 testes automáticos aqui (mais 49 na API; veja docs/TESTES.md)
 ```
 
 ## A receita (o que `main.py` faz, em ordem)
@@ -23,6 +23,7 @@ etl/
 | 1 | Bronze | `bronze.construir_bronze` (confere o contrato da semente antes) → `bronze.validar_bronze` → medir | registra os arquivos, esvazia a tabela e carrega os Parquet; confere se bate com os arquivos |
 | 2 | Silver | `silver.construir_silver` → `silver.auditar_silver` → `silver.validar_silver` → medir | limpa, define pessoa/visitas/retorno/elegibilidade, registra o que foi excluído; confere |
 | 3 | Gold | `gold.construir_gold` → `gold.construir_efeitos` → `gold.auditar_gold` → `gold.validar_gold` → medir | monta os resumos e estima os efeitos; confere que as somas batem com a silver |
+| 3b | Anomalias | `anomalia.verificar` | compara a taxa de retorno de cada país com a da carga anterior; se saltar demais, aponta a origem (bronze, silver, gold ou transformação) no log e em `auditoria.anomalia`; só alerta. Sob demanda: `docker compose --profile operacao run --rm investigar-anomalias` |
 | 4 | Publicar | `COMMIT` | só se **todas** as validações passaram; senão `ROLLBACK` e nada é publicado |
 
 As três camadas são reconstruídas **por inteiro, numa única transação**. Se uma validação falha (modo estrito), a carga é desfeita e o painel continua com os dados anteriores.
@@ -36,7 +37,7 @@ As três camadas são reconstruídas **por inteiro, numa única transação**. S
 | os resumos da tela | [`camadas/gold/sql.py`](camadas/gold/sql.py) |
 | o cálculo dos efeitos | [`camadas/gold/efeitos.py`](camadas/gold/efeitos.py) |
 | o histórico e a deriva | `comum/diagnostico.py`, `comum/deriva.py` e `camadas/<camada>/diagnosticar.py` |
-| as conferências | `camadas/<camada>/validar.py` (64 no total, contando 6 do recálculo independente e a deriva de cada camada) |
+| as conferências | `camadas/<camada>/validar.py` (65 no total, contando 6 do recálculo independente e a deriva de cada camada) |
 | como conectar e migrar o banco | [`comum/banco.py`](comum/banco.py) |
 | como a semente foi gerada | [`semente/`](semente/) |
 
