@@ -9,7 +9,7 @@ flowchart LR
   D -->|JSON| E[Frontend Next.js]
   E --> F[Pessoa de negocio]
 ```
-O dashboard nunca le a base bruta: ela nem existe no Postgres. Etapas do ETL: migrar, conferir semente, carregar e derivar
+O dashboard nunca le a base bruta: a bronze existe no Postgres, mas so o ETL tem acesso (o usuario da API nao tem privilegio nela). Etapas do ETL: migrar, conferir semente, carregar e derivar
 (usuario, sessao, variaveis; BDR-001/003), agregar, estimar efeitos, conferir qualidade.
 
 ## Componentes: local (entrega) e AWS (implantacao)

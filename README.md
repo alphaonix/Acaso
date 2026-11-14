@@ -13,6 +13,7 @@ trocar de modelo ou alongar a resposta não mostra ganho. É associação ajusta
 | Ver **onde cada exigência do PDF foi atendida** | [`REQUISITOS.md`](REQUISITOS.md) |
 | **Explorar os dados:** sete conclusões com figuras, intervalos e sugestões | [`docs/EDA.md`](docs/EDA.md) |
 | Entender **como o dado vira o número**, passo a passo, com consultas de conferência | [`docs/COMO_FUNCIONA.md`](docs/COMO_FUNCIONA.md) |
+| **Validar cada camada** (Bronze → Silver → Gold): o que cada código faz, por quê, limites e conciliação de ponta a ponta | [`docs/CAMADAS_BRONZE_A_GOLD.md`](docs/CAMADAS_BRONZE_A_GOLD.md) |
 | O incidente da seção 4.2 e os riscos da 4.3 | [`docs/INCIDENTE.md`](docs/INCIDENTE.md) · [`docs/RISCOS.md`](docs/RISCOS.md) |
 | Arquitetura, endpoints e telas | [`docs/arquitetura.md`](docs/arquitetura.md) |
 | Implantação na AWS, custo e Terraform | [`infra/README.md`](infra/README.md) |
