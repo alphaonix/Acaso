@@ -46,7 +46,7 @@ Prazo: 16/11/2026, 23h59.
 ## 4 Sustentação
 | Exigência | | Onde |
 |---|---|---|
-| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (175 testes, 65 conferências por carga, conciliação API × gold, trava de escrita e verificação de integridade das camadas, prova por mutação, fluxo de mudança), [`docs/PREVENCAO_DE_DIVERGENCIAS.md`](docs/PREVENCAO_DE_DIVERGENCIAS.md) (histórico de medidas por camada, detecção de deriva, recálculo independente, contrato da semente, CI), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
+| 4.1 O que registrar em cada camada; perceber divergência; testes; como a mudança chega à produção | ✔ | [`docs/TESTES.md`](docs/TESTES.md) (189 testes, 66 conferências por carga, conciliação API × gold, trava de escrita e verificação de integridade das camadas, prova por mutação, fluxo de mudança), [`docs/PREVENCAO_DE_DIVERGENCIAS.md`](docs/PREVENCAO_DE_DIVERGENCIAS.md) (histórico de medidas por camada, detecção de deriva, recálculo independente, contrato da semente, CI), `ops.qa_resultado`, schema `auditoria`, logs JSON da API |
 | 4.2 Incidente (as 5 respostas) | ✔ | [`docs/INCIDENTE.md`](docs/INCIDENTE.md); o teste dourado está em `etl/tests/test_incidente.py` |
 | 4.3 Riscos e decisões em aberto | ✔ | [`docs/RISCOS.md`](docs/RISCOS.md) |
 

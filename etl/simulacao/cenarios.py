@@ -39,6 +39,10 @@ def carga(cenario: str, semente: str, estrito: bool) -> None:
     if r.returncode not in (0, 1):
         print(r.stdout[-1500:], r.stderr[-1500:])
         raise SystemExit(f"a carga do cenario '{cenario}' quebrou (exit {r.returncode})")
+    if cenario != "base":                                         # o que o ETL disse sobre este cenario (o resumo completo vai para o PDF)
+        for linha in r.stdout.splitlines():
+            if linha.startswith("[anomalia-semanal]"):
+                print("   " + linha[:260], flush=True)
 
 
 def listar() -> None:
@@ -59,7 +63,17 @@ def coletar(db, nome: str, exec_id: int) -> dict:
     falhas = db.execute("""SELECT verificacao, esperado, obtido FROM ops.qa_resultado WHERE execucao_id = %s AND NOT passou
                            AND transicao NOT IN ('anomalia', 'deriva', 'integridade') ORDER BY id""", (exec_id,)).fetchall()
     apontada = achado["origem"] if achado else "sem alerta"
-    return {"cenario": c, "achado": achado, "apontada": apontada, "ok": apontada == (c.esperada or "sem alerta"), "gate_falhas": falhas, "gate_n": len(falhas)}
+    # alertas semanais NOVOS em qualquer pais (o Brasil primeiro): um defeito de codigo, como o do incidente, afeta todos os paises, e os grandes mostram o sinal melhor
+    semanais = [{"semana": s[0], "diagnostico": s[1], "camada": s[2], "novos": s[3], "novos_base": float(s[4]), "voltaram": s[5], "voltaram_base": float(s[6]),
+                 "pct_endereco": None if s[7] is None else float(s[7]), "pct_endereco_base": None if s[8] is None else float(s[8]), "resumo": s[9], "pais": s[10]}
+                for s in db.execute("""SELECT semana::text, diagnostico, camada, novos, novos_base, voltaram, voltaram_base, pct_endereco, pct_endereco_base, resumo, pais
+                                       FROM auditoria.anomalia_semanal WHERE execucao_id = %s AND nova
+                                       ORDER BY (pais <> 'Brazil'), (diagnostico <> 'PESSOA_DIVIDIDA'), pais, semana""", (exec_id,)).fetchall()]
+    diagnosticos = {s["diagnostico"] for s in semanais}
+    ok_carga = c.esperada == "QUALQUER" or apontada == (c.esperada or "sem alerta")
+    ok_semanal = True if not c.avaliar_semanal else ((c.esperada_semanal in diagnosticos) if c.esperada_semanal else not diagnosticos)
+    return {"cenario": c, "achado": achado, "apontada": apontada, "ok": ok_carga and ok_semanal, "gate_falhas": falhas, "gate_n": len(falhas),
+            "semanais": semanais, "ok_semanal": ok_semanal}
 
 
 def main(argv: list[str]) -> int:
@@ -88,8 +102,11 @@ def main(argv: list[str]) -> int:
             r = coletar(db, nome, exec_id)
         resultados.append(r)
         a = r["achado"]
-        print(f"   esperada: {CATALOGO[nome].esperada or 'sem alerta'} | apontada: {r['apontada']}"
-              + (f" | taxa {a['taxa_ref'] * 100:.1f}% -> {a['taxa_atual'] * 100:.1f}% ({a['tipo']})" if a else "") + f" | {'OK' if r['ok'] else 'ERRADO'}", flush=True)
+        c = CATALOGO[nome]
+        print(f"   esperada: {c.esperada or 'sem alerta'} | apontada: {r['apontada']}"
+              + (f" | taxa {a['taxa_ref'] * 100:.1f}% -> {a['taxa_atual'] * 100:.1f}% ({a['tipo']})" if a else "")
+              + (f" | semanal esperado: {c.esperada_semanal or 'nenhum'}, apontado: {', '.join(sorted({s['diagnostico'] for s in r['semanais']})) or 'nenhum'}" if c.avaliar_semanal else "")
+              + f" | {'OK' if r['ok'] else 'ERRADO'}", flush=True)
     os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
     relatorio_pdf.gerar(resultados, SAIDA)
     adm.execute(f"DROP DATABASE IF EXISTS {BANCO} WITH (FORCE)")

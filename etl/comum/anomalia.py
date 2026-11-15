@@ -26,6 +26,7 @@ Z_MINIMO = 4.0           # e o quanto ela tem de ser improvavel de ser acaso
 AMOSTRA_MINIMA = 30      # menos elegiveis que isso: nao se avalia (mesma regra do painel)
 # sinais do funil: a partir de quanto uma etapa e considerada "mudou de padrao"
 LIM_LINHAS_PCT, LIM_IPS_PCT, LIM_NULOS_PP, LIM_EXCLUSAO_PP, LIM_PESSOAS_CONV_PCT, LIM_ELEGIVEIS_PP = 30.0, 20.0, 5.0, 5.0, 20.0, 10.0
+LIM_PESSOAS_ENDERECO_PCT = 10.0     # pessoas por endereco: no incidente do PDF, 2.385 enderecos viraram 2.895 pessoas (+21%) por causa do navegador
 
 
 @dataclass
@@ -85,6 +86,7 @@ def perfil(m: dict, pais: str) -> dict:
     p["exclusao"] = None if p["conversas"] is None or not linhas else 1 - p["conversas"] / linhas
     p["pessoas_por_conversa"] = _div(p["pessoas"], p["conversas"])
     p["share_elegiveis"] = _div(p["elegiveis"], p["pessoas"])
+    p["pessoas_por_endereco"] = _div(p["pessoas"], p["ips"])           # perto de 1; sobe quando o mesmo endereco vira varias pessoas (incidente do navegador atualizado)
     p["taxa"] = _div(p["voltaram"], p["elegiveis"])
     p["share24"] = _div(g("silver", "voltaram_24h", pais), p["voltaram"])          # dos que voltaram em 7 dias, quantos ja tinham voltado em 24 h
     return p
@@ -115,6 +117,8 @@ def _sinais(a: dict, r: dict) -> list[Sinal]:
     s += [Sinal("silver", "conversas descartadas na limpeza", r["exclusao"], a["exclusao"], "%", sus(pp(a["exclusao"], r["exclusao"]), LIM_EXCLUSAO_PP)),
           Sinal("silver", "pessoas por conversa", r["pessoas_por_conversa"], a["pessoas_por_conversa"], "x",
                 sus(rel(a["pessoas_por_conversa"], r["pessoas_por_conversa"]), LIM_PESSOAS_CONV_PCT)),
+          Sinal("silver", "pessoas por endereco (sobe se a mesma pessoa for contada varias vezes)", r["pessoas_por_endereco"], a["pessoas_por_endereco"], "x",
+                sus(rel(a["pessoas_por_endereco"], r["pessoas_por_endereco"]), LIM_PESSOAS_ENDERECO_PCT)),
           Sinal("silver", "elegiveis entre as pessoas", r["share_elegiveis"], a["share_elegiveis"], "%", sus(pp(a["share_elegiveis"], r["share_elegiveis"]), LIM_ELEGIVEIS_PP)),
           Sinal("silver", "voltaram em 24 h entre os que voltaram em 7 dias", r["share24"], a["share24"], "%", sus(pp(a["share24"], r["share24"]), LIM_ELEGIVEIS_PP)),
           Sinal("silver", "pessoas elegiveis (denominador)", r["elegiveis"], a["elegiveis"], "n", False),

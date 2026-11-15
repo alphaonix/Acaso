@@ -4,6 +4,9 @@
   sem_endereco  60% das conversas do Brasil sem endereco (hashed_ip nulo)
   volume_cai    so 40% das conversas do Brasil (perda de dados no envio)
   sem_horario   50% das conversas do Brasil sem horario da primeira resposta
+  pico_de_novos  na semana de 08/04/2024 a fonte "triplica" os novos: cada endereco reaparece com 3 enderecos falsos de uma conversa so (ninguem volta)
+  navegador_atualiza  o Chrome passa a lancar uma versao nova a cada 4 semanas a partir de 09/10/2023 (como acontece de verdade): o texto do user-agent muda para
+                      TODOS os usuarios de Chrome a cada ciclo. E o gatilho do incidente do PDF (4.2); so vira problema se a regra de pessoa usar o user-agent bruto.
 """
 import os
 import shutil
@@ -36,6 +39,15 @@ def gerar() -> None:
         "nova": f"SELECT * FROM {src} WHERE conversation_hash <> (SELECT min(conversation_hash) FROM {src})",
         "sem_endereco": f"SELECT * REPLACE (CASE WHEN hash(conversation_hash) % 10 < 6 THEN NULL ELSE hashed_ip END AS hashed_ip) FROM {src}",
         "volume_cai": f"SELECT * FROM {src} WHERE hash(conversation_hash) % 10 < 4",
+        "navegador_atualiza": ("SELECT * REPLACE (CASE WHEN primeira_resposta_ts >= TIMESTAMPTZ '2023-10-09 00:00:00+00' THEN "
+                               "struct_pack(\"accept-language\" := header['accept-language'], \"user-agent\" := regexp_replace(header['user-agent'], 'Chrome/[0-9]+', "
+                               "'Chrome/' || (200 + floor(date_diff('day', TIMESTAMPTZ '2023-10-09 00:00:00+00', primeira_resposta_ts) / 28)::int)::varchar)) "
+                               f"ELSE header END AS header) FROM {src}"),
+        # em uma semana (08/04/2024), a fonte "triplica" os novos: cada endereco da semana reaparece com 3 enderecos falsos, cada um com UMA conversa (ninguem volta)
+        "pico_de_novos": " UNION ALL ".join(
+            [f"SELECT * FROM {src}"] + [f"SELECT * REPLACE (hashed_ip || '{x}' AS hashed_ip, conversation_hash || '{x}' AS conversation_hash) FROM {src} "
+                                        "WHERE primeira_resposta_ts >= TIMESTAMPTZ '2024-04-08 00:00:00+00' AND primeira_resposta_ts < TIMESTAMPTZ '2024-04-15 00:00:00+00' "
+                                        "AND hashed_ip IS NOT NULL QUALIFY row_number() OVER (PARTITION BY hashed_ip ORDER BY primeira_resposta_ts) = 1" for x in "xyz"]),
         "sem_horario": f"SELECT * REPLACE (CASE WHEN hash(conversation_hash) % 10 < 5 THEN NULL ELSE primeira_resposta_ts END AS primeira_resposta_ts) FROM {src}",
     }
     for nome, sql in variantes.items():

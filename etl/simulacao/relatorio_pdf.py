@@ -76,8 +76,23 @@ def _pagina_cenario(n, r, e):
         itens += [Spacer(1, 5), Paragraph("O funil, camada por camada (as linhas em amarelo mudaram)", e["h2"]), _funil(a, e)]
     else:
         itens.append(_p("Nenhum alerta para o Brasil.", e["p"]))
+    if c.avaliar_semanal:
+        itens += [Spacer(1, 5), Paragraph("O alerta semanal (compara cada semana com as 6 anteriores)", e["h2"])]
+        if r["semanais"]:
+            linhas = [[Paragraph(t, e["celb"]) for t in ("País", "Semana", "Diagnóstico", "Novos (normal)", "Voltaram (normal)", "Novos com endereço já visto")]]
+            for s in r["semanais"][:8]:
+                end = "-" if s["pct_endereco"] is None else f"{s['pct_endereco']:.0f}% (normal {s['pct_endereco_base']:.0f}%)"
+                linhas.append([_p(s["pais"], e["cel"]), _p(s["semana"], e["cel"]), _p(s["diagnostico"], e["cel"]), _p(f"{s['novos']} ({s['novos_base']:.0f})", e["cel"]),
+                               _p(f"{s['voltaram']} ({s['voltaram_base']:.0f})", e["cel"]), _p(end, e["cel"])])
+            t = Table(linhas, colWidths=[2.6 * cm, 2.2 * cm, 3.6 * cm, 2.4 * cm, 2.6 * cm, 3.6 * cm], repeatRows=1)
+            t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), AZUL), ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey), ("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
+            itens += [t, Spacer(1, 3), _p(r["semanais"][0]["resumo"], e["peq"])]
+        else:
+            itens.append(_p("Nenhum alerta semanal novo em nenhum país.", e["p"]))
+        esp_s = c.esperada_semanal or "nenhum alerta semanal"
+        itens.append(_p(f"Esperado no alerta semanal: {esp_s}. {'CONFERE' if r['ok_semanal'] else 'NÃO CONFERE'}.", e["p"]))
     ok = r["ok"]
-    esperado = NOMES_ORIGEM.get(c.esperada, "nenhum alerta") if c.esperada else "nenhum alerta"
+    esperado = NOMES_ORIGEM.get(c.esperada, "nenhum alerta") if c.esperada and c.esperada != "QUALQUER" else ("qualquer (o que vale é o alerta semanal)" if c.esperada == "QUALQUER" else "nenhum alerta")
     itens.append(Spacer(1, 5))
     itens.append(_caixa(f"<b>Resultado do teste:</b> esperado: {escape(esperado)}. Apontado: {escape(NOMES_ORIGEM.get(r['apontada'], r['apontada']))}. "
                         f"<font color='{'#0a7d33' if ok else '#b3261e'}'><b>{'CONFERE' if ok else 'NÃO CONFERE'}</b></font>",

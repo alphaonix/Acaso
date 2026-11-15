@@ -18,7 +18,7 @@ e o que ainda **não** está coberto.
 
 "Impressão digital" é uma soma de hashes das linhas: se **uma única** pessoa, conversa ou linha de resumo mudar, a impressão muda.
 
-## 2. As oito proteções, da entrada à saída
+## 2. As nove proteções, da entrada à saída
 1. **Contrato da semente** (`camadas/bronze/contrato.py`). Antes de carregar, confere as colunas e os tipos dos dois Parquet. Coluna a menos, tipo trocado, coluna nova ou arquivo ausente: a carga **para** com uma mensagem clara, em vez de quebrar no meio ou carregar números errados.
 2. **Conferências de conservação em cada camada.** "A soma de baixo é a de cima": bronze = silver + excluídas, soma das conversas por pessoa = conversas, cada resumo da gold = o que a silver tem. São 62 por carga (`camadas/*/validar.py`).
 3. **Números validados à mão.** Os 10 números principais do Brasil (11.621 conversas, 2.530 pessoas, 2.234 elegíveis, 23,72%…) estão escritos no código; se uma regra mudar, eles quebram.
@@ -44,7 +44,16 @@ e o que ainda **não** está coberto.
    | **SILVER** | entrada normal, mas a limpeza descartou outra proporção (±5 p.p.), as pessoas por conversa mudaram (±20%) ou a proporção de elegíveis mudou (±10 p.p.) | `etl/camadas/silver/sql.py` e `auditoria.registro_excluido` |
    | **SEM CAUSA TÉCNICA** | todo o funil estável e a taxa mudou | pode ser mudança real de comportamento: confirme com a fonte |
    O diagnóstico mostra o funil inteiro (antes → agora) com `!!` nas etapas que mudaram, e fica em `auditoria.anomalia`. Há dois tipos: **TAXA** (a taxa saltou) e **ENTRADA** (a taxa quase não mexeu, mas o dado de entrada mudou de padrão: por exemplo, 60% das linhas sem endereço encolhem o país inteiro sem mudar a taxa; só olhar a taxa deixaria passar). É **alerta** (a carga é publicada com status `alerta`), não bloqueio. Para ver funcionando sem tocar no banco: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia --simular Brazil bronze` (também `silver`, `gold` e `transformacao`).
-8. **Testes automáticos e CI.** 175 testes (126 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
+8. **Alerta semanal: picos de uma semana** (`comum/anomalia_semanal.py`, migração `028`). Nasceu do incidente do PDF (4.2): os "novos" de **uma** semana quase dobraram sem ninguém voltar a mais, e na média do país isso some. Em toda carga, cada semana de cada país é comparada com as **6 semanas anteriores da própria carga** por três sinais: (1) **novos** subiu 50% ou mais (ou caiu 70%) e o desvio é grande para a variação normal do país (desvio robusto ≥ 5); (2) **taxa** mudou 5 p.p. ou mais (z ≥ 4); (3) **"novos" com endereço que já tinha aparecido com outra pessoa** subiu 15 p.p. ou mais, que é o sinal mais direto de **pessoa dividida** (quem já usava o produto sendo contado como novo). Cada semana apontada recebe um diagnóstico e a camada onde procurar:
+   | Diagnóstico | O que significa | Camada |
+   |---|---|---|
+   | **PESSOA_DIVIDIDA** | muitos "novos" têm endereço já conhecido: a mesma pessoa contada várias vezes (o incidente) | SILVER (regra de pessoa) |
+   | **DENOMINADOR_INFLADO** | novos subiram e quem voltou não | SILVER ou BRONZE (duplicatas, regra de pessoa) |
+   | **PICO_DE_USO** | novos e quem voltou subiram juntos: parece uso real (campanha) | sem causa técnica (alarme falso provável) |
+   | **QUEDA_DE_NOVOS** | poucos novos: perda de dados na entrada? | BRONZE |
+   | **TAXA_SEMANAL** | a taxa da semana mudou com os novos normais | SILVER ou mudança real |
+   Só reprova a conferência o que é **novo desde a carga anterior** (o que já existia nos dados fica registrado em `auditoria.anomalia_semanal` como conhecido; a primeira carga vira a linha de base). **Calibrado nos dados reais:** os primeiros limites (30%, z = 4) geravam 406 alertas em 202 países, ruído; com os de hoje são 42, quase todos PICO_DE_USO ou queda de feriado, e nenhum no Brasil. Também por carga, o sinal **"pessoas por endereço"** (sobe 10% ou mais: alerta) cobre os países pequenos, onde o alerta semanal é pouco sensível. Para listar o que há hoje: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia_semanal`.
+9. **Testes automáticos e CI.** 189 testes (140 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
 
 ## 3. O que cada proteção pega (cenários)
 | O que pode dar errado | Quem pega | Verificado? |
@@ -71,7 +80,7 @@ docker compose --profile operacao run --rm simular-cenarios --listar            
 docker compose --profile operacao run --rm simular-cenarios bronze_sem_endereco gold_numerador       # só os que você escolher
 docker compose --profile operacao run --rm simular-cenarios todos                                     # todos (cerca de 15 minutos)
 ```
-Roda num banco descartável (`retencao_cenarios`), nunca no real. Faz uma carga normal (a referência) e, para cada cenário, uma carga com defeito que é **desfeita** no fim (um cenário não contamina o seguinte). As sementes adulteradas ficam em `data/cenarios/` (fora do git). Resultado da última execução (os 11 cenários conferem):
+Roda num banco descartável (`retencao_cenarios`), nunca no real. Faz uma carga normal (a referência) e, para cada cenário, uma carga com defeito que é **desfeita** no fim (um cenário não contamina o seguinte). As sementes adulteradas ficam em `data/cenarios/` (fora do git). Resultado da última execução (os 14 cenários conferem):
 | Começa em | Cenário | Taxa do Brasil | Tipo | Origem apontada |
 |---|---|---|---|---|
 | **bronze** | `bronze_sem_endereco` (60% sem endereço) | 23,7% → 22,5% | ENTRADA | BRONZE |
@@ -83,8 +92,13 @@ Roda num banco descartável (`retencao_cenarios`), nunca no real. Faz uma carga 
 | **gold** | `gold_numerador` (triplica quem voltou) | 23,7% → 71,2% | TAXA | GOLD |
 | **gold** | `gold_denominador` (metade dos elegíveis) | 23,7% → 47,4% | TAXA | GOLD |
 | **gold** | `gold_pais_trocado` (Brasil herda os números de outro país) | 23,7% → 23,7% | AGREGACAO | GOLD |
+| **silver** (incidente do PDF) | `incidente_navegador` (Chrome atualiza a cada 4 semanas e a pessoa volta a usar o user-agent bruto) | 23,7% → 26,8% | LIMPEZA ("pessoas por endereço"); alerta semanal PESSOA_DIVIDIDA em países grandes | SILVER |
+| nenhuma | `incidente_navegador_corrigido` (o mesmo Chrome, com a regra correta) | sem alerta | - | nenhum (a correção funciona) |
+| **bronze** (pico de uma semana) | `pico_de_novos_semana` (os novos triplicam em uma semana, ninguém volta a mais) | média do país: sem alerta; **alerta semanal** (Brasil, 08/04/2024: 239 novos contra 67) | semanal | DENOMINADOR_INFLADO |
 | código | `codigo_mudou` (mesma semente, regra alterada) | 23,7% → 61,8% | TAXA | TRANSFORMAÇÃO |
 | nenhuma | `controle_sem_defeito` (dado novo e saudável) | sem alerta | - | nenhum (correto) |
+
+**Sobre o incidente do PDF:** o erro foi reproduzido de verdade (a regra de pessoa passa a usar o user-agent bruto, em `executar.py`) e a correção foi provada no cenário irmão. Resultado honesto: no **Brasil**, com poucas dezenas de novos por semana, o alerta semanal **não** distingue o defeito do ruído; quem o pega é "pessoas por endereço", na comparação entre cargas. Nos países grandes (Estados Unidos, Alemanha, Canadá, Reino Unido) o alerta semanal aponta PESSOA_DIVIDIDA, que é o tamanho de dado do incidente original (cerca de 1.200 novos por semana).
 
 **A simulação achou duas falhas do detector, já corrigidas.** Na primeira rodada, a bronze (taxa quase igual) não gerou alerta; depois, a gold que troca os números entre países de taxa parecida também não. Por isso existem os tipos de alerta ENTRADA, LIMPEZA e AGREGACAO, que disparam mesmo sem a taxa mudar.
 

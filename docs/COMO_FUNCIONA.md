@@ -2,7 +2,7 @@
 
 Leia na ordem. Cada etapa tem: **a regra em uma frase**, **uma consulta para você conferir no DBeaver** (`localhost:5433`, banco
 `retencao`, usuário `auditor`, somente leitura) e **o resultado esperado** (números do Brasil, salvo quando dito). Nada aqui pede confiança: tudo se confere.
-As mesmas conferências rodam sozinhas a cada carga (65 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
+As mesmas conferências rodam sozinhas a cada carga (66 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
 
 ```
 arquivos (semente)  →  BRONZE (cópia)  →  SILVER (limpa, 1 linha por conversa e por usuário)  →  GOLD (resumos)  →  tela
@@ -90,7 +90,7 @@ Resumos prontos por país, semana e fator (`gold.agg_retorno_semana`, `gold.agg_
 (`gold.efeito_fator`). A gold tem as mesmas 837.972 conversas da silver, só agrupadas. Cada taxa vem com intervalo de confiança de
 95% (Wilson) e é escondida quando a amostra é menor que 30.
 
-## 12. As 65 conferências do portão (transição → o que protege)
+## 12. As 66 conferências do portão (transição → o que protege)
 | transição | n | exemplo |
 |---|---|---|
 | bronze_arquivos | 5 | linhas da bronze = linhas dos arquivos de origem |
@@ -102,6 +102,7 @@ Resumos prontos por país, semana e fator (`gold.agg_retorno_semana`, `gold.agg_
 | validados | 10 | números do Brasil conferidos à mão (Power BI e DBeaver) |
 | integridade | 2 | **antes de reconstruir**, o que está publicado é idêntico ao que a carga anterior deixou (ninguém alterou fora do ETL) e a trava de escrita está ligada |
 | anomalia | 1 | **nenhum país com 30 ou mais elegíveis teve a taxa de retorno mudada em 5 p.p. ou mais** (e z ≥ 4) em relação à carga anterior; se mudar, o log e `auditoria.anomalia` dizem se a origem é bronze, silver, gold ou transformação |
+| anomalia_semanal | 1 | **nenhuma semana tem um pico novo** de "novos", de taxa ou de "novos" com endereço já conhecido em relação às 6 semanas anteriores (o formato do incidente do PDF); aponta a camada |
 | deriva | 3 | **sem mudar a semente, os números da camada não mudam** em relação à carga anterior (uma por camada) |
 
 O recálculo da linha `silver_interna` parte só das conversas e refaz as sessões. O da linha `silver_independente` parte da **bronze** e refaz

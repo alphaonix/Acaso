@@ -19,9 +19,49 @@ class Cenario:
     anomalia_real: str                # por que isto pode ser um problema de verdade
     alarme_falso: str                 # por que isto pode ser um alarme falso
     verificar: list[str] = field(default_factory=list)
+    avaliar_semanal: bool = False     # True: o resultado do teste inclui o ALERTA SEMANAL (esperada_semanal = diagnostico esperado, None = nenhum alerta novo)
+    esperada_semanal: str | None = None
 
 
 CATALOGO: dict[str, Cenario] = {c.nome: c for c in [
+    # ------------------------------------------------------------------ o incidente do PDF (4.2): navegador atualiza e a pessoa e contada em duplicidade
+    Cenario(
+        "incidente_navegador", "silver", "Incidente do PDF: o navegador atualiza e a mesma pessoa vira várias",
+        "O Chrome passa a lançar versão nova a cada 4 semanas (o texto do user-agent muda para todos os usuários de Chrome) e a regra de pessoa da silver volta a usar o "
+        "user-agent bruto, com a versão: o erro do incidente do PDF.",
+        "navegador_atualiza", "SILVER",
+        "Quem já usava o produto passa a ser contado como gente nova a cada atualização do navegador: as pessoas sobem sem ninguém voltar a mais, e a taxa cai. É o mecanismo "
+        "do incidente do PDF (retorno de 31% para 18%). A pista mais direta é 'pessoas por endereço': normalmente perto de 1, sobe quando o mesmo endereço vira várias pessoas "
+        "(no incidente, 2.385 endereços viraram 2.895 pessoas).",
+        "Pode ser real se o produto passou a ser usado por várias pessoas no mesmo endereço (escola, empresa, rede compartilhada). Nesse caso a mudança é gradual e acompanha o "
+        "volume; se for súbita e coincidir com uma atualização de navegador, é mais provável que seja a regra de pessoa. Como o defeito está no código, ele afeta todos os países: "
+        "nos grandes (Estados Unidos, Alemanha, Canadá, Reino Unido) o alerta semanal aponta PESSOA_DIVIDIDA; no Brasil, que tem poucas dezenas de novos por semana, "
+        "quem o pega é a comparação entre cargas ('pessoas por endereço').",
+        ["Ver os alertas: SELECT * FROM auditoria.anomalia_semanal WHERE nova AND diagnostico = 'PESSOA_DIVIDIDA' ORDER BY pais, semana;",
+         "Conferir a regra de pessoa: UA_NORM_SQL em etl/comum/definicoes.py (deve tirar a versão do navegador).",
+         "Rodar test_incidente.py: o teste dourado do incidente deve quebrar se a regra voltar a usar o user-agent bruto."],
+        avaliar_semanal=True, esperada_semanal="PESSOA_DIVIDIDA"),
+    Cenario(
+        "incidente_navegador_corrigido", "nenhuma", "O mesmo navegador atualizando, com a regra de pessoa correta (a correção do incidente)",
+        "A mesma semente do cenário anterior (Chrome atualizando a cada 4 semanas), mas com o código atual, que tira a versão do navegador da regra de pessoa.",
+        "navegador_atualiza", None,
+        "Este cenário mostra a correção funcionando: as atualizações de navegador não criam pessoas novas, então os números ficam estáveis e nenhum alerta aparece.",
+        "Se aparecesse um alerta aqui, seria um alarme falso do detector, ou a correção teria deixado de funcionar.",
+        ["Nenhuma ação: o resultado esperado é não ter alerta (nem por carga, nem semanal)."],
+        avaliar_semanal=True, esperada_semanal=None),
+    Cenario(
+        "pico_de_novos_semana", "bronze", "Pico de uma semana: os novos triplicam e ninguém volta a mais",
+        "Em uma semana (08/04/2024), a fonte envia cada endereço da semana mais três vezes, com endereços falsos de uma conversa só (por exemplo, um robô ou uma duplicação "
+        "na origem). É o formato do incidente do PDF: os 'novos' de uma semana disparam e os que voltaram ficam iguais.",
+        "pico_de_novos", None,
+        "Uma semana com muito mais 'novos' do que as anteriores, e sem ninguém voltar a mais, infla o denominador: a taxa da semana cai sem que o comportamento tenha mudado. "
+        "Na média do país o pico some (um ano de dados), por isso só o alerta semanal enxerga.",
+        "Pode ser real se uma campanha ou uma reportagem trouxe muita gente nova de uma vez. Nesse caso os que voltaram costumam subir um pouco depois, e os endereços são "
+        "realmente inéditos; o alerta semanal diferencia: se quem voltou sobe junto, o diagnóstico é 'pico de uso', não 'denominador inflado'.",
+        ["Ver as semanas: SELECT * FROM auditoria.anomalia_semanal WHERE nova ORDER BY semana;",
+         "Comparar as linhas da bronze por semana e procurar endereços que só aparecem uma vez naquela semana.",
+         "Perguntar ao produto se houve campanha ou lançamento naquela semana."],
+        avaliar_semanal=True, esperada_semanal="DENOMINADOR_INFLADO"),
     # ------------------------------------------------------------------ comeca na BRONZE (o dado de entrada)
     Cenario(
         "bronze_sem_endereco", "bronze", "60% das conversas do Brasil chegam sem endereço",

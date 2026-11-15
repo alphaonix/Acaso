@@ -8,7 +8,7 @@ from simulacao.executar import DEFEITOS
 
 from .test_anomalia import REF, medidas
 
-ORIGENS = {"BRONZE", "SILVER", "GOLD", "TRANSFORMACAO", None}
+ORIGENS = {"BRONZE", "SILVER", "GOLD", "TRANSFORMACAO", "QUALQUER", None}
 
 
 def test_ha_cenarios_que_comecam_em_cada_camada():

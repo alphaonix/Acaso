@@ -22,7 +22,7 @@ import duckdb
 
 from camadas import bronze, gold, silver
 import verificacao
-from comum import acesso, anomalia, banco, deriva, diagnostico, qualidade
+from comum import acesso, anomalia, anomalia_semanal, banco, deriva, diagnostico, qualidade
 
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
 ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"           # conferencia falhou: desfaz a carga
@@ -42,7 +42,7 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
     falhas = [r for r in resultados if not r.passou]
     alertas.extend(falhas)
     # deriva so derruba a carga se DERIVA_ESTRITA=1; integridade (alguem mexeu fora do ETL) e so alerta: a carga reconstroi tudo e cura o dado
-    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade", "anomalia") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
+    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade", "anomalia", "anomalia_semanal") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
     if graves and ESTRITO:
         raise PortaoFalhou(f"{len(graves)} verificacao(oes) da camada {camada} falharam")
 
@@ -90,6 +90,8 @@ def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
 
     print("== ANOMALIAS: alguma taxa mudou demais em relacao a carga anterior? De que camada veio? ==", flush=True)
     conferir(ops, exec_id, "anomalia", anomalia.verificar(ops, exec_id), alertas)
+    print("== ALERTA SEMANAL: alguma semana teve pico de novos ou salto da taxa (como no incidente do PDF)? ==", flush=True)
+    conferir(ops, exec_id, "anomalia_semanal", anomalia_semanal.verificar(ops, dw, exec_id), alertas)
     return alertas
 
 
