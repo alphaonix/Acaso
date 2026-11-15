@@ -1,6 +1,6 @@
 # Como o dado vira o número da tela (passo a passo, com conferência)
 
-Leia na ordem. Cada etapa tem: **a regra em uma frase**, **uma consulta para você conferir no DBeaver** (`localhost:5433`, banco
+Para conferir **cada número da tela** em SQL (qualquer país), veja [`CONFERIR_NUMEROS.md`](CONFERIR_NUMEROS.md). Leia na ordem. Cada etapa tem: **a regra em uma frase**, **uma consulta para você conferir no DBeaver** (`localhost:5433`, banco
 `retencao`, usuário `auditor`, somente leitura) e **o resultado esperado** (números do Brasil, salvo quando dito). Nada aqui pede confiança: tudo se confere.
 As mesmas conferências rodam sozinhas a cada carga (66 verificações, registradas em `ops.qa_resultado`); se uma falhar, a carga não é publicada.
 
