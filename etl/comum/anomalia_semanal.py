@@ -176,6 +176,10 @@ def enderecos_todos(dw) -> dict[str, dict]:
     saida: dict[str, dict] = {}
     with dw.transaction():
         dw.execute("SET LOCAL max_parallel_workers_per_gather = 0")      # consulta paralela usa /dev/shm, que no container tem so 64 MB (DiskFull)
+        # as tabelas acabaram de ser carregadas nesta transacao e ainda nao tem estatisticas: sem isto o Postgres escolhe um plano
+        # lento (minutos); com elas a consulta leva segundos
+        for tabela in ("bronze.wildchat", "silver.fato_conversa", "silver.fato_usuario"):
+            dw.execute(f"ANALYZE {tabela}")
         linhas = dw.execute(SQL_ENDERECO).fetchall()
     for pais, semana, n, jv in linhas:
         saida.setdefault(pais, {})[semana] = (n, jv)
