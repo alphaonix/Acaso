@@ -25,7 +25,8 @@ jobs:
         run: docker compose up --build -d
       - name: A ultima carga do ETL tem de estar com status ok
         run: |
-          curl -fsS http://localhost:8000/api/saude | tee saude.json
+          # a porta aceita conexao antes de a API estar pronta: tenta por ate 2 minutos
+          curl -fsS --retry 60 --retry-delay 2 --retry-connrefused --retry-all-errors http://localhost:8000/api/saude | tee saude.json
           python3 -c "import json; d = json.load(open('saude.json')); assert d['ultima_execucao_etl']['status'] == 'ok', d"
       - name: Recalculo independente a partir dos arquivos da semente (0 divergencias)
         run: docker compose run --rm --no-deps -v "$PWD/analise/08_recalculo_independente.py:/tmp/r.py:ro" etl python /tmp/r.py
