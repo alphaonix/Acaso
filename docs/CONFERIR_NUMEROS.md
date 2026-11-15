@@ -26,6 +26,7 @@ Os valores abaixo são do Brasil; a Alemanha vem ao lado quando a diferença aju
 | 13 | Comparação entre países e média geral | Visão geral, barras |
 | 14 | Retorno por tema do primeiro pedido | O que faz voltar |
 | 15 | Da bronze para a silver (nada sumiu) | todas as telas |
+| 16 | Efeitos: grupos, efeito bruto e o que é ajustado | O que faz voltar |
 
 ---
 
@@ -281,6 +282,66 @@ SELECT (SELECT count(*) FROM bronze.wildchat WHERE coalesce(country, 'Desconheci
 ```
 **O que faz:** vale a regra **bronze = silver + excluídas**. Conversas sem país entram como "Desconhecido" na silver. A tabela `auditoria.registro_excluido` guarda cada linha excluída com o motivo.
 **Deve dar:** 11.621 · 0 · 11.621 (Alemanha: 28.975 · 0 · 28.975). No total, 837.989 = 837.972 + 17.
+
+## 16. Efeitos na tela "O que faz voltar"
+**O que dá e o que não dá para conferir em SQL.** Cada linha da tela tem duas partes:
+
+| Parte | Em SQL? |
+|---|---|
+| Quantas pessoas em cada grupo (n), retorno do grupo de comparação, **efeito bruto** e o intervalo dele | **Sim**, consultas abaixo |
+| **Efeito ajustado** (o número grande, ex.: +8,7), o intervalo dele, "grupos parecidos?", E-value | **Não**: é uma estimativa estatística (AIPW, regressão logística com validação cruzada) calculada em Python, em [`etl/camadas/gold/efeitos.py`](../etl/camadas/gold/efeitos.py). O SQL só lê o resultado guardado na gold. |
+
+O efeito bruto é a diferença simples entre os dois grupos. O ajustado compara pessoas **parecidas** (mesmo mês, horário, sistema, navegador, estado, modelo, tema, tamanho do pedido, idioma), por isso é diferente do bruto (+8,7 contra +6,5 nos turnos). Método e limites em [`bdr/BDR-004-analise-de-efeitos.md`](bdr/BDR-004-analise-de-efeitos.md).
+
+**(a) Efeito bruto de "2 ou mais turnos em vez de 1"** (a primeira linha da tela):
+```sql
+-- Divide as pessoas elegíveis em dois grupos (2+ turnos e 1 turno), calcula o retorno de cada um e a diferença em pontos percentuais.
+WITH g AS (SELECT (turnos >= 2) AS tratado, count(*) AS n, avg(voltou_7d::int) AS p
+           FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel GROUP BY 1),
+     d AS (SELECT t.n AS n_tratados, c.n AS n_comparacao, round(c.p, 4) AS taxa_comparacao, 100 * (t.p - c.p) AS dif,
+                  100 * 1.96 * sqrt(t.p*(1-t.p)/t.n + c.p*(1-c.p)/c.n) AS margem
+           FROM g t, g c WHERE t.tratado AND NOT c.tratado)
+SELECT d.n_tratados, d.n_comparacao, d.taxa_comparacao,
+       round(d.dif, 2) AS bruto_pp, round(d.dif - d.margem, 2) AS bruto_ic_lo, round(d.dif + d.margem, 2) AS bruto_ic_hi,
+       (d.n_tratados = e.n_tratados AND d.n_comparacao = e.n_controle AND round(d.dif, 2) = e.efeito_bruto_pp
+        AND round(d.dif - d.margem, 2) = e.bruto_ic_lo AND round(d.dif + d.margem, 2) = e.bruto_ic_hi) AS bate_com_gold
+FROM d, gold.efeito_fator e
+WHERE e.pais = 'Brazil' AND e.fator = 'Turnos da primeira conversa';
+```
+**O que faz:** `g` calcula, para cada grupo, quantas pessoas há e a taxa de retorno. `d` subtrai as taxas e calcula a margem de erro de 95% (`1,96 × erro-padrão`). O final compara com a linha guardada em `gold.efeito_fator`.
+**Deve dar:** 1.200 · 1.034 · 0,2021 · +6,54 [+3,04; +10,04] · `t`. É o "Efeito bruto +6,5 pp [+3,0; +10,0]" e o "retorno de 20,2%" da tela.
+
+**(b) Efeito bruto de "Saudação em vez de Conhecimento/pergunta":**
+```sql
+-- Mesma conta, comparando só as pessoas cujo primeiro pedido foi uma saudação com as de uma pergunta de conhecimento.
+WITH g AS (SELECT t.tema AS tema, count(*) AS n, avg(u.voltou_7d::int) AS p
+           FROM silver.fato_usuario u JOIN silver.dim_tema t ON t.tema_id = u.tema_id
+           WHERE u.pais = 'Brazil' AND u.elegivel AND t.tema IN ('Saudação', 'Conhecimento/pergunta') GROUP BY 1),
+     d AS (SELECT t.n AS n_tratados, c.n AS n_comparacao, round(c.p, 4) AS taxa_comparacao, 100 * (t.p - c.p) AS dif,
+                  100 * 1.96 * sqrt(t.p*(1-t.p)/t.n + c.p*(1-c.p)/c.n) AS margem
+           FROM g t, g c WHERE t.tema = 'Saudação' AND c.tema = 'Conhecimento/pergunta')
+SELECT d.n_tratados, d.n_comparacao, d.taxa_comparacao,
+       round(d.dif, 2) AS bruto_pp, round(d.dif - d.margem, 2) AS bruto_ic_lo, round(d.dif + d.margem, 2) AS bruto_ic_hi,
+       (d.n_tratados = e.n_tratados AND d.n_comparacao = e.n_controle AND round(d.dif, 2) = e.efeito_bruto_pp
+        AND round(d.dif - d.margem, 2) = e.bruto_ic_lo AND round(d.dif + d.margem, 2) = e.bruto_ic_hi) AS bate_com_gold
+FROM d, gold.efeito_fator e
+WHERE e.pais = 'Brazil' AND e.fator = 'Tema do primeiro pedido' AND e.contraste = 'Saudação em vez de Conhecimento/pergunta';
+```
+**Deve dar:** 386 · 531 · 0,2561 · −10,85 [−15,97; −5,72] · `t`. A tela mostra n = 917 (386 + 531) e o efeito **ajustado** −8,1; o bruto (−10,9) é maior em módulo porque o ajuste desconta diferenças de perfil entre os grupos.
+
+**Para os outros fatores**, troque só a definição do grupo `tratado`: recusa (`recusa` no lugar de `turnos >= 2`, com `AND recusa IS NOT NULL`) dá 198 · 2.036 · 0,2451 · −8,85 [−14,25; −3,46] · `t`; pedido longo (`prompt1_chars >= 60`, a mediana) dá 1.119 · 1.115 · 0,2000 · +7,44 [+3,92; +10,95] · `t`.
+
+**(c) Ver exatamente o que a gold guardou (é isto que a tela mostra):**
+```sql
+-- Uma linha por efeito: grupos, efeito bruto, efeito ajustado com intervalo, sobreposição e E-value.
+SELECT fator, contraste, n_tratados, n_controle, efeito_bruto_pp, efeito_pp AS efeito_ajustado_pp, ic_lo, ic_hi,
+       sobreposicao AS grupos_parecidos_pct, e_value, ajustado_por
+FROM gold.efeito_fator
+WHERE pais = 'Brazil'
+ORDER BY abs(efeito_pp) DESC;
+```
+**O que faz:** só lê a tabela. Para turnos: ajustado 8,72 [3,3; 14,14], sobreposição 97,9% ("97,9% das pessoas têm chance comparável"), E-value 2,26.
+**Como confiar no ajustado, se não sai de SQL:** (1) o código é o `efeitos.py`, com semente fixa e ordem fixa das linhas, então a mesma base dá sempre o mesmo número (a conferência de **deriva** da carga acusa se mudar); (2) o bruto acima mostra que a base do cálculo (grupos e retornos) está certa; (3) a sensibilidade e os limites estão em `docs/SENSIBILIDADE.md` e no BDR-004. **Ele mostra associação ajustada, não prova de causa.**
 
 ---
 

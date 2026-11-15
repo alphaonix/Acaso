@@ -1,4 +1,4 @@
-# Retenção de um assistente de IA: análise e dashboard
+﻿# Retenção de um assistente de IA: análise e dashboard
 
 Desafio técnico (Acaso): **o que faz quem experimentou o assistente voltar a usá-lo em até 7 dias**, com o efeito de cada fator, a incerteza e a separação entre causa e seleção.
 Base: WildChat-1M (análise sobre `country = 'Brazil'`; o dashboard tem filtro de país).
@@ -40,7 +40,7 @@ Detalhes em [`docs/TESTES.md`](docs/TESTES.md).
 | Onde cada exigência do PDF foi atendida | [`REQUISITOS.md`](REQUISITOS.md) |
 | Exploração dos dados (7 conclusões com figuras) | [`docs/EDA.md`](docs/EDA.md) |
 | Como o dado vira número, com consultas para conferir | [`docs/COMO_FUNCIONA.md`](docs/COMO_FUNCIONA.md) |
-| **Conferir qualquer número da tela em SQL** (15 consultas comentadas, para qualquer país) | [`docs/CONFERIR_NUMEROS.md`](docs/CONFERIR_NUMEROS.md) |
+| **Conferir qualquer número da tela em SQL** (16 consultas comentadas, para qualquer país) | [`docs/CONFERIR_NUMEROS.md`](docs/CONFERIR_NUMEROS.md) |
 | Incidente da seção 4.2 · riscos da 4.3 | [`docs/INCIDENTE.md`](docs/INCIDENTE.md) · [`docs/RISCOS.md`](docs/RISCOS.md) |
 | Arquitetura, endpoints e telas · AWS e custo | [`docs/arquitetura.md`](docs/arquitetura.md) · [`infra/README.md`](infra/README.md) |
 | Como evitar e investigar divergências de número | [`docs/PREVENCAO_DE_DIVERGENCIAS.md`](docs/PREVENCAO_DE_DIVERGENCIAS.md) |
