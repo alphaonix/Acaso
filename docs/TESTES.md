@@ -50,7 +50,7 @@ Alterei a definição de propósito e rodei a suíte; cada alteração foi **det
    se algo falhar, a carga é revertida e o dashboard continua no estado anterior.
 
 ## Como uma mudança chega à produção (desenho)
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) roda os 189 testes, sobe a carga completa (o build do frontend confere os tipos) e exige o recálculo independente sem divergência. Sem verde, não faz merge (a proteção do branch `main` precisa exigir os dois jobs). **O workflow foi criado e a sintaxe conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run.
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) roda os 189 testes, sobe a carga completa (o build do frontend confere os tipos) e exige o recálculo independente sem divergência. Sem verde, não faz merge (a proteção do branch `main` precisa exigir os dois jobs). Os dois jobs passam no GitHub (a carga completa leva cerca de 8 minutos).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem pelo ETL e registrados em `public.schema_migrations`; migração já aplicada nunca é editada (cria-se uma nova).
 3. **Ambientes:** `dev` (local, compose), `staging` (cópia na AWS com a mesma semente) e `prod`. A mudança de definição passa por `staging`, onde o portão do ETL compara os números novos com os antigos antes de promover.
 4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.

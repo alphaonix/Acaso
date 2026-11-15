@@ -53,7 +53,7 @@ e o que ainda **não** está coberto.
    | **QUEDA_DE_NOVOS** | poucos novos: perda de dados na entrada? | BRONZE |
    | **TAXA_SEMANAL** | a taxa da semana mudou com os novos normais | SILVER ou mudança real |
    Só reprova a conferência o que é **novo desde a carga anterior** (o que já existia nos dados fica registrado em `auditoria.anomalia_semanal` como conhecido; a primeira carga vira a linha de base). **Calibrado nos dados reais:** os primeiros limites (30%, z = 4) geravam 406 alertas em 202 países, ruído; com os de hoje são 42, quase todos PICO_DE_USO ou queda de feriado, e nenhum no Brasil. Também por carga, o sinal **"pessoas por endereço"** (sobe 10% ou mais: alerta) cobre os países pequenos, onde o alerta semanal é pouco sensível. Para listar o que há hoje: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia_semanal`.
-9. **Testes automáticos e CI.** 189 testes (140 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
+9. **Testes automáticos e CI.** 189 testes (140 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. Os dois jobs passam no GitHub (a carga completa leva cerca de 8 minutos). Falta, no GitHub, exigir os dois jobs na proteção do branch `main`.
 
 ## 3. O que cada proteção pega (cenários)
 | O que pode dar errado | Quem pega | Verificado? |
@@ -159,5 +159,5 @@ docker compose run --rm --no-deps -v "${PWD}\analise\08_recalculo_independente.p
 - **Deriva por padrão só alerta:** `DERIVA_ESTRITA=1` a torna bloqueante (decisão de quem opera).
 - **Impressões digitais** são somas de hashes de 64 bits: uma colisão é improvável, mas não impossível.
 - **Tema e recusa** (regras de palavras): os testes fixam o comportamento, mas **não medem a precisão**; isso depende da amostra manual.
-- **CI:** o workflow ainda não foi executado no GitHub e a proteção do branch precisa ser configurada lá.
+- **CI:** o workflow passa no GitHub; a proteção do branch (exigir os dois jobs) precisa ser configurada lá.
 - **Recálculo em todos os países:** por padrão só o Brasil (leve); `RECALCULO_PAISES=todos` leva mais tempo e memória.
