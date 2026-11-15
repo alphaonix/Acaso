@@ -71,6 +71,13 @@ def test_entrada_mudou_de_padrao_mesmo_sem_a_taxa_mudar():
     assert "DADO DE ENTRADA MUDOU DE PADRAO" in "\n".join(anomalia.relatorio(a))
 
 
+def test_gold_diferente_da_silver_alerta_mesmo_sem_a_taxa_mudar():
+    """Achado da simulacao: o Brasil herda os numeros de outro pais com taxa parecida (25%). A taxa nao muda, mas a gold nao bate com a silver."""
+    a = _origem(medidas(g_eleg=5000, g_volt=1250))                 # silver: 500 de 2.000; gold mostra 1.250 de 5.000 (tambem 25%)
+    assert a.tipo == "AGREGACAO" and a.origem == "GOLD"
+    assert any(s.camada == "gold" and s.suspeito for s in a.sinais)
+
+
 def test_taxa_estavel_com_entrada_estavel_nao_alerta():
     assert anomalia.detectar(medidas(eleg=1900, volt=475), REF, False) == []      # menos elegiveis e a taxa igual, mas a entrada nao mudou de padrao
 

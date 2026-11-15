@@ -37,9 +37,13 @@ class Sinal:
     unidade: str            # "n" contagem, "%" percentual (0 a 1), "x" razao
     suspeito: bool
 
+    def formatar(self, v) -> str:
+        if v is None:
+            return "-"
+        return f"{v * 100:.1f}%" if self.unidade == "%" else (f"{v:.3f}" if self.unidade == "x" else f"{v:,.0f}".replace(",", "."))
+
     def texto(self) -> str:
-        f = lambda v: "-" if v is None else (f"{v * 100:.1f}%" if self.unidade == "%" else (f"{v:.3f}" if self.unidade == "x" else f"{v:,.0f}".replace(",", ".")))
-        return f"{self.etapa}: {f(self.antes)} -> {f(self.agora)}"
+        return f"{self.etapa}: {self.formatar(self.antes)} -> {self.formatar(self.agora)}"
 
 
 @dataclass
@@ -53,7 +57,7 @@ class Anomalia:
     origem: str             # GOLD | TRANSFORMACAO | BRONZE | SILVER | SEM_CAUSA
     resumo: str
     sinais: list[Sinal] = field(default_factory=list)
-    tipo: str = "TAXA"      # TAXA: a taxa saltou | ENTRADA: a taxa nao se mexeu, mas o dado de entrada mudou de padrao
+    tipo: str = "TAXA"      # TAXA: a taxa saltou | ENTRADA / LIMPEZA / AGREGACAO: a taxa nao se mexeu, mas a bronze / a silver mudou de padrao ou a gold nao bate com a silver
 
 
 # ------------------------------------------------------------------ leitura das medidas
@@ -82,6 +86,7 @@ def perfil(m: dict, pais: str) -> dict:
     p["pessoas_por_conversa"] = _div(p["pessoas"], p["conversas"])
     p["share_elegiveis"] = _div(p["elegiveis"], p["pessoas"])
     p["taxa"] = _div(p["voltaram"], p["elegiveis"])
+    p["share24"] = _div(g("silver", "voltaram_24h", pais), p["voltaram"])          # dos que voltaram em 7 dias, quantos ja tinham voltado em 24 h
     return p
 
 
@@ -111,6 +116,7 @@ def _sinais(a: dict, r: dict) -> list[Sinal]:
           Sinal("silver", "pessoas por conversa", r["pessoas_por_conversa"], a["pessoas_por_conversa"], "x",
                 sus(rel(a["pessoas_por_conversa"], r["pessoas_por_conversa"]), LIM_PESSOAS_CONV_PCT)),
           Sinal("silver", "elegiveis entre as pessoas", r["share_elegiveis"], a["share_elegiveis"], "%", sus(pp(a["share_elegiveis"], r["share_elegiveis"]), LIM_ELEGIVEIS_PP)),
+          Sinal("silver", "voltaram em 24 h entre os que voltaram em 7 dias", r["share24"], a["share24"], "%", sus(pp(a["share24"], r["share24"]), LIM_ELEGIVEIS_PP)),
           Sinal("silver", "pessoas elegiveis (denominador)", r["elegiveis"], a["elegiveis"], "n", False),
           Sinal("silver", "voltaram em 7 dias (numerador)", r["voltaram"], a["voltaram"], "n", False)]
     for nome, silver_, gold_ in (("elegiveis", a["elegiveis"], a["gold_elegiveis"]), ("voltaram", a["voltaram"], a["gold_voltaram"])):
@@ -156,6 +162,13 @@ def detectar(atual: dict, ref: dict, mesma_semente: bool) -> list[Anomalia]:
             _, z, taxa_a, taxa_r, n_a, n_r = max(candidatos)
             origem, resumo = _origem(sinais, mesma_semente)
             saida.append(Anomalia(pais, taxa_r, taxa_a, int(n_r), int(n_a), z, origem, resumo, sinais))
+        elif any(s.camada == "gold" and s.suspeito for s in sinais):
+            # a taxa NAO se mexeu, mas a gold (o que a tela mostra) nao bate com a silver: erro de agregacao que a taxa sozinha esconde
+            # (achado da simulacao: um pais que herda os numeros de outro com taxa parecida)
+            saida.append(Anomalia(pais, r["taxa"], a["taxa"], int(r["elegiveis"]), int(a["elegiveis"]), 0.0, "GOLD",
+                                  "a taxa quase nao mudou, mas a gold nao bate com a silver ("
+                                  + "; ".join(s.texto() for s in sinais if s.camada == "gold" and s.suspeito)
+                                  + "): erro de agregacao em etl/camadas/gold/sql.py", sinais, "AGREGACAO"))
         elif any(s.camada == "bronze" and s.suspeito for s in sinais):
             # a taxa NAO se mexeu, mas o dado de entrada mudou de padrao (ex.: 60% das linhas sem endereco encolhem o pais todo sem mudar a taxa).
             # E o caso em que olhar so a taxa deixaria passar um defeito da fonte; aponta antes que ele se agrave.
@@ -163,6 +176,12 @@ def detectar(atual: dict, ref: dict, mesma_semente: bool) -> list[Anomalia]:
                                   "a taxa quase nao mudou, mas o dado de entrada mudou de padrao ("
                                   + "; ".join(s.texto() for s in sinais if s.camada == "bronze" and s.suspeito)
                                   + "): provavel problema na fonte. Confira os arquivos de origem", sinais, "ENTRADA"))
+        elif any(s.camada == "silver" and s.suspeito for s in sinais):
+            # a taxa NAO se mexeu, a entrada esta normal, mas a limpeza/as regras da silver mudaram de comportamento (ex.: um filtro novo descarta metade das conversas)
+            saida.append(Anomalia(pais, r["taxa"], a["taxa"], int(r["elegiveis"]), int(a["elegiveis"]), 0.0, "SILVER",
+                                  "a taxa quase nao mudou e a entrada esta normal, mas a silver mudou de comportamento ("
+                                  + "; ".join(s.texto() for s in sinais if s.camada == "silver" and s.suspeito)
+                                  + "): investigue etl/camadas/silver/sql.py e auditoria.registro_excluido", sinais, "LIMPEZA"))
     return saida
 
 
@@ -172,7 +191,8 @@ def relatorio(an: Anomalia) -> list[str]:
              "SILVER": "SILVER (limpeza e regras)", "SEM_CAUSA": "SEM CAUSA TECNICA APARENTE"}
     z = "muito alto" if math.isinf(an.z) else f"{an.z:.1f}"
     cab = (f"retorno em 7 dias {an.taxa_ref * 100:.1f}% -> {an.taxa_atual * 100:.1f}% (elegiveis {an.n_ref} -> {an.n_atual}; z = {z})" if an.tipo == "TAXA"
-           else f"DADO DE ENTRADA MUDOU DE PADRAO (retorno em 7 dias {an.taxa_ref * 100:.1f}% -> {an.taxa_atual * 100:.1f}%, elegiveis {an.n_ref} -> {an.n_atual})")
+           else f"{ {'ENTRADA': 'DADO DE ENTRADA MUDOU DE PADRAO', 'LIMPEZA': 'LIMPEZA DA SILVER MUDOU DE PADRAO', 'AGREGACAO': 'GOLD NAO BATE COM A SILVER'}[an.tipo] } "
+                f"(retorno em 7 dias {an.taxa_ref * 100:.1f}% -> {an.taxa_atual * 100:.1f}%, elegiveis {an.n_ref} -> {an.n_atual})")
     linhas = [f"[anomalia] {an.pais}: {cab}",
               f"[anomalia]   ORIGEM PROVAVEL: {nomes[an.origem]}: {an.resumo}"]
     camada_atual = ""
@@ -252,7 +272,7 @@ def verificar(ops, exec_id: int) -> list[Resultado]:
         ops.execute("""INSERT INTO auditoria.anomalia (execucao_id, execucao_referencia, pais, taxa_referencia, taxa_atual, elegiveis_referencia, elegiveis_atual, z, origem, resumo, tipo, sinais)
                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                     (exec_id, ref, a.pais, a.taxa_ref, a.taxa_atual, a.n_ref, a.n_atual, None if math.isinf(a.z) else a.z, a.origem, a.resumo, a.tipo,
-                     json.dumps([{"camada": s.camada, "etapa": s.etapa, "antes": s.antes, "agora": s.agora, "suspeito": s.suspeito} for s in a.sinais])))
+                     json.dumps([{"camada": s.camada, "etapa": s.etapa, "antes": s.antes, "agora": s.agora, "unidade": s.unidade, "suspeito": s.suspeito} for s in a.sinais])))
     return [Resultado("anomalia", f"{nome} (carga anterior: {ref})", "0", str(len(achadas)), not achadas)]
 
 

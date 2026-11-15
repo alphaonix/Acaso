@@ -1,35 +1,50 @@
 """Roda UMA carga do ETL com um defeito plantado, para provar que o detector de anomalia aponta a camada certa.
 Uso (feito pelo orquestrador, simulacao/cenarios.py):  python -m simulacao.executar <cenario>
-Os defeitos entram DEPOIS de a camada ser construida, como se o codigo dela tivesse errado:
-  silver, transformacao   70-80% dos retornantes nao entram como elegiveis (a regra de elegibilidade erra); a gold e construida em cima desse erro
-  gold                    a agregacao da gold triplica os que voltaram no Brasil; a silver esta certa
-  base, bronze            nenhum defeito no codigo (o da bronze esta na semente)
+
+Os defeitos de CODIGO entram DEPOIS de a camada ser construida, como se o codigo dela tivesse errado. Os defeitos da BRONZE estao na semente
+(simulacao/gerar_semente.py). No fim, a carga de um cenario e DESFEITA (rollback): a anomalia ja ficou registrada em auditoria.anomalia, e a carga
+normal continua sendo a referencia do proximo cenario (nao precisa recarregar tudo a cada vez).
 """
 import sys
 
 from camadas import gold, silver
+from comum import anomalia
 
-ERRO_ELEGIBILIDADE = """UPDATE silver.fato_usuario SET elegivel = false
-                        WHERE pais = 'Brazil' AND elegivel AND NOT voltou_7d AND abs(hashtext(usuario_id)) % 10 < 8"""
+SILVER_ELEGIBILIDADE = """UPDATE silver.fato_usuario SET elegivel = false
+                          WHERE pais = 'Brazil' AND elegivel AND NOT voltou_7d AND abs(hashtext(usuario_id)) % 10 < 8"""
+SILVER_RETORNO = """UPDATE silver.fato_usuario SET voltou_7d = true
+                    WHERE pais = 'Brazil' AND elegivel AND NOT voltou_7d AND abs(hashtext(usuario_id)) % 10 < 3"""
+SILVER_LIMPEZA = "DELETE FROM silver.fato_conversa WHERE pais = 'Brazil' AND abs(hashtext(conversation_hash)) % 10 < 5"
+GOLD_NUMERADOR = "UPDATE gold.pais SET voltaram_7d = voltaram_7d * 3 WHERE pais = 'Brazil'"
+GOLD_DENOMINADOR = "UPDATE gold.pais SET usuarios_elegiveis = usuarios_elegiveis / 2 WHERE pais = 'Brazil'"
+GOLD_TROCADO = """UPDATE gold.pais b SET usuarios_elegiveis = o.usuarios_elegiveis, voltaram_7d = o.voltaram_7d
+                  FROM (SELECT usuarios_elegiveis, voltaram_7d FROM gold.pais WHERE pais <> 'Brazil' ORDER BY usuarios_elegiveis DESC LIMIT 1) o
+                  WHERE b.pais = 'Brazil'"""
+
+DEFEITOS = {"silver_elegibilidade": ("silver", SILVER_ELEGIBILIDADE), "codigo_mudou": ("silver", SILVER_ELEGIBILIDADE),
+            "silver_retorno_inflado": ("silver", SILVER_RETORNO), "silver_limpeza_exagerada": ("silver", SILVER_LIMPEZA),
+            "gold_numerador": ("gold", GOLD_NUMERADOR), "gold_denominador": ("gold", GOLD_DENOMINADOR), "gold_pais_trocado": ("gold", GOLD_TROCADO)}
 
 
 def plantar(cenario: str) -> None:
-    if cenario in ("silver", "transformacao"):
-        original = silver.construir_silver
+    if cenario in DEFEITOS:
+        camada, sql = DEFEITOS[cenario]
+        modulo, nome = (silver, "construir_silver") if camada == "silver" else (gold, "construir_gold")
+        original = getattr(modulo, nome)
 
-        def silver_com_defeito(dw):
+        def com_defeito(dw):
             r = original(dw)
-            dw.execute(ERRO_ELEGIBILIDADE)
+            dw.execute(sql)
             return r
-        silver.construir_silver = silver_com_defeito
-    elif cenario == "gold":
-        original = gold.construir_gold
+        setattr(modulo, nome, com_defeito)
+    if cenario != "base":
+        import main
+        verificar = anomalia.verificar
 
-        def gold_com_defeito(dw):
-            r = original(dw)
-            dw.execute("UPDATE gold.pais SET voltaram_7d = voltaram_7d * 3 WHERE pais = 'Brazil'")
-            return r
-        gold.construir_gold = gold_com_defeito
+        def verificar_e_desfazer(ops, exec_id):
+            verificar(ops, exec_id)
+            raise main.PortaoFalhou("simulacao: carga desfeita de proposito (o resultado ficou em auditoria.anomalia)")
+        anomalia.verificar = verificar_e_desfazer
 
 
 if __name__ == "__main__":

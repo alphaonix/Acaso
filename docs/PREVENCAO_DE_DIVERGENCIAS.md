@@ -44,7 +44,7 @@ e o que ainda **não** está coberto.
    | **SILVER** | entrada normal, mas a limpeza descartou outra proporção (±5 p.p.), as pessoas por conversa mudaram (±20%) ou a proporção de elegíveis mudou (±10 p.p.) | `etl/camadas/silver/sql.py` e `auditoria.registro_excluido` |
    | **SEM CAUSA TÉCNICA** | todo o funil estável e a taxa mudou | pode ser mudança real de comportamento: confirme com a fonte |
    O diagnóstico mostra o funil inteiro (antes → agora) com `!!` nas etapas que mudaram, e fica em `auditoria.anomalia`. Há dois tipos: **TAXA** (a taxa saltou) e **ENTRADA** (a taxa quase não mexeu, mas o dado de entrada mudou de padrão: por exemplo, 60% das linhas sem endereço encolhem o país inteiro sem mudar a taxa; só olhar a taxa deixaria passar). É **alerta** (a carga é publicada com status `alerta`), não bloqueio. Para ver funcionando sem tocar no banco: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia --simular Brazil bronze` (também `silver`, `gold` e `transformacao`).
-8. **Testes automáticos e CI.** 160 testes (111 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
+8. **Testes automáticos e CI.** 175 testes (126 do ETL, 29 da API, 20 de integração API × gold) fixam cada regra de borda e reproduzem o incidente do PDF. O workflow `.github/workflows/ci.yml` roda os testes e a carga completa a cada push. **Foi criado e a sintaxe foi conferida, mas ainda não foi executado no GitHub**: confirme o primeiro run e, no GitHub, exija os dois jobs na proteção do branch `main`.
 
 ## 3. O que cada proteção pega (cenários)
 | O que pode dar errado | Quem pega | Verificado? |
@@ -65,18 +65,28 @@ e o que ainda **não** está coberto.
 | Código quebrado chega ao GitHub | CI | **ainda não executado** |
 
 ### Simulação ponta a ponta do detector de anomalia
+Você escolhe o cenário e recebe um **relatório em PDF** (`exports/relatorio_anomalias.pdf`) com o funil camada por camada, o resultado e, para cada cenário, **por que aquilo pode ser uma anomalia de verdade e por que pode ser um alarme falso**.
 ```bash
-docker compose --profile operacao run --rm simular-cenarios      # cerca de 12 minutos; usa o banco descartável retencao_cenarios, nunca o real
+docker compose --profile operacao run --rm simular-cenarios --listar                                  # o menu de cenários
+docker compose --profile operacao run --rm simular-cenarios bronze_sem_endereco gold_numerador       # só os que você escolher
+docker compose --profile operacao run --rm simular-cenarios todos                                     # todos (cerca de 15 minutos)
 ```
-Para cada cenário roda uma carga normal (referência) e uma com defeito (sem derrubar a carga, para ver também o portão). A semente oficial não é tocada; as sementes adulteradas ficam em `data/cenarios/` (fora do git). Resultado na última execução:
-| Cenário | Defeito plantado | Taxa do Brasil | Origem apontada | Conferências do portão que também falharam |
+Roda num banco descartável (`retencao_cenarios`), nunca no real. Faz uma carga normal (a referência) e, para cada cenário, uma carga com defeito que é **desfeita** no fim (um cenário não contamina o seguinte). As sementes adulteradas ficam em `data/cenarios/` (fora do git). Resultado da última execução (os 11 cenários conferem):
+| Começa em | Cenário | Taxa do Brasil | Tipo | Origem apontada |
 |---|---|---|---|---|
-| bronze | semente nova com 60% das conversas do Brasil sem endereço | 23,7% → 22,5% (quase igual!) | **BRONZE** (tipo ENTRADA) | 10 |
-| silver | semente saudável + regra de elegibilidade errada na silver | 23,7% → 61,8% | **SILVER** | 8 |
-| gold | semente saudável + agregação da gold triplica os que voltaram | 23,7% → 71,2% | **GOLD** | 5 |
-| transformação | mesma semente oficial + regra de elegibilidade errada | 23,7% → 61,8% | **TRANSFORMAÇÃO** | 4 |
+| **bronze** | `bronze_sem_endereco` (60% sem endereço) | 23,7% → 22,5% | ENTRADA | BRONZE |
+| **bronze** | `bronze_volume_cai` (só 40% das conversas) | 23,7% → 21,3% | ENTRADA | BRONZE |
+| **bronze** | `bronze_sem_horario` (50% sem horário) | 23,7% → 23,0% | ENTRADA | BRONZE |
+| **silver** | `silver_elegibilidade` (regra de elegível erra) | 23,7% → 61,8% | TAXA | SILVER |
+| **silver** | `silver_retorno_inflado` (retornos que não existiram) | 23,7% → 47,6% | TAXA | SILVER |
+| **silver** | `silver_limpeza_exagerada` (descarta metade das conversas) | 23,7% → 23,7% | LIMPEZA | SILVER |
+| **gold** | `gold_numerador` (triplica quem voltou) | 23,7% → 71,2% | TAXA | GOLD |
+| **gold** | `gold_denominador` (metade dos elegíveis) | 23,7% → 47,4% | TAXA | GOLD |
+| **gold** | `gold_pais_trocado` (Brasil herda os números de outro país) | 23,7% → 23,7% | AGREGACAO | GOLD |
+| código | `codigo_mudou` (mesma semente, regra alterada) | 23,7% → 61,8% | TAXA | TRANSFORMAÇÃO |
+| nenhuma | `controle_sem_defeito` (dado novo e saudável) | sem alerta | - | nenhum (correto) |
 
-A primeira execução errou o cenário **bronze** (não apontou nada, porque a taxa quase não mudou). A simulação encontrou a falha do detector; ele ganhou o tipo ENTRADA e passou nos 4.
+**A simulação achou duas falhas do detector, já corrigidas.** Na primeira rodada, a bronze (taxa quase igual) não gerou alerta; depois, a gold que troca os números entre países de taxa parecida também não. Por isso existem os tipos de alerta ENTRADA, LIMPEZA e AGREGACAO, que disparam mesmo sem a taxa mudar.
 
 ## 4. Como investigar quando um número parecer errado
 Conexão: DBeaver em `localhost:5433`, banco `retencao`, usuário `auditor` (somente leitura, senha padrão `auditor` no ambiente local).

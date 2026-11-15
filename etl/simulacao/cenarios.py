@@ -1,16 +1,13 @@
-"""TESTE PONTA A PONTA DO DETECTOR DE ANOMALIA: planta um defeito em cada camada, roda a carga de verdade e confere se a origem apontada e a certa.
+"""SIMULACAO DE CENARIOS: planta um defeito em uma camada, roda a carga de verdade, confere se o detector de anomalia aponta a camada certa e gera um
+RELATORIO EM PDF (exports/relatorio_anomalias.pdf) com o funil, o resultado e a explicacao de por que pode ser anomalia ou alarme falso.
 
-Roda num banco DESCARTAVEL (`retencao_cenarios`, no mesmo servidor): o banco real e a semente oficial nunca sao tocados.
-Para cada cenario: (1) carga normal com a semente oficial (a referencia); (2) carga com o defeito, sem derrubar a carga (QA_ESTRITO=0), para
-ver tambem o que o portao de qualidade diz; (3) le auditoria.anomalia e compara a origem apontada com a esperada.
+Roda num banco DESCARTAVEL (`retencao_cenarios`, no mesmo servidor): o banco real e a semente oficial nunca sao tocados. Uma carga normal e feita
+uma vez (a referencia); cada cenario roda em seguida e e desfeito (rollback), entao um cenario nao contamina o seguinte.
 
-  cenario         defeito plantado                                                              origem esperada
-  bronze          semente nova: 60% das conversas do Brasil sem endereco (a fonte falhou)       BRONZE
-  silver          semente nova e saudavel + regra de elegibilidade da silver errada             SILVER
-  gold            semente nova e saudavel + agregacao da gold errada (triplica os que voltaram) GOLD
-  transformacao   MESMA semente oficial + regra de elegibilidade errada                         TRANSFORMACAO
-
-Uso:  docker compose --profile operacao run --rm simular-cenarios        (cerca de 15 minutos; sai com erro se alguma origem estiver errada)
+Voce escolhe o que simular:
+  docker compose --profile operacao run --rm simular-cenarios --listar                         lista os cenarios
+  docker compose --profile operacao run --rm simular-cenarios bronze_sem_endereco gold_numerador     so esses
+  docker compose --profile operacao run --rm simular-cenarios todos                           todos (cerca de 20 minutos)
 """
 import os
 import subprocess
@@ -19,56 +16,87 @@ import sys
 import psycopg
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-from simulacao import gerar_semente
+from simulacao import gerar_semente, relatorio_pdf
+from simulacao.catalogo import CAMADA_TITULO, CATALOGO
 
 BANCO = "retencao_cenarios"
 SEMENTE_OFICIAL, CENARIOS = "/data/seed", "/data/cenarios"
-# cenario -> (semente, origem esperada)
-PLANO = {"bronze": (f"{CENARIOS}/bronze", "BRONZE"), "silver": (f"{CENARIOS}/nova", "SILVER"),
-         "gold": (f"{CENARIOS}/nova", "GOLD"), "transformacao": (SEMENTE_OFICIAL, "TRANSFORMACAO")}
+SAIDA = os.environ.get("SAIDA", "/saida/relatorio_anomalias.pdf")
 
 
 def url(dbname: str) -> str:
     return make_conninfo(**{**conninfo_to_dict(os.environ["DATABASE_URL"]), "dbname": dbname})
 
 
-def carga(cenario: str, semente: str, estrito: bool) -> int:
+def semente_de(nome: str) -> str:
+    s = CATALOGO[nome].semente
+    return SEMENTE_OFICIAL if s == "oficial" else f"{CENARIOS}/{s}"
+
+
+def carga(cenario: str, semente: str, estrito: bool) -> None:
     env = {**os.environ, "DATABASE_URL": url(BANCO), "SEED_DIR": semente, "QA_ESTRITO": "1" if estrito else "0", "CODE_VERSION": f"simulacao-{cenario}"}
     r = subprocess.run([sys.executable, "-m", "simulacao.executar", cenario], env=env, capture_output=True, text=True)
-    linhas = [l for l in r.stdout.splitlines() if l.startswith(("[anomalia]", "ETL", "[qa] FALHOU", "[integridade] ALTERADO"))]
-    print("\n".join(f"    {l}" for l in linhas[:60]), flush=True)
     if r.returncode not in (0, 1):
-        print(r.stderr[-1500:])
-    return r.returncode
+        print(r.stdout[-1500:], r.stderr[-1500:])
+        raise SystemExit(f"a carga do cenario '{cenario}' quebrou (exit {r.returncode})")
 
 
-def main() -> int:
-    assert os.environ["DATABASE_URL"] and conninfo_to_dict(os.environ["DATABASE_URL"])["dbname"] != BANCO
+def listar() -> None:
+    print("Cenarios disponiveis (rode com o nome, varios nomes, ou 'todos'):\n")
+    for camada in ("bronze", "silver", "gold", "codigo", "nenhuma"):
+        print(f"  [{CAMADA_TITULO[camada]}]")
+        for c in (c for c in CATALOGO.values() if c.camada == camada):
+            print(f"    {c.nome:<26} {c.titulo}")
+    print("\nExemplo: docker compose --profile operacao run --rm simular-cenarios bronze_sem_endereco silver_retorno_inflado gold_numerador")
+
+
+def coletar(db, nome: str, exec_id: int) -> dict:
+    c = CATALOGO[nome]
+    linha = db.execute("""SELECT tipo, origem, taxa_referencia, taxa_atual, elegiveis_referencia, elegiveis_atual, z, resumo, sinais
+                          FROM auditoria.anomalia WHERE execucao_id = %s AND pais = 'Brazil'""", (exec_id,)).fetchone()
+    achado = None if linha is None else {"tipo": linha[0], "origem": linha[1], "taxa_ref": float(linha[2]), "taxa_atual": float(linha[3]), "eleg_ref": linha[4],
+                                         "eleg_atual": linha[5], "z": None if linha[6] is None else float(linha[6]), "resumo": linha[7], "sinais": linha[8]}
+    falhas = db.execute("""SELECT verificacao, esperado, obtido FROM ops.qa_resultado WHERE execucao_id = %s AND NOT passou
+                           AND transicao NOT IN ('anomalia', 'deriva', 'integridade') ORDER BY id""", (exec_id,)).fetchall()
+    apontada = achado["origem"] if achado else "sem alerta"
+    return {"cenario": c, "achado": achado, "apontada": apontada, "ok": apontada == (c.esperada or "sem alerta"), "gate_falhas": falhas, "gate_n": len(falhas)}
+
+
+def main(argv: list[str]) -> int:
+    if not argv or "--listar" in argv:
+        listar()
+        return 0
+    escolhidos = list(CATALOGO) if "todos" in argv else argv
+    desconhecidos = [n for n in escolhidos if n not in CATALOGO]
+    if desconhecidos:
+        print(f"Cenario desconhecido: {', '.join(desconhecidos)}\n")
+        listar()
+        return 2
+    assert conninfo_to_dict(os.environ["DATABASE_URL"])["dbname"] != BANCO
     adm = psycopg.connect(url("postgres"), autocommit=True)
     adm.execute(f"DROP DATABASE IF EXISTS {BANCO} WITH (FORCE)")
     adm.execute(f"CREATE DATABASE {BANCO}")
     gerar_semente.gerar()
-    resultado = []
-    escolhidos = [a for a in sys.argv[1:] if a in PLANO] or list(PLANO)       # opcional: rodar so alguns cenarios (ex.: ... bronze gold)
-    for nome, (semente, esperada) in ((n, PLANO[n]) for n in escolhidos):
-        print(f"\n=== Cenario '{nome}' (origem esperada: {esperada}) ===\n  1) carga normal (referencia)", flush=True)
-        carga("base", SEMENTE_OFICIAL, True)
-        print(f"  2) carga com o defeito '{nome}'", flush=True)
-        carga(nome, semente, False)
+    print("\n== Carga normal (a referencia de todos os cenarios) ==", flush=True)
+    carga("base", SEMENTE_OFICIAL, True)
+    resultados = []
+    for nome in escolhidos:
+        print(f"== Cenario '{nome}' ==", flush=True)
+        carga(nome, semente_de(nome), False)
         with psycopg.connect(url(BANCO), autocommit=True) as db:
             exec_id = db.execute("SELECT max(id) FROM ops.etl_execucao").fetchone()[0]
-            achadas = db.execute("SELECT pais, round(taxa_referencia * 100, 1), round(taxa_atual * 100, 1), origem FROM auditoria.anomalia WHERE execucao_id = %s", (exec_id,)).fetchall()
-            gate = db.execute("SELECT count(*) FROM ops.qa_resultado WHERE execucao_id = %s AND NOT passou AND transicao NOT IN ('anomalia', 'deriva', 'integridade')", (exec_id,)).fetchone()[0]
-        br = [a for a in achadas if a[0] == "Brazil"]
-        ok = len(br) == 1 and br[0][3] == esperada
-        resultado.append((nome, esperada, br[0][3] if br else "NENHUMA", gate, ok))
-        print(f"  => anomalia: {br[0][1]}% -> {br[0][2]}%, origem apontada: {br[0][3]}" if br else "  => NENHUMA anomalia apontada para o Brasil", flush=True)
-    print("\n=== RESUMO ===\n cenario        esperada       apontada       conferencias do portao que falharam   resultado")
-    for nome, esperada, apontada, gate, ok in resultado:
-        print(f" {nome:<14} {esperada:<14} {apontada:<14} {gate:<37} {'OK' if ok else 'ERRADO'}")
+            r = coletar(db, nome, exec_id)
+        resultados.append(r)
+        a = r["achado"]
+        print(f"   esperada: {CATALOGO[nome].esperada or 'sem alerta'} | apontada: {r['apontada']}"
+              + (f" | taxa {a['taxa_ref'] * 100:.1f}% -> {a['taxa_atual'] * 100:.1f}% ({a['tipo']})" if a else "") + f" | {'OK' if r['ok'] else 'ERRADO'}", flush=True)
+    os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
+    relatorio_pdf.gerar(resultados, SAIDA)
     adm.execute(f"DROP DATABASE IF EXISTS {BANCO} WITH (FORCE)")
-    return 0 if all(r[4] for r in resultado) else 1
+    print(f"\nRelatorio em PDF: {SAIDA} (no seu computador: exports/relatorio_anomalias.pdf)")
+    print("RESULTADO:", "todos os cenarios conferem" if all(r["ok"] for r in resultados) else "HA CENARIOS QUE NAO CONFEREM")
+    return 0 if all(r["ok"] for r in resultados) else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

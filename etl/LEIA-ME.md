@@ -12,7 +12,7 @@ etl/
 │   └── gold/                os resumos que a tela lê     (LEIA-ME.md dentro)
 ├── comum/                   o que todas as camadas usam: banco, contas, regras de negócio, portão de qualidade
 ├── semente/                 como os arquivos de entrada foram gerados (feito uma vez, à mão; não roda no Docker)
-└── tests/                   111 testes automáticos aqui (mais 49 na API; veja docs/TESTES.md)
+└── tests/                   126 testes automáticos aqui (mais 49 na API; veja docs/TESTES.md)
 ```
 
 ## A receita (o que `main.py` faz, em ordem)

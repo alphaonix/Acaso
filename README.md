@@ -42,9 +42,9 @@ Se perder a senha gerada: `docker compose down -v` e suba de novo (ou defina `DA
 O que faz voltar (efeitos ordenados, com intervalo, os 4 achados, com o impacto estimado no retorno, e, no fim, dispositivo e idioma × navegador, **exploratório**) · Coortes semanais (curva de retorno com 24 h, 7 e 30 dias, pessoas novas por semana, mapa de calor (por semana ou por mês), decomposição "chegou gente diferente × a mesma gente voltou diferente") · Ajuda (para que serve o painel, palavras e regras, privacidade e problemas de qualidade dos dados).
 Seletor de país, idioma (PT/EN) e tema (claro/escuro) no cabeçalho; o botão "i" de cada indicador mostra a definição e a fórmula.
 
-## Testes (160)
+## Testes (175)
 ```bash
-docker compose --profile test run --rm --build testes-etl     # 111 testes das definições e da prevenção de divergências, num banco descartável
+docker compose --profile test run --rm --build testes-etl     # 126 testes das definições e da prevenção de divergências, num banco descartável
 docker compose --profile test run --rm --build testes-api     # 29 testes da decomposição mix × taxa
 ```
 Cobrem cada regra de borda da definição (sessão de 30 min, janela de 7 dias, elegibilidade, limpeza, tema, recusa) e **reproduzem o incidente** do PDF; detalhes e a prova por mutação em [`docs/TESTES.md`](docs/TESTES.md).

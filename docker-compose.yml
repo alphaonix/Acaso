@@ -78,11 +78,14 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-etl}:${POSTGRES_PASSWORD:-etl}@db:5432/${POSTGRES_DB:-retencao}
       MIGRATIONS_DIR: /migrations
+      SAIDA: /saida/relatorio_anomalias.pdf
     volumes:
       - ./data/seed:/data/seed:ro
       - ./data/cenarios:/data/cenarios          # sementes adulteradas geradas aqui (fora do git)
       - ./db/migrations:/migrations:ro
-    command: ["python", "-m", "simulacao.cenarios"]
+      - ./exports:/saida                        # o relatorio em PDF sai aqui (exports/relatorio_anomalias.pdf)
+    entrypoint: ["python", "-m", "simulacao.cenarios"]      # os cenarios escolhidos vao como argumentos (ou --listar, ou todos)
+    command: ["--listar"]
 
   # ---- testes automatizados (nao sobem com `docker compose up`; rode com o perfil "test") ----
   testes-etl:                # definicoes (sessao, retorno, elegibilidade, tema, recusa), limpeza e gold, num banco descartavel
