@@ -1,6 +1,6 @@
 """Variaveis derivadas da 1a experiencia: usuario (navegador normalizado), tema, recusa, tamanhos, duracao.
 ATENCAO: os testes de tema e recusa FIXAM o comportamento atual das regras (regressao), eles NAO medem precisao.
-A precisao vem da amostra manual (exports/amostra_validacao_*.csv, docs/VALIDACAO.md)."""
+A precisao vem da amostra manual (exports/amostra_validacao_*.csv, README, secao 13)."""
 import pytest
 
 from comum.definicoes import UA_NORM_SQL

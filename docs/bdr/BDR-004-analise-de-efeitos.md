@@ -1,6 +1,6 @@
 # BDR-004: análise dos efeitos no retorno em 7 dias (causa x seleção)
 
-Status: resultados estáveis (reprodutíveis entre cargas); validação independente pendente (docs/VALIDACAO.md, rodada 5).
+Status: resultados estáveis (reprodutíveis entre cargas); validação independente pendente (o efeito bruto se confere em SQL: `docs/CONFERIR_NUMEROS.md`, seção 3).
 Código: `etl/camadas/gold/efeitos.py` (grava `gold.efeito_fator`) e `analise/04_sensibilidade.py`.
 
 > **Correção de uma versão anterior deste documento.** A primeira versão trazia números que mudavam a cada carga

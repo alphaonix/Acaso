@@ -61,7 +61,7 @@ Os vieses têm sentidos opostos; a direção líquida não é conhecida só pela
 - Mitigação: sensibilidade IP x IP+UA completo (diferença de ~2,5 pontos no retorno) e rodar com e sem o IP gigante.
 - Dado que falta: identificador de usuário (login ou cookie). Entra em "o que os dados não permitem medir" e em
   "decisões em aberto" com o cliente (seção 4.3).
-- Verificação sugerida: fração de IPs com mais de um navegador normalizado (ver docs/VALIDACAO.md, item 13).
+- Verificação sugerida: fração de IPs com mais de um navegador normalizado (referência: 11,3% dos IPs têm mais de um user-agent bruto).
 
 ## Pendências derivadas
 - Medir o efeito do IP gigante (1.557 conversas): rodar com e sem ele.
@@ -86,12 +86,12 @@ do Brasil e para o dos demais países, e vem preenchida nas 837.989 linhas da br
   tabela `auditoria.nulos`). Não é uma segunda opção: é uma coluna sem dado.
 - *Histórico (12/11):* antes disso, o arquivo do Brasil não trazia `primeira_resposta_ts` e a silver usava
   `coalesce(primeira_resposta_ts, conversation[2].timestamp)`. A unificação foi comparada antes e depois: `silver.fato_conversa` (837.972
-  linhas), `silver.fato_usuario` (197.319) e as quatro tabelas gold que mudam com o início ficaram **idênticas**, e as conferências passam (hoje 32, ver `docs/COMO_FUNCIONA.md`).
+  linhas), `silver.fato_usuario` (197.319) e as quatro tabelas gold que mudam com o início ficaram **idênticas**, e as conferências passam (hoje 66 por carga, ver README, seção 4).
 
 **Impacto de usar a resposta do assistente:** o início fica alguns segundos depois do momento em que a pessoa escreveu. O retorno é
 medido em dias, então não muda o resultado; a sessão (gap de 30 min) também não é afetada de forma relevante.
 
-**Como validar (DBeaver):** `docs/VALIDACAO.md`, rodada 5, consultas 3 a 5.
+**Como validar (DBeaver):** `docs/CONFERIR_NUMEROS.md` e `docs/SENSIBILIDADE.md`.
 
 ## Duplicatas exatas (17 linhas, nenhuma do Brasil)
 Uma linha é excluída se repete **hash da conversa + IP + início** de outra (fica a de menor `bronze_id`). Hash igual com início

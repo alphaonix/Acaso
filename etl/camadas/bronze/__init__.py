@@ -2,7 +2,7 @@
 
   construir_bronze(...)  registra os arquivos da semente (sha256), esvazia a tabela e carrega os Parquet (DuckDB -> CSV -> COPY)
   validar_bronze(...)    confere que o que entrou bate com os arquivos de origem
-Arquivos desta pasta:  registrar_lotes.py  limpar.py  carregar.py  validar.py  (explicacao em LEIA-ME.md)
+Arquivos desta pasta:  registrar_lotes.py  limpar.py  carregar.py  validar.py  (explicacao no README da raiz, secao 4)
 """
 from pathlib import Path
 

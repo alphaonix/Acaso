@@ -3,7 +3,7 @@
   construir_silver(dw)         esvazia, limpa, define a "pessoa", as visitas, o retorno, a elegibilidade, o tema e a recusa
   auditar_silver(dw, exec_id)  registra o que foi excluido e por que (schema auditoria)
   validar_silver(dw, exec_id)  confere bronze = silver + excluidas, recalcula o retorno e compara com os numeros validados
-Arquivos desta pasta:  limpar.py  sql.py  construir.py  auditoria.py  validar.py  (explicacao em LEIA-ME.md)
+Arquivos desta pasta:  limpar.py  sql.py  construir.py  auditoria.py  validar.py  (explicacao no README da raiz, secao 4)
 """
 from .auditoria import auditar_silver
 from .construir import construir_silver

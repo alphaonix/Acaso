@@ -28,7 +28,7 @@ Opção 2.
 - **Conferências por transição:** cada uma das 66 verificações de `ops.qa_resultado` diz qual passagem protege (bronze x arquivos,
   bronze → silver, silver interna, silver → gold, efeitos, números validados). A principal é a lei de conservação:
   **linhas da bronze = conversas da silver + linhas excluídas**.
-- **Sem tela no dashboard (decisão de 12/11):** a primeira versão tinha uma tela "Linhagem dos dados" (e o endpoint `/api/linhagem`). Foi removida: o dashboard é para o cliente, que não precisa dela. A auditoria continua no schema `auditoria` (consulta no DBeaver, `docs/VALIDACAO.md`, rodada 7) e nas conferências do ETL (`ops.qa_resultado`, registradas em `ops.qa_resultado`). A API não lê mais o schema `auditoria`.
+- **Sem tela no dashboard (decisão de 12/11):** a primeira versão tinha uma tela "Linhagem dos dados" (e o endpoint `/api/linhagem`). Foi removida: o dashboard é para o cliente, que não precisa dela. A auditoria continua no schema `auditoria` (consulta no DBeaver, README, seção 6) e nas conferências do ETL (`ops.qa_resultado`, registradas em `ops.qa_resultado`). A API não lê mais o schema `auditoria`.
 
 ## Consequências
 - **Correção após o primeiro uso:** a versão inicial acumulava as cargas; quem somava as linhas de uma camada via 3x o valor real

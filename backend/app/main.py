@@ -1,4 +1,4 @@
-"""API do dashboard (FastAPI). Le SOMENTE gold e ops, com usuario somente leitura. Contrato em docs/arquitetura.md.
+"""API do dashboard (FastAPI). Le SOMENTE gold e ops, com usuario somente leitura. Contrato em README.md (secao 9).
 
 Publico:    GET /api/saude · POST /api/auth/login · POST /api/auth/logout
 Protegido (cookie de sessao; todos aceitam ?pais=, padrao Brazil):

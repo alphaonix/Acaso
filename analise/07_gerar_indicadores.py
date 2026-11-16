@@ -10,7 +10,7 @@ from comum.definicoes import AMOSTRA_MINIMA, CATALOGO  # noqa: E402
 CAB = """# Indicadores: definição, fórmula, denominador e consulta de referência
 
 Gerado a partir de `etl/comum/definicoes.py` (`CATALOGO`), a fonte única que também alimenta o botão "i" do dashboard (que mostra só a fórmula).
-A consulta de referência usa o parâmetro `:pais` e as tabelas do banco analítico (ver `docs/arquitetura.md`).
+A consulta de referência usa o parâmetro `:pais` e as tabelas do banco analítico (ver `README.md`, seção 3).
 """
 
 blocos = [CAB]

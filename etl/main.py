@@ -10,7 +10,7 @@ A receita esta na funcao `carga` (leia-a de cima para baixo):
   publicar   COMMIT (ou ROLLBACK, se alguma validacao falhar)
 
 As tres camadas sao reconstruidas por inteiro em UMA transacao: a API nunca ve um estado pela metade, e se qualquer validacao
-falhar (modo estrito) nada e publicado. Cada camada tem a sua pasta em camadas/ (com um LEIA-ME.md); o que e comum a todas
+falhar (modo estrito) nada e publicado. Cada camada tem a sua pasta em camadas/ (explicada no README, secao 4); o que e comum a todas
 (banco, contas, regras de negocio, portao de qualidade) fica em comum/. Como a semente foi gerada: semente/.
 """
 import json

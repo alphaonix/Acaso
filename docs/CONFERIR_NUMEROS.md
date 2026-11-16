@@ -12,7 +12,7 @@ Quando a consulta tem a coluna `bate_com_gold`, ela deve vir **`t`** (verdadeiro
 Os valores abaixo são do Brasil; a Alemanha aparece ao lado quando ajuda a entender (a tela dela mostra 18,9% de retorno).
 
 ## Três palavras que aparecem em tudo
-- **Pessoa** = uma linha de `silver.fato_usuario`: IP (anonimizado) + família do navegador e do sistema, sem versão. Ver [`COMO_FUNCIONA.md`](COMO_FUNCIONA.md).
+- **Pessoa** = uma linha de `silver.fato_usuario`: IP (anonimizado) + família do navegador e do sistema, sem versão. Ver o [README](../README.md#5-definições-e-premissas).
 - **Elegível** = pessoa cuja primeira vez tem a janela completa: 30 dias depois do início dos dados e 7 dias antes do fim. É o denominador do retorno em 7 dias.
 - **Gold** = os resumos prontos que a API lê. A tela nunca lê a silver.
 
@@ -59,7 +59,7 @@ SELECT (SELECT count(*) FROM silver.fato_conversa WHERE pais = 'Brazil') AS conv
 ```
 **Passo a passo:** `silver.fato_conversa` tem uma linha por conversa e `silver.fato_usuario` uma por pessoa, então `count(*)` dá os totais. `inicio_utc` é o início da conversa (a 1ª resposta do assistente); `min` e `max` dão o período. `AT TIME ZONE 'UTC'` garante a mesma data que a tela, mesmo que o seu DBeaver use outro fuso.
 **Deve dar:** 11.621 · 2.530 · 2023-04-09 · 2024-04-29 · 837.972 · `t`. (Alemanha: 28.975 conversas e 4.544 pessoas.)
-**Por que 09/04 e não 08/04:** a data é em UTC; no horário de São Paulo o primeiro dia é 08/04 (ver `COMO_FUNCIONA.md`).
+**Por que 09/04 e não 08/04:** a data é em UTC; no horário de São Paulo o primeiro dia é 08/04 (ver README, seção 5).
 
 ## 1.2 Pessoas novas
 **Na tela:** cartão "Pessoas novas" = 2.530.

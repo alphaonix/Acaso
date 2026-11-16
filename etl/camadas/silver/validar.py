@@ -1,7 +1,7 @@
 """Conferencias da SILVER, em tres grupos:
   bronze_silver  nada some da bronze sem registro (bronze = silver + excluidas)
   silver_interna a silver e coerente; o retorno, a elegibilidade e a 1a vez sao RECALCULADOS a partir das conversas
-  validados      os numeros principais do Brasil continuam iguais aos que conferi a mao (Power BI e DBeaver; docs/VALIDACAO.md)
+  validados      os numeros principais do Brasil continuam iguais aos que conferi a mao (Power BI e DBeaver; docs/CONFERIR_NUMEROS.md)
 Cada linha: (grupo, o que confere, valor esperado, SQL que devolve um unico valor). Se algo diferir, a carga e desfeita."""
 import os
 

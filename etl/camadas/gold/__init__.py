@@ -4,7 +4,7 @@
   construir_efeitos(dw)      estima os efeitos ajustados (AIPW) e grava em gold.efeito_fator (so Brasil)
   auditar_gold(dw, exec_id)  completa o funil por pais com os numeros da gold
   validar_gold(dw, exec_id)  confere que as somas da gold batem com a silver e que os efeitos sao coerentes
-Arquivos desta pasta:  limpar.py  sql.py  construir.py  efeitos.py  auditoria.py  validar.py  (explicacao em LEIA-ME.md)
+Arquivos desta pasta:  limpar.py  sql.py  construir.py  efeitos.py  auditoria.py  validar.py  (explicacao no README da raiz, secao 4)
 """
 from .auditoria import auditar_gold
 from .construir import construir_gold

@@ -1,6 +1,6 @@
 """Peças comuns do portao de qualidade: o resultado de uma conferencia, como executar uma lista delas e como gravar.
 As conferencias em si ficam em cada camada (camadas/<camada>/validar.py). Elas comparam a carga com LEIS DE CONSERVACAO
-(ex.: bronze = silver + excluidas) e com numeros VALIDADOS por conferencia independente (docs/VALIDACAO.md)."""
+(ex.: bronze = silver + excluidas) e com numeros VALIDADOS por conferencia independente (docs/CONFERIR_NUMEROS.md)."""
 from dataclasses import dataclass
 
 
