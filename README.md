@@ -375,7 +375,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 206 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
-4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.
+4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).
 5. **Reversão:** a carga é uma transação (se falhar, nada é publicado) e a imagem anterior continua disponível.
 
 ---
@@ -496,7 +496,12 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 ## 11. Incidente, riscos e AWS
 - **Incidente 4.2** ("o retorno caiu de 31% para 18%"): [`docs/INCIDENTE.md`](docs/INCIDENTE.md). É um **erro de medição**: o `usuario_id` usa o user-agent bruto, e uma atualização de navegador fez ~860 pessoas virarem "novas" (os "novos" da semana dobraram, os que voltaram não). O documento traz por onde começar, a camada da falha, a consulta de confirmação, a correção, a prevenção e o que dizer à gerente de produto. O teste dourado está em `etl/tests/test_incidente.py`.
 - **Riscos e decisões em aberto (4.3):** [`docs/RISCOS.md`](docs/RISCOS.md) (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS).
-- **AWS (2.2 e 3.3):** [`infra/README.md`](infra/README.md) tem o diagrama, a rede, a segurança, o **custo (≈ US$ 136 por mês em São Paulo; ≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade)** e o esboço em Terraform. CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário agendado, RDS PostgreSQL, S3 para o bruto e Secrets Manager. **Não há LLM.** O Terraform é um esboço validado (`validate`), não aplicado.
+- **AWS (2.2 e 3.3):** [`infra/README.md`](infra/README.md) compara as opções, com o **tamanho medido** da pilha (pico de ~2,8 GB no banco e ~1,8 GB no ETL durante a carga, então 4 GB de RAM no mínimo), a proteção na frente e os custos (preços oficiais, região de São Paulo):
+  - **A · simples (principal), ≈ US$ 25 por mês:** uma máquina virtual (Lightsail, 4 GB) com tudo em `docker compose`, atrás do CloudFront (WAF básico e DDoS, plano Free).
+  - **B · robusta, ≈ US$ 53:** a mesma máquina com o **banco PostgreSQL gerenciado e separado** (≈ US$ 83 com o banco em alta disponibilidade). Só muda a `DATABASE_URL`.
+  - **C · escala, ≈ US$ 136:** ECS Fargate, RDS e ALB (com Terraform), para muitos usuários.
+  - **D · alternativa fora da AWS, ≈ US$ 29 a 59:** DigitalOcean com Cloudflare na frente; só vale se o cliente aceitar sair da AWS (o PDF exige a AWS).
+  **Não há LLM.** O Terraform (opção C) é um esboço validado (`validate`), não aplicado.
 
 ---
 
@@ -529,5 +534,5 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 | `frontend/` | Dashboard Next.js (React, Recharts), PT/EN, tema claro e escuro |
 | `analise/` | Scripts da análise: perfil, qualidade, sensibilidade (`05`), figuras da EDA (`06`), indicadores (`07`), recálculo independente (`08`), exportação para Power BI |
 | `docs/` | `DOCUMENTO.md` (entrega), `EDA.md` (com `figuras/`), `INDICADORES.md`, `SENSIBILIDADE.md`, `CONFERIR_NUMEROS.md`, `INCIDENTE.md`, `RISCOS.md`, `adr/` e `bdr/` |
-| `infra/` | Implantação na AWS: desenho, custo e esboço em Terraform |
+| `infra/` | Implantação: opções (AWS simples, robusta e de escala; alternativa DigitalOcean), proteção, custos e esboço em Terraform |
 | `.github/workflows/ci.yml` | CI: testes e carga completa a cada push |
