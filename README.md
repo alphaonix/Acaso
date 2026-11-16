@@ -80,15 +80,39 @@ Para incluir outro idioma: crie `frontend/lib/idiomas/<codigo>.ts` com as mesmas
 
 ## 3. Como o projeto funciona de ponta a ponta
 ```mermaid
-flowchart LR
-  HF[Hugging Face<br/>WildChat-1M] -->|download_full.py<br/>uma vez, à mão| RAW[data/raw 3 GB<br/>fora do Git]
-  RAW -->|make_seed.py| SEED[data/seed/*.parquet<br/>no Git]
-  SEED -->|DuckDB + COPY| B[(bronze.wildchat)]
-  B -->|SQL| S[(silver.fato_conversa<br/>silver.fato_usuario)]
-  S -->|SQL| G[(gold.*)]
-  S -->|pandas + sklearn| G
-  G -->|usuário somente leitura| API[API FastAPI]
-  API --> WEB[Painel Next.js]
+flowchart TB
+  subgraph PREP["① Preparação (uma vez)"]
+    direction LR
+    HF["WildChat-1M<br/>Hugging Face"] --> RAW["Base completa<br/>3 GB · fora do Git"] --> SEED["Semente no repositório<br/>data/seed · 57 MB"]
+  end
+
+  PREP -->|"docker compose up:<br/>o ETL lê e carrega"| BR
+
+  subgraph PG["② Postgres: 3 camadas"]
+    direction TB
+    BR["<b>BRONZE</b><br/>bronze.wildchat<br/>o dado como veio"]
+    SI["<b>SILVER</b><br/>fato_conversa · fato_usuario<br/>limpa, define a pessoa,<br/>o retorno e a elegibilidade"]
+    GO["<b>GOLD</b><br/>resumos por país, semana e fator<br/>e os efeitos (AIPW)<br/>é o que a tela lê"]
+    BR -->|SQL| SI -->|"SQL + Python"| GO
+  end
+
+  GO --> PORTAO{{"<b>Portão de qualidade</b><br/>66 conferências a cada carga<br/>falhou: ROLLBACK e nada é publicado"}}
+  PORTAO -->|"③ passou: a API sobe<br/>(usuário somente leitura)"| API["<b>API FastAPI</b><br/>lê só a gold"]
+  API -->|JSON| WEB["<b>Painel Next.js</b><br/>localhost:3000"]
+  WEB --> PESSOA(["Pessoa de negócio"])
+
+  classDef bronze fill:#7a4a24,stroke:#cd7f32,color:#fff,stroke-width:2px;
+  classDef silver fill:#4a5560,stroke:#c0c0c0,color:#fff,stroke-width:2px;
+  classDef gold fill:#7a6200,stroke:#ffd700,color:#fff,stroke-width:2px;
+  classDef app fill:#1f3d6b,stroke:#58a6ff,color:#fff,stroke-width:2px;
+  classDef gate fill:#5a1f1f,stroke:#f85149,color:#fff,stroke-width:2px;
+  classDef prep fill:#21262d,stroke:#8b949e,color:#fff;
+  class BR bronze
+  class SI silver
+  class GO gold
+  class API,WEB,PESSOA app
+  class PORTAO gate
+  class HF,RAW,SEED prep
 ```
 O ETL (`etl/main.py`) é uma "receita" que roda **uma vez** a cada `docker compose up`. As três camadas são **reconstruídas por inteiro, numa única transação**: a API nunca vê um estado pela metade e, se uma conferência falha, nada é publicado e o painel continua com os dados anteriores.
 
