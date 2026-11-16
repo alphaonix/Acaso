@@ -262,7 +262,7 @@ def main(argv: list[str]) -> int:
 
 # ------------------------------------------------------------------ dentro da carga
 def verificar(ops, exec_id: int) -> list[Resultado]:
-    """Chamado ao fim da gold: compara esta carga com a anterior, imprime o diagnostico e grava em auditoria.anomalia (so alerta)."""
+    """Chamado ao fim da gold: compara esta carga com a anterior, imprime o diagnostico e grava em auditoria.anomalia. Anomalia RETEM a carga (main.py) ate alguem aprovar com --aprovar-anomalias."""
     nome = (f"Anomalia: nenhum pais com 30 ou mais elegiveis teve a taxa de retorno em 7 dias mudada em {PP_MINIMO:.0f} pontos percentuais ou mais "
             f"(z >= {Z_MINIMO:.0f}) em relacao a carga anterior")
     ref = deriva.carga_anterior(ops, exec_id)

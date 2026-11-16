@@ -145,8 +145,9 @@ def gerar(resultados: list[dict], caminho: str) -> None:
           Paragraph("A comparação é sempre com a carga anterior, não com uma média histórica nem com a sazonalidade. Os limites (5 pontos percentuais, z de 4, 30% e 20%) são escolhas "
                     "e podem ser ajustados em etl/comum/anomalia.py.", e["lista"], bulletText="•"),
           Paragraph("Só a taxa de retorno em 7 dias, por país com 30 ou mais elegíveis, é avaliada. Os defeitos da gold só são vistos na tabela por país (gold.pais).", e["lista"], bulletText="•"),
-          Paragraph("O alerta não bloqueia a publicação: a carga sai com status 'alerta' e o resultado fica em auditoria.anomalia. O portão de qualidade (conferências de conservação "
-                    "entre camadas) é que pode desfazer a carga.", e["lista"], bulletText="•")]
+          Paragraph("Na operação, a anomalia RETÉM a carga: nada é publicado e o painel continua com os números anteriores até alguém aprovar (--aprovar-anomalias); "
+                    "o resultado fica em auditoria.anomalia. Nesta simulação a carga é desfeita de propósito. O portão de qualidade (conferências de conservação "
+                    "entre camadas) também pode desfazer a carga.", e["lista"], bulletText="•")]
 
     def rodape(canvas, doc_):
         canvas.saveState()

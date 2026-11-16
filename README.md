@@ -52,6 +52,22 @@ docker compose down -v                                       # derruba e apaga o
 ```
 **Depois de mudar o código, use sempre `--build`**; sem ele o Compose reaproveita as imagens antigas.
 
+**Quando o ETL retém a carga (anomalia).** A cada carga, o ETL compara os números novos com os da carga anterior. Se o detector achar uma **anomalia** (a taxa de retorno de algum país mudou 5 p.p. ou mais, ou uma semana teve um pico novo), a carga fica **retida**: **nada é publicado** e o painel continua com os números anteriores, até alguém decidir. Assim uma mudança estranha nos dados nunca "bagunça" os números do cliente sem ninguém ver.
+
+| Situação | O que acontece | Status em `ops.etl_execucao` |
+|---|---|---|
+| Uma conferência de conservação falha (ou um dos números do Brasil conferidos à mão) | a carga é desfeita (rollback); os dados anteriores ficam | `falhou` |
+| O detector acha anomalia | a carga é **retida** (também desfeita) e espera a sua decisão | `retida` |
+| Você aprova a anomalia | a carga é refeita e publicada, com o registro do que foi aprovado | `alerta` |
+| Nada de estranho | a carga é publicada | `ok` |
+
+```bash
+docker compose --profile operacao run --rm investigar-anomalias            # o que mudou e de qual camada veio
+docker compose run --rm etl python main.py --aprovar-anomalias             # é mudança real: refaz a carga e publica
+docker compose run --rm etl python main.py --recarregar                    # era defeito: corrija a causa e refaça, sem aprovar
+```
+Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há uma carga retida aguardando aprovação"); uma semente nova, `--recarregar` ou `--aprovar-anomalias` refazem a tentativa. `GET /api/saude` devolve a carga publicada (`ultima_execucao_etl`) e, se houver, a retida (`carga_retida`). A **primeira** carga de um banco vazio nunca é retida (não há com o que comparar). O ETL sai com código 0 mesmo retida, para o painel continuar de pé com os números anteriores; no desenho da AWS, um alarme sobre o status `retida` avisaria o time (não implementado).
+
 **O que o `docker compose up` executa, em ordem**
 
 | Serviço | O que faz | Termina? |
@@ -97,7 +113,7 @@ flowchart TB
     GO["<b>GOLD</b><br/>resumos por país, semana e fator<br/>e os efeitos (AIPW)<br/>é o que a tela lê"]
     BR -->|SQL| SI -->|"SQL + Python"| GO
   end
-  GO --> PORTAO{{"<b>Portão de qualidade</b><br/>66 conferências a cada carga<br/>falhou: ROLLBACK e nada é publicado"}}
+  GO --> PORTAO{{"<b>Portão de qualidade</b><br/>66 conferências a cada carga<br/>falhou ou anomalia: nada é publicado<br/>(anomalia: só depois de aprovada)"}}
   PORTAO -->|"③ passou: a API sobe<br/>(usuário somente leitura)"| API["<b>API FastAPI</b><br/>lê só a gold"]
   API -->|JSON| WEB["<b>Painel Next.js</b><br/>localhost:3000"]
   WEB --> PESSOA(["Pessoa de negócio"])
@@ -124,7 +140,7 @@ O ETL (`etl/main.py`) é uma "receita" que roda **quando o banco está vazio**, 
 | 1 | Bronze | confere o contrato da semente (colunas e tipos), registra os arquivos (sha256) e carrega os Parquet em `bronze.wildchat`; valida |
 | 2 | Silver | limpa, define a pessoa, as visitas, o retorno e a elegibilidade; registra o que excluiu; valida |
 | 3 | Gold | monta os resumos que a tela lê, estima os efeitos e valida |
-| 3b/3c | Anomalias | compara a taxa de cada país e cada semana com a carga anterior e aponta a camada de origem; só alerta |
+| 3b/3c | Anomalias | compara a taxa de cada país e cada semana com a carga anterior e aponta a camada de origem; **se achar anomalia, retém a carga** (nada é publicado) até alguém aprovar |
 | 4 | Publicar | `COMMIT` só se **todas** as conferências passaram; senão `ROLLBACK` |
 
 Cada camada faz **limpar → construir → (auditar) → validar → medir**, e "medir" grava as medidas da camada em `auditoria.metrica` e compara com a carga anterior. Duas conexões: `ops` (cada comando vale na hora; guarda o histórico mesmo se a carga falhar) e `dw` (a transação das camadas).
@@ -236,7 +252,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 | `validados` | 10 | os números do Brasil continuam iguais aos conferidos à mão (Power BI e DBeaver) |
 | `integridade` | 2 | o publicado é idêntico ao que a carga anterior deixou; a trava de escrita está ligada |
 | `deriva` | 3 | sem mudar a semente, os números não mudam (uma por camada) |
-| `anomalia`, `anomalia_semanal` | 1 + 1 | nenhuma taxa de país ou pico de semana novo desde a carga anterior |
+| `anomalia`, `anomalia_semanal` | 1 + 1 | nenhuma taxa de país ou pico de semana novo desde a carga anterior (se houver, a carga fica **retida** até aprovação) |
 
 As conferências garantem **coerência**, não **verdade**: não dizem se a definição de "pessoa" é boa.
 
@@ -326,9 +342,9 @@ docker compose run --rm --no-deps -v "${PWD}/analise/08_recalculo_independente.p
 ---
 
 ## 7. Testes automáticos
-Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **195 testes**: 146 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco carregado, **só leem**).
+Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **206 testes**: 157 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco carregado, **só leem**).
 ```bash
-docker compose --profile test run --rm --build testes-etl          # 146 testes
+docker compose --profile test run --rm --build testes-etl          # 157 testes
 docker compose --profile test run --rm --build testes-api          # 29 testes: decomposição mix × taxa
 docker compose --profile test run --rm --build testes-integracao  # 20 testes: API × Gold (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo     # gera exports/fluxo_dos_dados.html (caminho do dado e todas as conferências)
@@ -347,6 +363,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | `test_integridade.py` | UPDATE, DELETE, INSERT e TRUNCATE nas camadas fora da carga são recusados; alteração por fora muda a impressão digital |
 | `test_anomalia.py`, `test_anomalia_semanal.py`, `test_simulacao.py` | a taxa que salta e a camada de origem; o pico de uma semana; o catálogo dos cenários e o PDF |
 | `test_recarga.py` | **o banco guarda os dados**: o ETL só recarrega se o banco estiver vazio, se a semente mudou ou sob `--recarregar`; uma carga que falhou não conta |
+| `test_retencao.py` | **anomalia retém a carga**: sem aprovação nada é publicado; com `--aprovar-anomalias` publica e registra o que foi aprovado; deriva e integridade continuam só alertando; uma carga retida não se repete a cada `up` |
 | `test_acesso.py` | nenhuma conta ou senha real no repositório; senha aleatória na primeira subida |
 | `backend/tests/test_api_x_gold.py` | **a API devolve o que a gold tem**: 401 conferências em 6 países; um erro plantado é detectado |
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios) |
@@ -355,7 +372,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 195 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 206 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.
@@ -386,8 +403,8 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 4. **Recálculo independente:** a silver é refeita em Python (pandas) a partir da bronze, com outro código, e comparada pessoa por pessoa (em três níveis, o último parte dos arquivos da semente). Hoje: **0 divergências em 197.319 pessoas**.
 5. **Deriva** (`comum/deriva.py`): com a **mesma semente** (mesmo sha256), os números têm de ser iguais aos da carga anterior; com semente nova, só se aponta variação maior que 20%. Por padrão gera alerta; com `DERIVA_ESTRITA=1`, desfaz a carga.
 6. **Trava de escrita e verificação de integridade** (migração `025`, `etl/verificacao.py`): `UPDATE`, `INSERT`, `DELETE` e `TRUNCATE` nas camadas são **recusados** fora da carga ("Camada protegida… só é permitido ao ETL"). A verificação mede de novo as 3 camadas e compara com o que a última carga gravou; roda no início de toda carga e sob demanda: `docker compose --profile operacao run --rm verificar-integridade`.
-7. **Anomalia com diagnóstico de origem** (`comum/anomalia.py`): a cada carga, a taxa de cada país (30+ elegíveis) é comparada com a carga anterior; se mudar **5 p.p. ou mais** (z ≥ 4), o funil é comparado camada a camada e aponta a origem: **GOLD** (a gold não bate com a silver), **TRANSFORMAÇÃO** (mesma entrada, resultado diferente), **BRONZE** (o dado de entrada mudou de padrão: problema da fonte), **SILVER** (a limpeza ou a elegibilidade mudou) ou **SEM CAUSA TÉCNICA** (pode ser mudança real). É alerta, não bloqueio.
-8. **Alerta semanal** (`comum/anomalia_semanal.py`): nasceu do incidente do PDF. Cada semana é comparada com as 6 anteriores por três sinais (novos subiram 50%+; taxa mudou 5 p.p.+; "novos" com endereço já conhecido subiram 15 p.p.+) e recebe um diagnóstico (PESSOA_DIVIDIDA, DENOMINADOR_INFLADO, PICO_DE_USO, QUEDA_DE_NOVOS, TAXA_SEMANAL) com a camada onde procurar. Só reprova o que é **novo desde a carga anterior**. Calibrado nos dados reais: 406 alertas com os limites iniciais, 42 hoje (nenhum no Brasil). Listar: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia_semanal`.
+7. **Anomalia com diagnóstico de origem** (`comum/anomalia.py`): a cada carga, a taxa de cada país (30+ elegíveis) é comparada com a carga anterior; se mudar **5 p.p. ou mais** (z ≥ 4), o funil é comparado camada a camada e aponta a origem: **GOLD** (a gold não bate com a silver), **TRANSFORMAÇÃO** (mesma entrada, resultado diferente), **BRONZE** (o dado de entrada mudou de padrão: problema da fonte), **SILVER** (a limpeza ou a elegibilidade mudou) ou **SEM CAUSA TÉCNICA** (pode ser mudança real). **Achou anomalia, a carga fica retida** até alguém aprovar (seção 2); o painel continua com os números anteriores.
+8. **Alerta semanal** (`comum/anomalia_semanal.py`): nasceu do incidente do PDF. Cada semana é comparada com as 6 anteriores por três sinais (novos subiram 50%+; taxa mudou 5 p.p.+; "novos" com endereço já conhecido subiram 15 p.p.+) e recebe um diagnóstico (PESSOA_DIVIDIDA, DENOMINADOR_INFLADO, PICO_DE_USO, QUEDA_DE_NOVOS, TAXA_SEMANAL) com a camada onde procurar. Só retém a carga o que é **novo desde a carga anterior**. Calibrado nos dados reais: 406 alertas com os limites iniciais, 42 hoje (nenhum no Brasil). Listar: `docker compose --profile operacao run --rm investigar-anomalias python -m comum.anomalia_semanal`.
 9. **Testes e CI** (seção 7).
 
 **O que cada proteção pega (demonstrado)**
@@ -399,6 +416,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | Alguém edita a silver ou a gold por fora (DBeaver) | trava de escrita | "Camada protegida: UPDATE em gold.pais só é permitido ao ETL" |
 | Alguém desliga a trava e altera 1 pessoa | verificação de integridade | `voltaram_7d[Brazil]` 530 → 531 apontado; a carga seguinte curou e voltou a 61 de 61 |
 | A taxa de um país salta (25% → 97%) | anomalia com origem | simulação ponta a ponta nos 14 cenários |
+| Dado novo muda de padrão e passa em todas as conferências | **retenção por anomalia** | **demonstrado** com uma semente em que 60% das linhas da Alemanha perdem o endereço: carga retida, painel com os números anteriores; aprovada com `--aprovar-anomalias`, só a Alemanha mudou (18,85% → 17,54%) |
 | Carga que falha no meio | transação única | rollback, dados intactos |
 
 ### Simulação dos cenários de defeito (camada opcional de operação)
@@ -411,7 +429,7 @@ docker compose --profile operacao run --rm simular-cenarios todos               
 **14 cenários, todos conferem:** 3 que começam na **bronze** (60% sem endereço; só 40% das conversas; 50% sem horário), 3 na **silver** (elegibilidade errada; retornos inflados; limpeza exagerada), 3 na **gold** (quem voltou triplicado; metade dos elegíveis; país trocado), código alterado, dois do **incidente do PDF** (`incidente_navegador` e `incidente_navegador_corrigido`), o pico de novos de uma semana e um controle sem defeito. O código está em `etl/simulacao/` (`catalogo.py` define os cenários, `executar.py` planta o defeito, `cenarios.py` orquestra).
 **Honestidade sobre o incidente:** no **Brasil**, com poucas dezenas de novos por semana, o alerta semanal **não** separa o defeito do ruído; quem o pega é o sinal "pessoas por endereço", na comparação entre cargas. Nos países grandes (EUA, Alemanha, Canadá, Reino Unido) o alerta semanal aponta PESSOA_DIVIDIDA. A simulação mostrou que olhar só a taxa deixava passar três tipos de defeito (dado de entrada alterado com a taxa parecida, limpeza que descarta demais, números trocados entre países); por isso existem os tipos de alerta ENTRADA, LIMPEZA e AGREGACAO, já corrigidos.
 
-**Limites declarados:** o recálculo usa os mesmos parâmetros do código (confirma que o **código** segue a regra, não que a **regra** é boa); quem é dono do banco pode desligar a trava (a verificação pega, mas só quando roda); a anomalia compara só com a carga anterior e só a taxa de 7 dias, e a origem é uma **pista**; **não há teste automático do que a tela desenha** (o painel só mostra o que a API devolve); os números validados precisam ser atualizados por uma pessoa quando uma definição muda de propósito.
+**Limites declarados:** o recálculo usa os mesmos parâmetros do código (confirma que o **código** segue a regra, não que a **regra** é boa); quem é dono do banco pode desligar a trava (a verificação pega, mas só quando roda); a anomalia compara só com a carga anterior e só a taxa de 7 dias, e a origem é uma **pista** (a retenção depende de o detector enxergar o problema; um defeito que quebra a coerência entre camadas, ou os números do Brasil conferidos à mão, é barrado antes pelo portão rígido); **não há teste automático do que a tela desenha** (o painel só mostra o que a API devolve); os números validados precisam ser atualizados por uma pessoa quando uma definição muda de propósito.
 
 ---
 

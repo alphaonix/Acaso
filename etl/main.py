@@ -8,7 +8,8 @@ A receita esta na funcao `carga` (leia-a de cima para baixo):
   SILVER     construir_silver  ->  auditar_silver  ->  validar_silver  ->  medir   (limpeza, pessoa, visitas, retorno, elegibilidade)
   GOLD       construir_gold  ->  construir_efeitos  ->  auditar_gold  ->  validar_gold  ->  medir   (resumos que a tela le)
   "medir"    grava as medidas da camada no historico e compara com a carga anterior (deriva: numeros que mudaram sem a semente mudar)
-  publicar   COMMIT (ou ROLLBACK, se alguma validacao falhar)
+  reter      anomalia (taxa de pais ou pico de semana) RETEM a carga: nada e publicado ate alguem rodar --aprovar-anomalias
+  publicar   COMMIT (ou ROLLBACK, se alguma validacao falhar ou se a carga foi retida)
 
 As tres camadas sao reconstruidas por inteiro em UMA transacao: a API nunca ve um estado pela metade, e se qualquer validacao
 falhar (modo estrito) nada e publicado. Cada camada tem a sua pasta em camadas/ (explicada no README, secao 4); o que e comum a todas
@@ -36,6 +37,23 @@ class PortaoFalhou(Exception):
     """Uma validacao de camada falhou no modo estrito: a carga e desfeita."""
 
 
+class CargaRetida(Exception):
+    """O detector achou anomalia (taxa de pais ou pico de semana novo): a carga fica RETIDA (desfeita) e os numeros publicados continuam
+    os da carga anterior, ate alguem aprovar de forma explicita (`--aprovar-anomalias`)."""
+
+    def __init__(self, anomalias: list) -> None:
+        super().__init__(f"{len(anomalias)} anomalia(s) aguardando aprovacao")
+        self.anomalias = anomalias
+
+
+TRANSICOES_QUE_RETEM = ("anomalia", "anomalia_semanal")
+
+
+def anomalias_aprovadas() -> bool:
+    """True quando quem opera ja olhou as anomalias e autorizou a publicacao: `python main.py --aprovar-anomalias` (ou ETL_APROVAR_ANOMALIAS=1)."""
+    return "--aprovar-anomalias" in sys.argv or os.environ.get("ETL_APROVAR_ANOMALIAS") == "1"
+
+
 def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultado], alertas: list) -> None:
     """Grava o resultado das validacoes da camada, mostra no log e, se alguma falhou no modo estrito, interrompe a carga."""
     qualidade.gravar(ops, exec_id, resultados)
@@ -43,10 +61,19 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
         print(f"[qa] {'OK ' if r.passou else 'FALHOU'} [{r.transicao}] {r.verificacao}: esperado {r.esperado}, obtido {r.obtido}", flush=True)
     falhas = [r for r in resultados if not r.passou]
     alertas.extend(falhas)
-    # deriva so derruba a carga se DERIVA_ESTRITA=1; integridade (alguem mexeu fora do ETL) e so alerta: a carga reconstroi tudo e cura o dado
-    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade", "anomalia", "anomalia_semanal") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
+    # deriva so derruba a carga se DERIVA_ESTRITA=1; integridade (alguem mexeu fora do ETL) e so alerta: a carga reconstroi tudo e cura o dado;
+    # anomalia nao derruba, mas RETEM a carga (abaixo) ate alguem aprovar
+    graves = [r for r in falhas if r.transicao not in ("deriva", "integridade", *TRANSICOES_QUE_RETEM) or (r.transicao == "deriva" and DERIVA_ESTRITA)]
     if graves and ESTRITO:
         raise PortaoFalhou(f"{len(graves)} verificacao(oes) da camada {camada} falharam")
+    anomalias = [r for r in falhas if r.transicao in TRANSICOES_QUE_RETEM]
+    if anomalias and not anomalias_aprovadas():
+        raise CargaRetida(anomalias)
+
+
+MENSAGEM_RETIDA = ("     Para ver o que mudou:     docker compose --profile operacao run --rm investigar-anomalias\n"
+                  "     Se for real e voce aprova: docker compose run --rm etl python main.py --aprovar-anomalias\n"
+                  "     Se for defeito:            corrija a causa e rode docker compose run --rm etl python main.py --recarregar")
 
 
 def carga_necessaria(ops, semente: Path, forcar: bool = False) -> tuple[bool, str]:
@@ -55,11 +82,16 @@ def carga_necessaria(ops, semente: Path, forcar: bool = False) -> tuple[bool, st
     Devolve (precisa, motivo)."""
     if forcar:
         return True, "recarga pedida"
+    atuais = bronze.impressao_da_semente(semente)
+    retida = ops.execute("SELECT id FROM ops.etl_execucao WHERE status = 'retida' AND id > coalesce((SELECT max(id) FROM ops.etl_execucao WHERE status IN ('ok', 'alerta')), 0) "
+                         "ORDER BY id DESC LIMIT 1").fetchone()
+    if retida is not None and dict(ops.execute("SELECT arquivo, sha256 FROM ops.bronze_lote WHERE execucao_id = %s", (retida[0],)).fetchall()) == atuais:
+        return False, f"ha uma carga retida por anomalia aguardando aprovacao (execucao {retida[0]}); os numeros publicados sao os da carga anterior"
     ultima = ops.execute("SELECT id FROM ops.etl_execucao WHERE status IN ('ok', 'alerta') ORDER BY id DESC LIMIT 1").fetchone()
     if ultima is None:
         return True, "o banco ainda nao tem carga"
     gravadas = dict(ops.execute("SELECT arquivo, sha256 FROM ops.bronze_lote WHERE execucao_id = %s", (ultima[0],)).fetchall())
-    if gravadas != bronze.impressao_da_semente(semente):
+    if gravadas != atuais:
         return True, "a semente mudou desde a ultima carga"
     return False, f"o banco ja esta carregado (execucao {ultima[0]})"
 
@@ -117,10 +149,12 @@ def main() -> int:
     banco.migrar(ops)
     acesso.garantir_conta_avaliacao(ops)
     ops.execute("SELECT auditoria.proteger_camadas()")      # liga a trava de escrita nas tabelas das camadas (so cria onde falta)
-    forcar = "--recarregar" in sys.argv or os.environ.get("ETL_RECARREGAR") == "1"
+    forcar = "--recarregar" in sys.argv or os.environ.get("ETL_RECARREGAR") == "1" or anomalias_aprovadas()      # aprovar tambem refaz a carga
     precisa, motivo = carga_necessaria(ops, SEMENTE, forcar)
     if not precisa:
         print(f"ETL: nada a fazer, {motivo}. Para recarregar: docker compose run --rm etl python main.py --recarregar", flush=True)
+        if "retida" in motivo:
+            print(MENSAGEM_RETIDA, flush=True)
         return 0
     print(f"ETL: carregando ({motivo}).", flush=True)
     exec_id = banco.abrir_execucao(ops, VERSAO)
@@ -130,10 +164,25 @@ def main() -> int:
         con = duckdb.connect()                  # DuckDB so le os Parquet da semente
         dw = banco.conectar(autocommit=False)   # as tres camadas: so valem se a carga inteira terminar bem
         alertas = carga(ops, dw, con, exec_id, estado)
+        aprovadas = [r.verificacao for r in alertas if r.transicao in TRANSICOES_QUE_RETEM]
+        if aprovadas:
+            estado["anomalias_aprovadas"] = aprovadas
+            print(f"ETL: {len(aprovadas)} anomalia(s) APROVADA(S) por quem operou; a carga foi publicada.", flush=True)
         dw.commit()
         banco.finalizar_execucao(ops, exec_id, "alerta" if alertas else "ok", estado["lidas"], estado["carregadas"],
                                  json.dumps({k: v for k, v in estado.items() if k != "bronze_s"}))
         print(f"ETL concluido ({'com alertas' if alertas else 'ok'}).", flush=True)
+        return 0
+    except CargaRetida as e:
+        dw.rollback()
+        publicada = ops.execute("SELECT max(id) FROM ops.etl_execucao WHERE status IN ('ok', 'alerta')").fetchone()[0]
+        resumo = " | ".join(r.verificacao[:90] for r in e.anomalias)
+        banco.finalizar_execucao(ops, exec_id, "retida", estado.get("lidas"), 0, f"retida por anomalia, aguardando aprovacao: {resumo}")
+        print("=" * 110, flush=True)
+        print(f"ETL: CARGA RETIDA (execucao {exec_id}): {len(e.anomalias)} anomalia(s) detectada(s). NADA foi publicado;", flush=True)
+        print(f"     os numeros do painel continuam os da carga {publicada}.", flush=True)
+        print(MENSAGEM_RETIDA, flush=True)
+        print("=" * 110, flush=True)
         return 0
     except PortaoFalhou as e:
         dw.rollback()

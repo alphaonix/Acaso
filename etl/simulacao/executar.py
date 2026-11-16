@@ -5,6 +5,7 @@ Os defeitos de CODIGO entram DEPOIS de a camada ser construida, como se o codigo
 (simulacao/gerar_semente.py). No fim, a carga de um cenario e DESFEITA (rollback): a anomalia ja ficou registrada em auditoria.anomalia, e a carga
 normal continua sendo a referencia do proximo cenario (nao precisa recarregar tudo a cada vez).
 """
+import os
 import sys
 
 from camadas import gold, silver
@@ -59,6 +60,7 @@ def plantar(cenario: str) -> None:
 
 
 if __name__ == "__main__":
+    os.environ["ETL_APROVAR_ANOMALIAS"] = "1"      # a simulacao precisa ir ate o fim (as duas verificacoes); ela mesma desfaz a carga no final
     plantar(sys.argv[1])
     import main
     sys.exit(main.main())

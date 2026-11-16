@@ -57,8 +57,11 @@ def pais_valido(pais: str = Query("Brazil")) -> str:
 # ---- publico ----------------------------------------------------------------------------------------
 @app.get("/api/saude")
 def saude() -> dict:
-    ultima = consulta("SELECT id, status, finalizado_em, linhas_carregadas FROM ops.etl_execucao ORDER BY id DESC LIMIT 1")
-    return {"status": "ok", "ultima_execucao_etl": ultima[0] if ultima else None}
+    """Ultima carga PUBLICADA (ok ou alerta) e, se houver, uma carga RETIDA por anomalia aguardando aprovacao (os numeros do painel sao os da publicada)."""
+    ultima = consulta("SELECT id, status, finalizado_em, linhas_carregadas FROM ops.etl_execucao WHERE status IN ('ok', 'alerta') ORDER BY id DESC LIMIT 1")
+    retida = consulta("SELECT id, finalizado_em, observacao FROM ops.etl_execucao WHERE status = 'retida' "
+                      "AND id > coalesce((SELECT max(id) FROM ops.etl_execucao WHERE status IN ('ok', 'alerta')), 0) ORDER BY id DESC LIMIT 1")
+    return {"status": "ok", "ultima_execucao_etl": ultima[0] if ultima else None, "carga_retida": retida[0] if retida else None}
 
 
 class Credenciais(BaseModel):
@@ -340,7 +343,7 @@ def efeitos(pais: str = Depends(pais_valido)) -> list[dict]:
 @app.get("/api/qualidade", dependencies=[Depends(usuario_atual)])
 def qualidade() -> dict:
     ex = consulta("SELECT id, status, iniciado_em, finalizado_em, versao_codigo, linhas_lidas, linhas_carregadas "
-                  "FROM ops.etl_execucao ORDER BY id DESC LIMIT 1")
+                  "FROM ops.etl_execucao WHERE status IN ('ok', 'alerta') ORDER BY id DESC LIMIT 1")      # a carga PUBLICADA, nao a retida
     if not ex:
         return {"execucao": None, "verificacoes": [], "lotes": []}
     eid = ex[0]["id"]

@@ -36,6 +36,6 @@ def abrir_execucao(ops: psycopg.Connection, versao: str) -> int:
 
 
 def finalizar_execucao(ops, exec_id: int, status: str, lidas=None, carregadas=None, obs=None) -> None:
-    """Fecha o registro: status 'ok', 'alerta', 'falhou' ou 'erro'."""
+    """Fecha o registro: status 'ok', 'alerta' (publicada, com avisos ou anomalias aprovadas), 'retida' (anomalia aguardando aprovacao, nada publicado), 'falhou' ou 'erro'."""
     ops.execute("UPDATE ops.etl_execucao SET finalizado_em = now(), status = %s, linhas_lidas = %s, linhas_carregadas = %s, observacao = %s WHERE id = %s",
                 (status, lidas, carregadas, obs, exec_id))
