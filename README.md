@@ -77,12 +77,9 @@ Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há um
 | `api` | FastAPI somente leitura; **só sobe se o ETL terminou bem** | não |
 | `web` | Dashboard Next.js; fala com a API pelo mesmo domínio (`/api/*`) | não |
 
-**Acesso (nenhuma senha fica no repositório).** Sem configurar nada, existe a conta `avaliacao@exemplo.com`, com **senha aleatória gerada na primeira subida e mostrada uma vez no log**:
-```bash
-docker compose logs etl | findstr SENHA      # Windows
-docker compose logs etl | grep SENHA          # Linux e macOS
-```
-Para usar o seu e-mail e senha: copie `.env.example` para `.env`, preencha `DASH_USERS` (`email|Nome|url-da-foto;email|Nome`; a foto é opcional) e `DASH_PASSWORD`, e suba de novo com `--build`. Se perder a senha gerada: `docker compose down -v` e suba de novo.
+**Acesso.** O painel pede e-mail e senha. As contas de quem avalia o desafio (Nathália Anjos e Daniele Cardoso) já nascem no banco pela migração `db/migrations/029_contas_avaliadoras.sql`, que guarda só o **hash** da senha (scrypt, sal próprio de cada conta); **nenhuma senha em texto fica no repositório** e não é preciso criar `.env`. A senha foi enviada na entrega. Como a base é pública (WildChat) e o painel roda na máquina de quem o sobe, o login serve para demonstrar autenticação, não para proteger dado sensível; em produção seria um provedor de identidade (Amazon Cognito).
+
+Para usar **outras contas ou outra senha**: copie `.env.example` para `.env`, preencha `DASH_USERS` (`email|Nome|url-da-foto;email|Nome`; a foto é opcional) e `DASH_PASSWORD`, e suba de novo com `--build` (as contas fora da lista saem do banco). Se o banco não tiver nenhuma conta, o ETL cria `avaliacao@exemplo.com` com **senha aleatória mostrada uma vez no log** (`docker compose logs etl | findstr SENHA` no Windows, `grep SENHA` em Linux e macOS).
 
 A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as sessões); em produção ele vem de `SESSION_SECRET`. As portas 3000 e 8000 abrem só em `localhost`.
 
@@ -353,9 +350,9 @@ docker compose run --rm --no-deps -v "${PWD}/analise/08_recalculo_independente.p
 ---
 
 ## 7. Testes automáticos
-Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **207 testes**: 157 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
+Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **208 testes**: 157 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
 ```bash
-docker compose --profile test run --rm --build testes-etl          # 157 testes
+docker compose --profile test run --rm --build testes-etl          # 158 testes
 docker compose --profile test run --rm --build testes-api          # 29 testes: decomposição mix × taxa
 docker compose --profile test run --rm --build testes-integracao  # 21 testes: API × Gold (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo     # gera exports/fluxo_dos_dados.html (caminho do dado e todas as conferências)
@@ -375,7 +372,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | `test_anomalia.py`, `test_anomalia_semanal.py`, `test_simulacao.py` | a taxa que salta e a camada de origem; o pico de uma semana; o catálogo dos cenários e o PDF |
 | `test_recarga.py` | **o banco guarda os dados**: o ETL só recarrega se o banco estiver vazio, se a semente mudou ou sob `--recarregar`; uma carga que falhou não conta |
 | `test_retencao.py` | **anomalia retém a carga**: sem aprovação nada é publicado; com `--aprovar-anomalias` publica e registra o que foi aprovado; deriva e integridade continuam só alertando; uma carga retida não se repete a cada `up` |
-| `test_acesso.py` | nenhuma conta ou senha real no repositório; senha aleatória na primeira subida |
+| `test_acesso.py` | contas de quem avalia vêm da migração só com hash; contas do `.env` substituem a lista; sem nenhuma conta, senha aleatória |
 | `backend/tests/test_api_x_gold.py` | **a API devolve o que a gold tem**: 401 conferências em 6 países; um erro plantado é detectado |
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios) |
 
@@ -383,7 +380,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 207 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 208 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).

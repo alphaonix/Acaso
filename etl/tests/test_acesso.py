@@ -1,4 +1,4 @@
-"""Contas de acesso: nenhuma conta nem senha real no repositorio; sem configuracao, uma conta generica com senha aleatoria."""
+"""Contas de acesso: a migracao 029 traz as contas de quem avalia (so o hash); sem nenhuma conta, uma generica com senha aleatoria."""
 from comum import acesso
 
 
@@ -7,9 +7,21 @@ def _hash(dw, email):
     return r[0] if r else None
 
 
-def test_sem_configuracao_cria_conta_generica_com_senha_aleatoria(dw, monkeypatch, capsys):
+def test_migracao_traz_as_contas_de_quem_avalia_e_sem_configuracao_as_mantem(dw, monkeypatch, capsys):
     monkeypatch.delenv("DASH_USERS", raising=False)
     monkeypatch.delenv("DASH_PASSWORD", raising=False)
+    antes = {r[0]: r[1] for r in dw.execute("SELECT email, senha_hash FROM ops.usuario_dashboard")}
+    assert set(antes) == {"nathalia.anjos@aca.so", "daniele.cardoso@aca.so"}
+    assert all(h.startswith("scrypt$") for h in antes.values()) and len(set(antes.values())) == 2   # hash com sal proprio
+    acesso.garantir_conta_avaliacao(dw)
+    assert {r[0]: r[1] for r in dw.execute("SELECT email, senha_hash FROM ops.usuario_dashboard")} == antes
+    assert "SENHA GERADA" not in capsys.readouterr().out
+
+
+def test_sem_nenhuma_conta_cria_conta_generica_com_senha_aleatoria(dw, monkeypatch, capsys):
+    monkeypatch.delenv("DASH_USERS", raising=False)
+    monkeypatch.delenv("DASH_PASSWORD", raising=False)
+    dw.execute("DELETE FROM ops.usuario_dashboard")
     acesso.garantir_conta_avaliacao(dw)
     saida = capsys.readouterr().out
     assert "SENHA GERADA para avaliacao@exemplo.com" in saida
@@ -20,6 +32,7 @@ def test_sem_configuracao_cria_conta_generica_com_senha_aleatoria(dw, monkeypatc
 def test_segunda_subida_mantem_a_senha_e_nao_a_mostra_de_novo(dw, monkeypatch, capsys):
     monkeypatch.delenv("DASH_USERS", raising=False)
     monkeypatch.delenv("DASH_PASSWORD", raising=False)
+    dw.execute("DELETE FROM ops.usuario_dashboard")
     acesso.garantir_conta_avaliacao(dw)
     antes = _hash(dw, "avaliacao@exemplo.com")
     capsys.readouterr()

@@ -1,6 +1,6 @@
 # Sobe tudo do zero:  docker compose up --build
 # Fluxo: db -> etl (migra, carrega, estima, confere) -> api -> web.   Tela: http://localhost:3000
-# Acesso (README): sem .env, a conta generica de avaliacao recebe uma senha aleatoria, mostrada uma vez em `docker compose logs etl`. Para definir as suas: .env (DASH_USERS, DASH_PASSWORD).
+# Acesso (README): as contas de quem avalia vem da migracao 029 (so o hash da senha); nao precisa de .env. Para outras contas: .env (DASH_USERS, DASH_PASSWORD).
 services:
   db:
     image: postgres:16-alpine

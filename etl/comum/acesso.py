@@ -1,4 +1,4 @@
-"""Contas de acesso ao painel. NENHUMA conta nem senha real fica no repositorio: tudo vem do ambiente (.env)."""
+"""Contas de acesso ao painel. As contas de quem avalia vem da migracao 029 (so o hash da senha); outras contas vem do ambiente (.env)."""
 import os
 import secrets
 
@@ -8,13 +8,18 @@ from .seguranca import hash_senha
 
 
 def garantir_conta_avaliacao(ops: psycopg.Connection) -> None:
-    """Sincroniza as contas de acesso com o ambiente. NENHUMA conta nem senha real fica no repositorio.
-      DASH_USERS     'email|Nome|url-da-foto;email|Nome' (a foto e opcional; padrao: uma conta generica de avaliacao)
-      DASH_PASSWORD  se definida (em .env), vale para todas as contas e e a fonte de verdade;
-                     se vazia, cada conta NOVA recebe uma senha aleatoria, mostrada UMA vez no log do ETL
-                     (docker compose logs etl); conta que ja existe mantem a senha.
-    Contas que nao estao na lista sao removidas (nenhuma senha antiga sobra no banco)."""
+    """Sincroniza as contas de acesso com o ambiente. Nenhuma senha em texto fica no repositorio.
+      sem DASH_USERS  as contas que ja estao no banco (migracao 029) ficam como estao; se nao houver nenhuma, cria uma
+                      conta generica de avaliacao com senha aleatoria, mostrada UMA vez no log do ETL
+      DASH_USERS      'email|Nome|url-da-foto;email|Nome' (a foto e opcional): passa a ser a lista de contas
+      DASH_PASSWORD   se definida (em .env), vale para todas as contas de DASH_USERS e e a fonte de verdade;
+                      se vazia, cada conta NOVA recebe uma senha aleatoria; conta que ja existe mantem a senha.
+    Com DASH_USERS, contas que nao estao na lista sao removidas (nenhuma senha antiga sobra no banco)."""
     padrao = "avaliacao@exemplo.com|Avaliação"
+    if not os.environ.get("DASH_USERS") and ops.execute("SELECT 1 FROM ops.usuario_dashboard LIMIT 1").fetchone():
+        contas_banco = [r[0] for r in ops.execute("SELECT email FROM ops.usuario_dashboard ORDER BY email")]
+        print(f"[acesso] contas ativas: {', '.join(contas_banco)}", flush=True)
+        return
     senha_env = os.environ.get("DASH_PASSWORD") or None
     contas = []
     for item in (os.environ.get("DASH_USERS") or padrao).split(";"):
