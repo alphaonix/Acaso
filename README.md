@@ -211,7 +211,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 | `problema_qualidade`, `catalogo_indicador` | — | os 11 problemas de qualidade; definição e SQL de cada indicador |
 | `efeito_fator` | contraste | os 16 efeitos (abaixo) |
 
-*Por que Wilson:* é estável com poucas pessoas e com taxas perto de 0% ou 100%. Supõe pessoas independentes; como a "pessoa" é aproximada, as margens podem ser otimistas.
+*Por que Wilson:* é estável com poucas pessoas e com taxas perto de 0% ou 100%. Ele vale para as **taxas** (retorno, recusa, curva...); as **diferenças** entre grupos (efeito bruto, saudação e recusa por modelo, tendência) e os **efeitos ajustados** usam a aproximação normal (estimativa ± 1,96 erros-padrão). Supõe pessoas independentes; como a "pessoa" é aproximada, as margens podem ser otimistas.
 **Conferências (27):** cada soma da gold bate com a silver (pessoas e conversas por país, novos/elegíveis/voltaram por semana, uso, curva, concentração...), mais 3 sobre os efeitos.
 
 ### Efeitos: `etl/camadas/gold/efeitos.py`
@@ -409,7 +409,7 @@ docker compose --profile operacao run --rm simular-cenarios bronze_sem_endereco 
 docker compose --profile operacao run --rm simular-cenarios todos                                  # todos (~15 min)
 ```
 **14 cenários, todos conferem:** 3 que começam na **bronze** (60% sem endereço; só 40% das conversas; 50% sem horário), 3 na **silver** (elegibilidade errada; retornos inflados; limpeza exagerada), 3 na **gold** (quem voltou triplicado; metade dos elegíveis; país trocado), código alterado, dois do **incidente do PDF** (`incidente_navegador` e `incidente_navegador_corrigido`), o pico de novos de uma semana e um controle sem defeito. O código está em `etl/simulacao/` (`catalogo.py` define os cenários, `executar.py` planta o defeito, `cenarios.py` orquestra).
-**Honestidade sobre o incidente:** no **Brasil**, com poucas dezenas de novos por semana, o alerta semanal **não** separa o defeito do ruído; quem o pega é o sinal "pessoas por endereço", na comparação entre cargas. Nos países grandes (EUA, Alemanha, Canadá, Reino Unido) o alerta semanal aponta PESSOA_DIVIDIDA. A simulação achou duas falhas do detector, já corrigidas.
+**Honestidade sobre o incidente:** no **Brasil**, com poucas dezenas de novos por semana, o alerta semanal **não** separa o defeito do ruído; quem o pega é o sinal "pessoas por endereço", na comparação entre cargas. Nos países grandes (EUA, Alemanha, Canadá, Reino Unido) o alerta semanal aponta PESSOA_DIVIDIDA. A simulação mostrou que olhar só a taxa deixava passar três tipos de defeito (dado de entrada alterado com a taxa parecida, limpeza que descarta demais, números trocados entre países); por isso existem os tipos de alerta ENTRADA, LIMPEZA e AGREGACAO, já corrigidos.
 
 **Limites declarados:** o recálculo usa os mesmos parâmetros do código (confirma que o **código** segue a regra, não que a **regra** é boa); quem é dono do banco pode desligar a trava (a verificação pega, mas só quando roda); a anomalia compara só com a carga anterior e só a taxa de 7 dias, e a origem é uma **pista**; **não há teste automático do que a tela desenha** (o painel só mostra o que a API devolve); os números validados precisam ser atualizados por uma pessoa quando uma definição muda de propósito.
 
@@ -449,7 +449,7 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 
 ### Desempenho
 - **Pré-calculado na gold:** a API nunca varre as conversas; cada endpoint lê dezenas ou poucas centenas de linhas por índice (`pais`).
-- **Medição local** (100 requisições por endpoint, base completa de 838 mil conversas): **p50 de 6 a 9 ms, p95 de 7 a 22 ms**, máximo de 30 ms. Meta: p95 abaixo de 300 ms (o endpoint do incidente do PDF, não pré-calculado, levava 412 ms).
+- **Medição local** (100 requisições por endpoint, base completa de 838 mil conversas): **p50 de 6 a 9 ms, p95 de 7 a 22 ms**, máximo de 30 ms. Meta nossa: p95 abaixo de 300 ms. Para comparar: no registro de monitoramento do próprio PDF (seção 4.2), o endpoint do incidente aparece com 412 ms; ele calcula tudo na hora, a cada requisição, e a nossa medição é em outra máquina e com outro volume, então é uma ordem de grandeza, não uma comparação exata.
 - **Cache (desenho, não implementado localmente):** `Cache-Control: private, max-age=300` nos agregados e CloudFront na frente do front. **Expira** quando uma carga nova termina: a API devolve `ETag` com o id da última execução do ETL. Se o volume crescer, ElastiCache com a mesma chave.
 - **Como se mede em produção:** log JSON por requisição; CloudWatch calcula p50/p95 por rota e um alarme dispara se o p95 passar de 300 ms.
 
