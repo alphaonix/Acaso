@@ -41,3 +41,21 @@ Faixa do retorno ao variar cada premissa (a adotada incluída), da mais para a m
 - **Sem os usuários mais ativos** mostra se poucos usuários (como o IP com 1.557 conversas) puxam o número.
 
 Limite: a amostra é pequena (cerca de 2,2 mil elegíveis), então diferenças menores que a incerteza acima não são distinguíveis de ruído.
+
+
+## Fuso, período dos dados e janela de elegibilidade (medido à mão)
+
+Duas premissas de calendário que o script acima não varia. Consultas sobre `silver.fato_usuario` e `silver.fato_conversa`, Brasil; os dados vão de 09/04/2023 00:11 UTC a 29/04/2024 23:33 UTC.
+
+**Fuso.** O retorno em 7 dias compara instantes (timestamps), então **não depende do fuso**. O fuso só escolhe a **semana, a hora e o dia da semana** de cada pessoa. Entre as 2.234 elegíveis, **42 (1,9%) mudariam de semana** se usássemos UTC no lugar de America/Sao_Paulo; a hora muda para todas, como esperado (diferença de 3 h). Efeito no número principal: nenhum; efeito nas telas de semana e de horário: pequeno, e o horário só é correto se o país tiver um único fuso (premissa registrada em `dim_pais`; para o Brasil, o estado vem na silver).
+
+**Período de aquecimento (lavagem).** Quem aparece nos primeiros N dias dos dados pode ser um usuário antigo, não novo. Variando N com a mesma regra de janela completa no fim:
+
+| Aquecimento (dias) | Elegíveis | Voltaram | Retorno |
+|---|---|---|---|
+| 0 | 2.479 | 597 | 24,08% |
+| 15 | 2.405 | 575 | 23,91% |
+| **30 (adotado)** | **2.234** | **530** | **23,72%** |
+| 60 | 1.874 | 447 | 23,85% |
+
+**Janela completa no fim.** Exigir 14 dias antes do fim dos dados, no lugar de 7, dá 2.181 elegíveis e 24,03%. Conclusão: as duas escolhas de calendário mexem **menos de 0,4 pp**, bem dentro do intervalo de Wilson (22,0% a 25,5%); o que mexe de verdade é o gap de sessão (tabela acima).

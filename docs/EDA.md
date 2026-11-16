@@ -62,6 +62,36 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 **Cuidado:** o idioma da conversa é **inferido** pelo WildChat e erra (há 88 conversas do Brasil marcadas como "latim"). Pode ser ruído de detecção, ou tradução e estudo de idiomas.
 **Conclusão:** hipótese a verificar, não achado. **O que fazemos:** sugerir o cruzamento **idioma do pedido × idioma do navegador** como indicador, com validação da detecção de idioma antes de agir.
 
+
+## 8. Distribuições do que entra nos efeitos (Brasil, elegíveis, n = 2.234)
+
+Para saber se os cortes de "curto" e "longo" fazem sentido, estas são as distribuições medidas (`silver.fato_usuario`) e o retorno em cada faixa, **sem ajuste** (só descrição; o ajuste está no BDR-004).
+
+| Variável | Mediana | p90 | p99 |
+|---|---|---|---|
+| Turnos da 1ª conversa | 2 | 5 | 14 |
+| Caracteres do 1º pedido | 60 | 992 | 15.703 |
+| Caracteres da 1ª resposta | 978 | 3.039 | 4.899 |
+
+| Faixa | Pessoas | Retorno em 7 dias |
+|---|---|---|
+| 1 turno | 1.034 | 20,2% |
+| 2 turnos | 532 | 23,1% |
+| 3 a 4 turnos | 382 | 26,7% |
+| 5 ou mais turnos | 286 | 33,6% |
+| 1º pedido com menos de 50 caracteres | 993 | 19,6% |
+| 1º pedido com 50 a 199 | 690 | 27,5% |
+| 1º pedido com 200 a 999 | 329 | 25,8% |
+| 1º pedido com 1.000 ou mais | 222 | 27,0% |
+| 1ª resposta com menos de 300 caracteres | 738 | 18,8% |
+| 1ª resposta com 300 a 999 | 386 | 27,2% |
+| 1ª resposta com 1.000 a 1.999 | 507 | 22,5% |
+| 1ª resposta com 2.000 ou mais | 603 | 28,5% |
+
+Leituras: (1) o retorno sobe com os turnos, mas turno é comportamento de quem já está engajado (BDR-004: "perfil"); (2) o 1º pedido curto (menos de 50 caracteres, em geral uma saudação) é a faixa com menor retorno; acima de 50 a taxa fica entre 26% e 28%, sem ordem clara, então "pedido longo" é, na prática, "pedido que não é só um oi"; (3) a cauda é muito longa (p99 do pedido: 15.703 caracteres, colagens de texto), o que justifica comparar faixas e não médias; (4) a resposta mais curta (menos de 300 caracteres) volta menos, mas isso mistura saudações e recusas, que têm respostas curtas; depois do ajuste o efeito da resposta longa some (+0,1 pp).
+
+Um detalhe mecânico: quem teve **1 conversa no total** tem retorno de 0% por definição (voltar exige outra sessão); 2 a 3 conversas: 43,7%; 4 a 10: 74,8%; 11 ou mais: 88,3%. Por isso o número de conversas **nunca** entra como fator explicativo, já que é consequência do retorno.
+
 ## Resumo: o que esta exploração muda nos achados
 | Achado | Antes | Depois da exploração |
 |---|---|---|

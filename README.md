@@ -207,6 +207,17 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 4. **Por pessoa:** visitas (nova visita após mais de 30 min), `voltou_7d`, `voltou_24h`, `dias_ate_voltar`, 1ª experiência (modelo, idioma, turnos, etc. da primeira conversa), semana/hora/dia no fuso do país, e `elegivel`.
 5. **Gravar** `fato_conversa` (guarda `bronze_id`, que liga cada conversa à sua linha na bronze) e `fato_usuario`. **Não guarda** texto nem IP.
 
+**Variáveis de `fato_usuario` (uma linha por pessoa e país):**
+
+| Variável | Significado | Como é obtida |
+|---|---|---|
+| `primeira_vez_utc`, `semana`, `hora`, `dia_semana` | quando a pessoa chegou | 1ª conversa; semana, hora e dia no fuso do país |
+| `modelo`, `idioma`, `navegador`, `sistema`, `estado`, `idioma_navegador` | 1ª experiência | da 1ª conversa; navegador e sistema sem versão |
+| `turnos`, `prompt1_chars`, `resp1_chars` | tamanho da 1ª conversa, do 1º pedido e da 1ª resposta | contagens e caracteres |
+| `recusa`, `tema_id` | recusa na 1ª resposta e tema do 1º pedido | regras por palavras, só Brasil (heurística) |
+| `convs_1a_sessao`, `convs_total` | conversas na 1ª sessão e no total | contagem; `convs_total` é consequência do retorno, não explica |
+| `voltou_7d`, `voltou_24h`, `dias_ate_voltar` | retorno | nova sessão (gap de 30 min) em até 7 dias / 24 h; dias até a volta |
+| `elegivel`, `janela_30d` | entra na taxa? | 1ª vez após 30 dias do início e 7 dias antes do fim dos dados; `janela_30d` (curva de retorno) exige 1ª vez a mais de 30 dias do início e do fim |
 **Conferências (27):** bronze = silver + excluídas; soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez recalculados a partir das conversas = os da silver; `voltou_24h` implica `voltou_7d`; **recálculo independente em Python a partir da bronze**; 10 números do Brasil validados à mão.
 **Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras erram para os dois lados (na conferência manual de 30 casos marcados como recusa, **8 (27%) eram recusa no sentido estrito**; a precisão do tema não foi medida); fuso único por país.
 
