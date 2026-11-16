@@ -35,7 +35,7 @@ Faixa do retorno ao variar cada premissa (a adotada incluída), da mais para a m
 
 ## Como ler
 
-- **Só o IP** junta quem divide a rede (celular, escola, CGNAT) e reduz o número de usuários; **user-agent completo** separa quem atualiza o navegador (é a causa do incidente da seção 4.2). A definição adotada fica no meio: IP + família do navegador + sistema, sem versão.
+- **Só o IP** junta quem divide a rede (celular, escola, CGNAT) e reduz o número de usuários; **user-agent completo** separa quem atualiza o navegador (é o defeito de código do incidente da seção 4.2). A definição adotada fica no meio: IP + família do navegador + sistema, sem versão.
 - **Gap da sessão** e **lavagem** mudam quem conta como "voltou" e quem conta como "novo"; **janela** muda o que é "voltar" (é outro indicador, não um erro).
 - **Horário do último turno** e a **regra de 1 h** são as armadilhas do código do incidente; estão aqui para mostrar quanto elas custariam.
 - **Sem os usuários mais ativos** mostra se poucos usuários (como o IP com 1.557 conversas) puxam o número.
@@ -43,9 +43,9 @@ Faixa do retorno ao variar cada premissa (a adotada incluída), da mais para a m
 Limite: a amostra é pequena (cerca de 2,2 mil elegíveis), então diferenças menores que a incerteza acima não são distinguíveis de ruído.
 
 
-## Fuso, período dos dados e janela de elegibilidade (medido à mão)
+## Fuso, período dos dados e janela de elegibilidade (medido em SQL)
 
-Duas premissas de calendário que o script acima não varia. Consultas sobre `silver.fato_usuario` e `silver.fato_conversa`, Brasil; os dados vão de 09/04/2023 00:11 UTC a 29/04/2024 23:33 UTC.
+Duas premissas de calendário que o script acima não varia; esta seção é escrita à mão, e o script não a gera. Consultas sobre `silver.fato_usuario` e `silver.fato_conversa`, Brasil; os dados vão de 09/04/2023 00:11 UTC a 29/04/2024 23:33 UTC.
 
 **Fuso.** O retorno em 7 dias compara instantes (timestamps), então **não depende do fuso**. O fuso só escolhe a **semana, a hora e o dia da semana** de cada pessoa. Entre as 2.234 elegíveis, **42 (1,9%) mudariam de semana** se usássemos UTC no lugar de America/Sao_Paulo; a hora muda para todas, como esperado (diferença de 3 h). Efeito no número principal: nenhum; efeito nas telas de semana e de horário: pequeno, e o horário só é correto se o país tiver um único fuso (premissa registrada em `dim_pais`; para o Brasil, o estado vem na silver).
 

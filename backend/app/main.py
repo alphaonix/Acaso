@@ -11,6 +11,7 @@ import logging
 import sys
 import time
 import uuid
+from datetime import date
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from pydantic import BaseModel
@@ -169,7 +170,7 @@ def _recusa(pais: str) -> dict:
 
 
 @app.get("/api/retencao/coortes", dependencies=[Depends(usuario_atual)])
-def coortes(pais: str = Depends(pais_valido), inicio: str | None = None, fim: str | None = None) -> list[dict]:
+def coortes(pais: str = Depends(pais_valido), inicio: date | None = None, fim: date | None = None) -> list[dict]:
     return consulta("""SELECT semana, novos, elegiveis, voltaram_7d, taxa, ic_lo, ic_hi, (taxa IS NULL) AS amostra_pequena
        FROM gold.agg_retorno_semana
        WHERE pais = %s AND semana >= coalesce(%s::date, '0001-01-01') AND semana <= coalesce(%s::date, '9999-12-31')

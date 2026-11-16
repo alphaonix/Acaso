@@ -56,7 +56,7 @@ docker compose down -v                                       # derruba e apaga o
 
 | Situação | O que acontece | Status em `ops.etl_execucao` |
 |---|---|---|
-| Uma conferência de conservação falha (ou um dos números do Brasil conferidos à mão) | a carga é desfeita (rollback); os dados anteriores ficam | `falhou` |
+| Uma conferência de conservação falha (ou um dos 10 números validados do Brasil) | a carga é desfeita (rollback); os dados anteriores ficam | `falhou` |
 | O detector acha anomalia | a carga é **retida** (também desfeita), um **PDF** da anomalia é gerado e a carga espera a sua decisão | `retida` |
 | Você aprova a anomalia | a carga é refeita e publicada, com o registro do que foi aprovado e um PDF da anomalia | `alerta` |
 | Nada de estranho | a carga é publicada | `ok` |
@@ -98,8 +98,6 @@ A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as 
 
 Seletor de país, idioma (PT/EN) e tema (claro/escuro) no cabeçalho; o botão "i" de cada indicador mostra a definição e a fórmula.
 Para incluir outro idioma: crie `frontend/lib/idiomas/<codigo>.ts` com as mesmas chaves de `pt.ts` (o compilador acusa chave faltando) e acrescente-o em `lib/i18n.tsx`. Textos que vêm do banco são traduzidos em `lib/traducao-dados.ts`.
-
-**Problema de build com `SSL: UNEXPECTED_EOF`** em `files.pythonhosted.org`: é rede (VPN ou proxy), não o projeto. Tente outra rede.
 
 ---
 
@@ -389,7 +387,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 210 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada.
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 210 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). A carga completa leva ~8 min. A proteção do `main` exigindo os dois jobs é a configuração recomendada.
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).
@@ -453,7 +451,7 @@ docker compose --profile operacao run --rm simular-cenarios todos               
 
 ## 9. API, telas e desempenho
 
-### Endpoints (todos aceitam `?pais=`, padrão Brazil; exigem login, menos `/api/saude`)
+### Endpoints (os de dados aceitam `?pais=`, padrão Brazil; exigem login, menos `/api/saude`)
 | Endpoint | Entrada | Saída |
 |---|---|---|
 | `GET /api/saude` | — | status e última execução do ETL |
@@ -535,11 +533,9 @@ O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o 
 
 ## 13. Limites conhecidos e extensões
 1. **Precisão de tema e recusa.** São regras de palavras. Na conferência manual de 30 casos marcados como recusa, **8 (27%) são recusa no sentido estrito**; o resto é desculpa, pedido de informação ou aviso de IA com resposta normal. A variável deve ser lida como **"recusa ou ressalva de IA"** e o achado 2 é só indício. A precisão do tema não foi medida (BDR-003).
-2. **Proteção do branch `main`.** Exigir os dois jobs do CI é a configuração recomendada.
-3. **AWS.** O Terraform é um esboço validado (`terraform validate`), sem `plan`/`apply`; o preço do RDS vem de fonte secundária.
-4. **Extensões descritas, não implementadas:** fuso de ~160 países, cache e SSO.
-5. **Fora do Brasil**, a semente só tem metadados: sem tema e recusa (as regras são em português) e sem efeitos; o painel mostra "indisponível".
-6. **Semana do incidente.** O PDF pede uma semana; o painel explica o movimento por mês, porque uma semana tem poucas pessoas elegíveis. A conta semanal existe (20/11/2023: 29,1% → 20,6%, quase tudo na taxa, margem ±15 pp) em `docs/CONFERIR_NUMEROS.md`, seção 2.2.
+2. **Extensões descritas, não implementadas:** fuso de ~160 países, cache e SSO.
+3. **Fora do Brasil**, a semente só tem metadados: sem tema e recusa (as regras são em português) e sem efeitos; o painel mostra "indisponível".
+4. **Uma semana só tem poucas pessoas.** O PDF pede explicar uma semana em que o retorno caiu ou subiu; o painel explica o movimento por mês, porque uma semana tem poucas pessoas elegíveis. Como exemplo, a semana de 20/11/2023 do Brasil (29,1% → 20,6%, margem de ±15 pp, indistinguível de acaso) está em `docs/CONFERIR_NUMEROS.md`, seção 2.2.
 
 ---
 

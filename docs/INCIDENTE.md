@@ -60,9 +60,9 @@ SELECT count(*) FILTER (WHERE primeira_par > primeira_ip) AS fantasmas,
        count(*) FILTER (WHERE primeira_par > primeira_ip AND primeira_par > primeira_modelo) AS so_versao
 FROM r;
 ```
-- **Não há pico em 20/11:** 1.452 fantasmas, entre 1.537 e 1.561 nas semanas vizinhas. O salto do enunciado só se verifica na base da empresa.
+- **Os fantasmas ficam estáveis de semana em semana** (por exemplo, 1.452 na semana de 20/11/2023, entre 1.537 e 1.561 nas vizinhas), sem salto. Os números do enunciado (de ~60 para 862) são de um exemplo, não desta base: a nossa base serve para mostrar o método, não para reproduzir o incidente.
 
-**Ponto fraco da hipótese.** No enunciado os "voltaram" não sobem (366) mesmo com 862 "novos" a mais. Se fossem as mesmas pessoas com a versão nova, parte delas voltaria. Isso sugere ids de uso único (robô ou proxy que troca o user-agent) ou um filtro diferente entre dashboard e relatório. Para achar o gatilho, olho os user-agents dos fantasmas daquela semana:
+**Ponto fraco da hipótese.** No enunciado os "voltaram" não sobem (366) mesmo com 862 "novos" a mais. Se fossem as mesmas pessoas com a versão nova, parte delas voltaria. Isso sugere ids de uso único (robô ou proxy que troca o user-agent) ou um filtro diferente entre dashboard e relatório. Para achar o gatilho, olho os user-agents dos fantasmas da semana do exemplo (abaixo rodo na nossa base, só para mostrar o método, com a semana de 20/11/2023):
 ```sql
 -- (usa as CTEs par e ip da primeira consulta)
 SELECT p.ua, count(*) AS fantasmas
@@ -71,7 +71,7 @@ WHERE p.primeira_par > i.primeira_ip
   AND date_trunc('week', timezone('America/Sao_Paulo', p.primeira_par)) = timestamp '2023-11-20'
 GROUP BY 1 ORDER BY 2 DESC LIMIT 10;
 ```
-Poucos valores novos concentrando quase tudo = atualização de versão ou proxy; muitos valores diferentes, cada um com poucos casos = robô. Na nossa base os maiores são a versão vigente de cada navegador (Chrome 119 no Windows: 359 de 1.452), toda semana, sem degrau em 20/11. Também o relatório por IP é imperfeito: quem divide um IP é contado como uma só pessoa.
+Poucos valores novos concentrando quase tudo = atualização de versão ou proxy; muitos valores diferentes, cada um com poucos casos = robô. Na nossa base os maiores são a versão vigente de cada navegador (Chrome 119 no Windows: 359 de 1.452), toda semana, sem degrau. Também o relatório por IP é imperfeito: quem divide um IP é contado como uma só pessoa.
 
 ## 3. Código que causa o problema e a correção
 **Causa:** `chave = f"{c['hashed_ip']}|{c['header']['user-agent']}"`. **Correção:** a identidade usa a família do navegador e o sistema, sem versão:

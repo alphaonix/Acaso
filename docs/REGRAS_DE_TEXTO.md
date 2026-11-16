@@ -31,14 +31,14 @@ Tema e recusa só existem para o **Brasil**, o único país cuja semente traz o 
 | 10 | Conhecimento/pergunta | o que, como, qual, quem, por que, explique, defina… | 531 | 23,8 |
 | 11 | Outro | nenhuma regra bateu | 438 | 19,6 |
 
-- **Precisão:** **não foi medida** (há uma amostra para conferir em `exports/amostra_validacao_tema.csv`). Palavras amplas ("texto", "programa", "aula") geram falsos positivos; temas pequenos têm margem de erro grande. Decisão e alternativas (LLM no Bedrock, embeddings) em [`BDR-003`](bdr/BDR-003-classificacao-de-tema.md).
+- **Precisão:** **não foi medida**. Palavras amplas ("texto", "programa", "aula") geram falsos positivos; temas pequenos têm margem de erro grande. Decisão e alternativas (LLM no Bedrock, embeddings) em [`BDR-003`](bdr/BDR-003-classificacao-de-tema.md).
 - **Como estreitar:** conferir uma amostra por tema, corrigir as regras e remedir.
 
 ## 3. Idioma do pedido x idioma do navegador
 
 - **Idioma do pedido:** já vem na base (campo `language`, detectado pelos autores do WildChat, **não por nós**).
 - **Idioma do navegador:** a **primeira etiqueta** do cabeçalho `Accept-Language` da requisição (por exemplo `pt-BR`), em minúsculas. Comparamos só a parte antes do hífen (`pt`). Fica em `silver.fato_usuario.idioma_navegador`.
-- **Comparação:** o idioma do pedido é traduzido para o código de 2 letras (18 idiomas: inglês, português, espanhol, francês, alemão, russo, chinês, japonês, coreano, árabe, italiano, turco, holandês, polonês, indonésio, vietnamita, persa, ucraniano, tailandês). Se bate com o do navegador, o pedido está "no idioma do navegador".
+- **Comparação:** o idioma do pedido é traduzido para o código de 2 letras (19 idiomas: inglês, português, espanhol, francês, alemão, russo, chinês, japonês, coreano, árabe, italiano, turco, holandês, polonês, indonésio, vietnamita, persa, ucraniano, tailandês). Se bate com o do navegador, o pedido está "no idioma do navegador".
 
 | Grupo | Pessoas | Retorno em 7 dias |
 |---|---|---|
@@ -46,7 +46,7 @@ Tema e recusa só existem para o **Brasil**, o único país cuja semente traz o 
 | Inglês, com navegador em outro idioma | 317 | 25,9% |
 | Outro idioma (nem o do navegador, nem inglês) | 343 | 18,4% |
 
-- **Fora da conta:** 14 pessoas sem o cabeçalho. Idiomas fora da lista de 18 (como "Nolang" ou finlandês) caem em "outro idioma".
+- **Fora da conta:** 14 pessoas sem o cabeçalho. Idiomas fora da lista de 19 (como "Nolang" ou finlandês) caem em "outro idioma".
 - **Limite:** é um recorte descritivo, sem ajuste; o navegador em português não garante que a pessoa seja brasileira, e o primeiro idioma do cabeçalho é só uma indicação.
 
 ## Conferir em SQL

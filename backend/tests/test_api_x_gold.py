@@ -69,6 +69,10 @@ def test_numero_principal_do_brasil(client):
     a = client.get("/api/retencao/resumo", params={"pais": "Brazil"}).json()
     assert (a["elegiveis"], a["voltaram_7d"]) == (2234, 530)
     assert round(a["taxa"] * 100, 2) == 23.72
+    # entrada ruim e erro do cliente (422), nao do servidor (500); data valida continua filtrando
+    assert client.get("/api/retencao/coortes", params={"pais": "Brazil", "inicio": "abc"}).status_code == 422
+    ok = client.get("/api/retencao/coortes", params={"pais": "Brazil", "inicio": "2023-11-06", "fim": "2023-11-20"})
+    assert ok.status_code == 200 and [r["semana"] for r in ok.json()] == ["2023-11-06", "2023-11-13", "2023-11-20"]
 
 
 def test_resposta_traz_rastreio(client, db):

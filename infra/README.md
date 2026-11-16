@@ -105,8 +105,8 @@ flowchart TB
 | Entrega | GitHub Actions com OIDC | testes, build, ECR, `update-service` |
 
 **Rede:** VPC em 2 zonas; o RDS fica em sub-redes sem rota para a internet; as tarefas ficam em sub-redes públicas com entrada só pelo ALB (isso dispensa o NAT Gateway, que custaria de US$ 35 a US$ 70 por mês, estimativa).
-**Custo (região de São Paulo, 730 horas):** A·mínimo ≈ 111, **B·recomendado ≈ 136**, C·alta disponibilidade ≈ 190. O RDS pesa 40%, os dois serviços Fargate 37% e o ALB 21%. Na Virgínia (`us-east-1`) o recomendado custaria ≈ 77, mas tira o dado do Brasil (decisão de LGPD do cliente). Preços de Fargate, ALB, Secrets Manager e CloudWatch lidos das listas oficiais da AWS em 04 e 11/11/2026; o **RDS (US$ 0,069 por hora) vem de agregador de preços, não do site da AWS**.
-É **10 vezes mais caro que a opção A** para o mesmo painel: só se justifica com muitos usuários.
+**Custo (região de São Paulo, 730 horas):** mínimo ≈ 111, **recomendado ≈ 136**, alta disponibilidade ≈ 190. O RDS pesa 40%, os dois serviços Fargate 37% e o ALB 21%. Na Virgínia (`us-east-1`) o recomendado custaria ≈ 77, mas tira o dado do Brasil (decisão de LGPD do cliente). Preços de Fargate, ALB, Secrets Manager e CloudWatch lidos das listas oficiais da AWS em 04 e 11/11/2026; o **RDS (US$ 0,069 por hora) vem de agregador de preços, não do site da AWS**.
+É **cerca de 5 vezes mais caro que a opção A** para o mesmo painel: só se justifica com muitos usuários.
 
 ## 7. Opção D: DigitalOcean com Cloudflare (alternativa, fora da restrição do PDF)
 - **Droplet de 4 GB** (2 vCPU, 80 GB, 4 TB de transferência): **US$ 24 por mês**, mais **backups semanais a 20%** (US$ 4,80). Com Docker Compose, igual à opção A: **≈ US$ 29**.

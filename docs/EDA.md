@@ -1,16 +1,16 @@
 # Análise exploratória: o que os dados mostram além do número principal
 
 Complemento do `docs/DOCUMENTO.md` (PDF, seção 3.1). **Cada figura sustenta uma conclusão** e termina com o que fazemos com ela. Base: conversas do Brasil (11.621 conversas, 2.530 pessoas, 2.234 elegíveis),
-08/04/2023 a 29/04/2024, fuso de São Paulo. As figuras são geradas por `python analise/06_eda_figuras.py` (com o `docker compose up` ativo).
+09/04/2023 a 29/04/2024 (datas em UTC); dia e semana no fuso de São Paulo. As figuras são geradas por `python analise/06_eda_figuras.py` (com o `docker compose up` ativo).
 
 > **Como ler os números.** Olhei cerca de 15 recortes. Os intervalos de confiança abaixo são os de cada comparação **isolada, sem ajuste e sem correção para múltiplos testes**: são **hipóteses**, não achados.
 > Os efeitos ajustados e corrigidos estão no `docs/bdr/BDR-004`. Quando uma conclusão muda um achado, está dito.
 
 ## 1. Quem volta, volta logo
 ![curva de retorno](figuras/eda2_curva_de_retorno.png)
-**O que vemos** (cada ponto usa as pessoas que já tiveram esse tempo para voltar, no mínimo 7 dias: 2.234 até o ponto de 7 dias, 2.181 no de 14 e 2.039 no de 30): **15,9%** voltam em até 1 dia, 20,8% em 3, **23,7% em 7** (o mesmo número do cartão de retorno), 25,3% em 14 e 26,1% em 30. Entre as 2.039 pessoas com 30 dias completos, das que voltam em até 30 dias, **92% já voltou em 7** e metade volta em cerca de **14 horas** (mediana de 0,6 dia).
+**O que vemos** (cada ponto usa as pessoas que já tiveram esse tempo para voltar, no mínimo 7 dias: 2.234 até o ponto de 7 dias, 2.181 no de 14 e 2.039 no de 30): **15,9%** voltam em até 1 dia, 20,8% em 3, **23,7% em 7** (o mesmo número do cartão de retorno), 25,3% em 14 e 26,1% em 30. Entre as 2.039 pessoas com 30 dias completos, das que voltam em até 30 dias, **92% já voltou em 7** e metade volta em cerca de **15 horas** (mediana de 0,63 dia).
 **Conclusão:** a janela de 7 dias é adequada (14 dias muda o retorno em só +1,6 pp) e a decisão de voltar se dá **nas primeiras horas**.
-**O que fazemos:** sugerir o indicador **"voltou em 24 horas"** (16,0%) como sinal precoce no painel, e pensar qualquer ação de reengajamento dentro do primeiro dia.
+**O que fazemos:** sugerir o indicador **"voltou em 24 horas"** (15,9%) como sinal precoce no painel, e pensar qualquer ação de reengajamento dentro do primeiro dia.
 
 ## 2. O modelo mudou com o calendário, e "GPT-3.5" não é um bloco só
 ![modelo no tempo](figuras/eda1_modelo_no_tempo.png)
@@ -38,7 +38,7 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 ## 4. Quando usam: diurno e começo da noite, sem diferença no fim de semana
 ![quando usam](figuras/eda4_quando_usam.png)
 **O que vemos:** a comparação certa é com o uso **uniforme** (igual em todas as horas da semana). O expediente (seg a sex, 9h às 18h) é 45 das 168 horas (26,8%) e tem **35,5%** das conversas: **acima** do esperado. A madrugada (22h às 6h) é 8 de 24 horas (33,3%) e tem **20,1%**: **abaixo**. O fim de semana tem **29,0%** (esperado 28,6%): **sem diferença**. O pico é das 18h às 20h (6,5 a 6,8% por hora).
-**Conclusão:** o uso é **diurno e do começo da noite**, sem deslocamento para o fim de semana. (Uma versão anterior deste texto dizia "noite e fim de semana, não expediente", lendo os 35,5% sem a base uniforme: era uma leitura errada e foi corrigida.) O efeito de "noite" ou "fim de semana" sobre o retorno é inconclusivo (BDR-004: fim de semana +1,8 pp [−2,9; +6,5]).
+**Conclusão:** o uso é **diurno e do começo da noite**, sem deslocamento para o fim de semana. O efeito de "noite" ou "fim de semana" sobre o retorno é inconclusivo (BDR-004: fim de semana +1,8 pp [−2,9; +6,5]).
 **O que fazemos:** a tela **"Quando usam"** (hora × dia, no fuso do país) compara cada faixa com o esperado. Para o cliente: escolher o horário de mensagens pelo pico real do mapa.
 
 ## 5. Dispositivo: mobile e desktop voltam igual, a Apple volta menos (e pode ser a medida)
@@ -114,7 +114,7 @@ Um detalhe mecânico: quem teve **1 conversa no total** tem retorno de 0% por de
 
 ## Sugestões que saem da exploração
 **Para o dashboard (indicadores e telas pensados depois de olhar os dados):**
-1. **Voltou em 24 horas** (16,0%) e a **curva de retorno** na tela de coortes.
+1. **Voltou em 24 horas** (15,9%) e a **curva de retorno** na tela de coortes.
 2. **Pessoas ativas** (e não só conversas) no gráfico de uso, com **alerta de uso concentrado ou possivelmente automatizado**.
 3. Tela **"Quando usam"** (hora × dia no fuso do país).
 4. Tela **"Dispositivo e navegador"**, com o aviso de que a medida pode distorcer.
@@ -126,7 +126,7 @@ Um detalhe mecânico: quem teve **1 conversa no total** tem retorno de 0% por de
 1. **Onboarding na saudação** (o achado mais consistente): responder a "oi" com exemplos do que o assistente faz, e testar por A/B.
 2. **Revisar recusas nos dois modelos**, e reduzir as falsas recusas.
 3. **Cuidar de quem escreve em outros idiomas** (detecção, resposta no idioma, tradução).
-4. **Pensar o reengajamento no primeiro dia**, já que metade de quem volta o faz em cerca de 14 horas.
+4. **Pensar o reengajamento no primeiro dia**, já que metade de quem volta o faz em cerca de 15 horas.
 
 ## Limites
 Amostra pequena (os intervalos têm de ±3 a ±7 pp nos subgrupos); comparações simples, sem ajuste; cerca de 15 recortes olhados, sem correção para múltiplos testes; e a "pessoa" é uma aproximação (IP + navegador), o que afeta sobretudo o dispositivo.

@@ -30,7 +30,7 @@ Os valores abaixo são do Brasil; a Alemanha aparece ao lado quando ajuda a ente
 | | GPT-4 por mês | 1.13 |
 | | Concentração do uso (faixas e retorno sem as 10 mais ativas) | 1.14 |
 | | Comparação entre países e média geral | 1.15 |
-| Coortes semanais | Pessoas novas e retorno por semana (incluindo a semana do PDF) | 2.1 |
+| Coortes semanais | Pessoas novas e retorno por semana (incluindo a semana de 20/11/2023) | 2.1 |
 | | Decomposição: chegou gente diferente × a mesma gente voltou diferente | 2.2 |
 | O que faz voltar | Efeitos: grupos e efeito bruto (16 linhas) | 3.1 |
 | | Efeito ajustado, intervalo, etiqueta "resiste à correção" | 3.2 e 3.3 |
@@ -416,8 +416,8 @@ SELECT pais, el AS elegiveis, v AS voltaram, round(v::numeric / el, 4) AS retorn
 
 A curva de retorno (24 h, 7 e 30 dias) desta tela é a mesma da seção **1.11**. O mapa de calor "por mês" é a seção **1.9** e o "por semana" é a consulta abaixo.
 
-## 2.1 Pessoas novas e retorno por semana (a semana do incidente)
-**Na tela:** o gráfico de pessoas novas por semana, o mapa de calor semanal e a semana de 20/11/2023 do PDF.
+## 2.1 Pessoas novas e retorno por semana (inclui a semana de 20/11/2023)
+**Na tela:** o gráfico de pessoas novas por semana e o mapa de calor semanal.
 ```sql
 -- Novos, elegíveis e quem voltou, por semana de chegada (segunda a domingo, no fuso do país).
 WITH s AS (SELECT semana, count(*) AS novos, count(*) FILTER (WHERE elegivel) AS elegiveis,
@@ -429,10 +429,9 @@ FROM s JOIN gold.agg_retorno_semana g ON g.pais = 'Brazil' AND g.semana = s.sema
 WHERE s.semana BETWEEN '2023-11-06' AND '2023-11-27'
 ORDER BY s.semana;
 ```
-**Passo a passo:** `semana` já vem calculada na silver (a segunda-feira da semana da primeira vez). O `WHERE` final escolhe as semanas de 06/11 a 27/11/2023 (a do PDF é 20/11); troque as datas para ver outras. Retire o `WHERE` para ver todas.
+**Passo a passo:** `semana` já vem calculada na silver (a segunda-feira da semana da primeira vez). O `WHERE` final escolhe as semanas de 06/11 a 27/11/2023 (o exemplo é 20/11); troque as datas para ver outras. Retire o `WHERE` para ver todas.
 **Deve dar (Brasil):** 06/11: 48 · 12 · 0,2500; 13/11: 55 · 16 · 0,2909; 20/11: 68 · 14 · 0,2059; 27/11: 67 · 14 · 0,2090; todas `t`. A Alemanha dá 105, 80, 132 e 108 pessoas nessas semanas.
-Semanas com menos de 30 elegíveis aparecem na tela como "amostra pequena" e sem taxa; a conta aqui continua válida. Os números do PDF (1.210 novos, 31% → 18%) são do exemplo do enunciado, não desta base: o incidente é sobre os "novos" que dobram sem os "voltaram" acompanharem, e as hipóteses estão em [`INCIDENTE.md`](INCIDENTE.md).
-
+Semanas com menos de 30 elegíveis aparecem na tela como "amostra pequena" e sem taxa; a conta aqui continua válida.
 ## 2.2 Decomposição: chegou gente diferente ou a mesma gente voltou diferente?
 **Na tela:** "mai./2023 → abr./2024: de 22,3% para 21,1% (−1,3 pp): mix +2,2 · taxa −2,0 · interação −1,5".
 ```sql

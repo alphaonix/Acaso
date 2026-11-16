@@ -129,7 +129,7 @@ def main() -> int:
                      f"(amplitude de {str(round(max(v) - min(v), 1)).replace('.', ',')} pp)")
     saida += ["", "## Como ler", "",
               "- **Só o IP** junta quem divide a rede (celular, escola, CGNAT) e reduz o número de usuários; **user-agent completo** separa quem atualiza o navegador "
-              "(é a causa do incidente da seção 4.2). A definição adotada fica no meio: IP + família do navegador + sistema, sem versão.",
+              "(é o defeito de código do incidente da seção 4.2). A definição adotada fica no meio: IP + família do navegador + sistema, sem versão.",
               "- **Gap da sessão** e **lavagem** mudam quem conta como \"voltou\" e quem conta como \"novo\"; **janela** muda o que é \"voltar\" (é outro indicador, não um erro).",
               "- **Horário do último turno** e a **regra de 1 h** são as armadilhas do código do incidente; estão aqui para mostrar quanto elas custariam.",
               "- **Sem os usuários mais ativos** mostra se poucos usuários (como o IP com 1.557 conversas) puxam o número.", "",
