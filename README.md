@@ -514,7 +514,7 @@ O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o 
 ---
 
 ## 11. Incidente, riscos e AWS
-- **Incidente 4.2** ("o retorno caiu de 31% para 18%"): [`docs/INCIDENTE.md`](docs/INCIDENTE.md). É um **erro de medição**: o `usuario_id` usa o user-agent bruto, e uma atualização de navegador fez ~860 pessoas virarem "novas" (os "novos" da semana dobraram, os que voltaram não). O documento traz por onde começar, a camada da falha, a consulta de confirmação, a correção, a prevenção e o que dizer à gerente de produto. O teste dourado está em `etl/tests/test_incidente.py`.
+- **Incidente 4.2** ("o retorno caiu de 31% para 18%"): [`docs/INCIDENTE.md`](docs/INCIDENTE.md). Os "novos" da semana dobraram (862 a mais, que o relatório do time não vê) e os que voltaram não. A causa no código está na **carga**: o `usuario_id` usa o user-agent bruto, e a mesma pessoa vira "nova" quando ele muda. O que mudou em 20/11 só se confirma na base da empresa. O documento traz por onde começar, a camada da falha, as consultas, a correção e a prevenção. O teste dourado está em `etl/tests/test_incidente.py`.
 - **Riscos e decisões em aberto (4.3):** [`docs/RISCOS.md`](docs/RISCOS.md) (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS).
 - **AWS (2.2 e 3.3):** [`infra/README.md`](infra/README.md) compara as opções, com o **tamanho medido** da pilha (pico de ~2,8 GB no banco e ~1,8 GB no ETL durante a carga, então 4 GB de RAM no mínimo), a proteção na frente e os custos (preços oficiais, região de São Paulo):
   - **A · simples (principal), ≈ US$ 25 por mês:** uma máquina virtual (Lightsail, 4 GB) com tudo em `docker compose`, atrás do CloudFront (WAF básico e DDoS, plano Free).

@@ -65,7 +65,7 @@ Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação de 
 
 ## 7. Sustentação
 210 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 66 conferências a cada carga reverte a publicação se algo divergir, e uma anomalia **retém a carga** até alguém aprovar (os números do cliente não mudam sem decisão)
-(`README.md`, seções 7 e 8). **Incidente:** o "retorno caiu de 31% para 18%" é um erro de medição (o `usuario_id` usa o user-agent bruto e uma atualização de navegador fez ~860 pessoas virarem "novas"); causa, consulta de confirmação, correção e prevenção em `docs/INCIDENTE.md`.
+(`README.md`, seções 7 e 8). **Incidente:** o "retorno caiu de 31% para 18%" vem dos "novos", que dobram (862 a mais, ausentes no relatório do time), enquanto os que voltaram não. A causa no código é a carga (o `usuario_id` usa o user-agent bruto); o gatilho de 20/11 só se confirma na base da empresa. Consultas, correção e prevenção em `docs/INCIDENTE.md`.
 **Riscos e decisões em aberto** (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS): `docs/RISCOS.md`.
 
 ## 8. Uso de IA

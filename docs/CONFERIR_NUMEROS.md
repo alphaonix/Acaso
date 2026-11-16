@@ -431,7 +431,7 @@ ORDER BY s.semana;
 ```
 **Passo a passo:** `semana` já vem calculada na silver (a segunda-feira da semana da primeira vez). O `WHERE` final escolhe as semanas de 06/11 a 27/11/2023 (a do PDF é 20/11); troque as datas para ver outras. Retire o `WHERE` para ver todas.
 **Deve dar (Brasil):** 06/11: 48 · 12 · 0,2500; 13/11: 55 · 16 · 0,2909; 20/11: 68 · 14 · 0,2059; 27/11: 67 · 14 · 0,2090; todas `t`. A Alemanha dá 105, 80, 132 e 108 pessoas nessas semanas.
-Semanas com menos de 30 elegíveis aparecem na tela como "amostra pequena" e sem taxa; a conta aqui continua válida. Os números do PDF (1.210 novos, 31% → 18%) são do exemplo do enunciado, não desta base: o que o incidente mostra é o **erro de código** que dobra os novos, explicado em [`INCIDENTE.md`](INCIDENTE.md).
+Semanas com menos de 30 elegíveis aparecem na tela como "amostra pequena" e sem taxa; a conta aqui continua válida. Os números do PDF (1.210 novos, 31% → 18%) são do exemplo do enunciado, não desta base: o incidente é sobre os "novos" que dobram sem os "voltaram" acompanharem, e as hipóteses estão em [`INCIDENTE.md`](INCIDENTE.md).
 
 ## 2.2 Decomposição: chegou gente diferente ou a mesma gente voltou diferente?
 **Na tela:** "mai./2023 → abr./2024: de 22,3% para 21,1% (−1,3 pp): mix +2,2 · taxa −2,0 · interação −1,5".
