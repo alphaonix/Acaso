@@ -185,7 +185,7 @@ docker compose --profile base run --rm baixar-base --so-semente   # refaz só a 
 docker compose run --rm etl python main.py --recarregar            # o banco passa a usar a semente nova
 ```
 O código é [`etl/semente/baixar_base.py`](etl/semente/baixar_base.py) (só biblioteca padrão e DuckDB). **Verificado:** a partir do arquivo bruto completo, a semente regenerada é **idêntica byte a byte** à do repositório (sha256 `e81720c4…` e `77ee2c15…`); lida em vários arquivos, o conteúdo e a ordem são os mesmos (só a divisão interna em blocos muda os bytes). O download foi testado com um arquivo: **levou 9 minutos nesta máquina** (231 MB); os 14 arquivos (3,3 GB) levariam cerca de 2 horas, e por isso a semente fica no Git e é o padrão (ADR-002).
-- *Por quê:* subir com um comando, sem baixar 3 GB. *Limites:* é uma foto fixa; só o Brasil tem texto, então tema, recusa e efeitos só existem para ele; o texto do Brasil está no repositório, que por isso deve ser **privado**.
+- *Por quê:* subir com um comando, sem baixar 3 GB. *Limites:* é uma foto fixa; só o Brasil tem texto, então tema, recusa e efeitos só existem para ele; o texto do Brasil está no repositório, que é **público** porque a fonte (WildChat, `odc-by`) já é pública.
 ### Bronze: o dado como veio
 | | |
 |---|---|
@@ -389,7 +389,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 210 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 210 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada.
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).
@@ -504,10 +504,12 @@ O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o 
 | [001](docs/adr/ADR-001-stack-e-monorepo.md) stack e monorepo | [001](docs/bdr/BDR-001-usuario-sessao-retorno.md) usuário, sessão e retorno (com a sensibilidade medida) |
 | [002](docs/adr/ADR-002-semente-do-bruto-no-repositorio.md) semente da base bruta no repositório | [002](docs/bdr/BDR-002-principios-do-dashboard.md) princípios do dashboard |
 | [003](docs/adr/ADR-003-base-analitica.md) base analítica (Postgres) | [003](docs/bdr/BDR-003-classificacao-de-tema.md) classificação de tema e recusa |
-| [004](docs/adr/ADR-004-arquitetura-em-camadas.md) camadas e portão de qualidade | [004](docs/bdr/BDR-004-analise-de-efeitos.md) análise dos efeitos (AIPW, E-value, correção) |
+| [004](docs/adr/ADR-004-arquitetura-em-camadas.md) camadas e conferências | [004](docs/bdr/BDR-004-analise-de-efeitos.md) análise dos efeitos (AIPW, E-value, correção) |
 | [005](docs/adr/ADR-005-auditoria-e-linhagem.md) auditoria e linhagem | |
+| [006](docs/adr/ADR-006-anomalia-retem-a-carga.md) anomalia retém a carga até aprovação | |
+| [007](docs/adr/ADR-007-contas-de-acesso.md) contas de acesso por migração | |
 
-**As decisões em uma linha cada:** Postgres em camadas bronze/silver/gold, reconstruídas por inteiro numa transação (mesma semente, mesmo resultado); tema e recusa por **regras**, sem LLM (barato, repetível, auditável; custo zero na AWS); pessoa = IP + navegador sem versão (a premissa que mais pesa, medida); estimativa por AIPW com intervalo e correção para 16 testes; a análise do Brasil, com filtro de país como extensão; a semente no repositório (privado) em vez dos 3 GB.
+**As decisões em uma linha cada:** Postgres em camadas bronze/silver/gold, reconstruídas por inteiro numa transação (mesma semente, mesmo resultado); tema e recusa por **regras**, sem LLM (barato, repetível, auditável; custo zero na AWS); pessoa = IP + navegador sem versão (a premissa que mais pesa, medida); estimativa por AIPW com intervalo e correção para 16 testes; a análise do Brasil, com filtro de país como extensão; a semente no repositório em vez dos 3 GB.
 
 ---
 
@@ -525,7 +527,7 @@ O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o 
 
 ## 12. Dados, licença, privacidade e uso de IA
 - **Fonte:** [WildChat-1M](https://huggingface.co/datasets/allenai/WildChat-1M) (Allen Institute for AI), licença **ODC-By** (Open Data Commons Attribution): permite usar e redistribuir **com atribuição**, que está aqui. Citação: Zhao et al., *WildChat: 1M ChatGPT Interaction Logs in the Wild*, ICLR 2024.
-- **Privacidade:** as conversas podem conter dado pessoal (o WildChat já anonimiza parte). A semente do Brasil leva o **texto das conversas**, por isso este repositório deve ser **privado**, com acesso só a quem avalia.
+- **Privacidade:** as conversas podem conter dado pessoal (o WildChat já anonimiza parte). A semente do Brasil leva o **texto das conversas**. O repositório é **público** porque a fonte já é pública; o risco foi aceito. A base analítica não guarda texto e o painel nunca mostra texto, IP nem identificador de pessoa.
 - **Marca:** os logotipos da Acaso em `frontend/public/` são usados só para o dashboard desta avaliação.
 - **Uso de IA:** ferramentas, o que foi conferido, corrigido ou descartado e as horas estão em [`docs/DOCUMENTO.md`](docs/DOCUMENTO.md) §8.
 
@@ -533,7 +535,7 @@ O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o 
 
 ## 13. Limites conhecidos e extensões
 1. **Precisão de tema e recusa.** São regras de palavras. Na conferência manual de 30 casos marcados como recusa, **8 (27%) são recusa no sentido estrito**; o resto é desculpa, pedido de informação ou aviso de IA com resposta normal. A variável deve ser lida como **"recusa ou ressalva de IA"** e o achado 2 é só indício. A precisão do tema não foi medida (BDR-003).
-2. **Proteção do branch `main`.** Exigir os dois jobs do CI é a configuração recomendada; em repositório privado depende do plano do GitHub.
+2. **Proteção do branch `main`.** Exigir os dois jobs do CI é a configuração recomendada.
 3. **AWS.** O Terraform é um esboço validado (`terraform validate`), sem `plan`/`apply`; o preço do RDS vem de fonte secundária.
 4. **Extensões descritas, não implementadas:** fuso de ~160 países, cache e SSO.
 5. **Fora do Brasil**, a semente só tem metadados: sem tema e recusa (as regras são em português) e sem efeitos; o painel mostra "indisponível".
