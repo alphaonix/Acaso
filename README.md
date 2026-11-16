@@ -88,8 +88,6 @@ Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há um
 
 Elas já nascem no banco pela migração `db/migrations/029_contas_avaliadoras.sql`, que guarda só o **hash** da senha (scrypt, sal próprio de cada conta). A base é pública (WildChat) e o painel roda na máquina de quem o sobe; por isso a senha pode ficar neste tutorial: o login demonstra autenticação, não protege dado sensível. Em produção seria um provedor de identidade (Amazon Cognito).
 
-Para trocar uma conta ou uma senha, crie uma nova migração em `db/migrations/` com o hash novo (formato `scrypt$N$r$p$sal$hash`, gerado com `hashlib.scrypt` do Python) e rode `docker compose down -v` para recriar o banco.
-
 A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as sessões). As portas 3000 e 8000 abrem só em `localhost`.
 
 **As 4 telas**
