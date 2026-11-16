@@ -34,6 +34,20 @@ export default function Ajuda() {
         </dl>
       </Painel>
 
+      <Painel className="bloco" titulo={t("rg.titulo")} pergunta={t("rg.pergunta")}>
+        <h4>{t("rg.recusaT")}</h4>
+        <p><R texto={t("rg.recusaP1")} /></p>
+        <p><R texto={t("rg.recusaP2")} /></p>
+        <h4>{t("rg.temaT")}</h4>
+        <p><R texto={t("rg.temaP1")} /></p>
+        <ol className="lista-dados">
+          {(["rg.t1", "rg.t2", "rg.t3", "rg.t4", "rg.t5", "rg.t6", "rg.t7", "rg.t8", "rg.t9", "rg.t10", "rg.t11"] as const).map((k) => <li key={k}><R texto={t(k)} /></li>)}
+        </ol>
+        <p><R texto={t("rg.temaP2")} /></p>
+        <h4>{t("rg.idiT")}</h4>
+        <p><R texto={t("rg.idiP1")} /></p>
+        <p><R texto={t("rg.idiP2")} /></p>
+      </Painel>
       <Painel className="bloco" titulo={t("gl.privTitulo")}>
         <div className="priv-grade priv-tres">
           <div>
