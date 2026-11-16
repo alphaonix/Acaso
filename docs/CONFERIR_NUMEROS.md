@@ -100,6 +100,23 @@ FROM p;
 **Passo a passo:** aplica a fórmula do intervalo de Wilson com `z = 1,96`. Ele diz "o valor verdadeiro provavelmente está entre estes dois números". É mais confiável que a margem simples quando a amostra é pequena. Não depende de nenhuma função do banco.
 **Deve dar:** 0,2201 e 0,2553 (22,0% a 25,5%). Alemanha: 0,1765 e 0,2012.
 
+```sql
+-- (c) Teste de robustez: e se "voltar" só contasse em OUTRO DIA (calendário de São Paulo) dentro de 7 dias da primeira conversa?
+WITH base AS (SELECT usuario_id, primeira_vez_utc, voltou_7d FROM silver.fato_usuario WHERE pais = 'Brazil' AND elegivel),
+     outro_dia AS (SELECT b.usuario_id FROM base b
+                   WHERE EXISTS (SELECT 1 FROM silver.fato_conversa c
+                                 WHERE c.pais = 'Brazil' AND c.usuario_id = b.usuario_id
+                                   AND c.inicio_utc > b.primeira_vez_utc AND c.inicio_utc <= b.primeira_vez_utc + interval '7 days'
+                                   AND timezone('America/Sao_Paulo', c.inicio_utc)::date > timezone('America/Sao_Paulo', b.primeira_vez_utc)::date))
+SELECT count(*) AS elegiveis,
+       count(*) FILTER (WHERE voltou_7d) AS voltaram_definicao_atual, round(100.0 * count(*) FILTER (WHERE voltou_7d) / count(*), 1) AS pct_atual,
+       count(*) FILTER (WHERE usuario_id IN (SELECT usuario_id FROM outro_dia)) AS voltaram_em_outro_dia,
+       round(100.0 * count(*) FILTER (WHERE usuario_id IN (SELECT usuario_id FROM outro_dia)) / count(*), 1) AS pct_outro_dia
+FROM base;
+```
+**Passo a passo:** conta quem tem uma conversa em um **dia de calendário posterior** ao da primeira, ainda dentro dos 7 dias. Responde à pergunta "voltar duas horas depois, no mesmo dia, é retenção?".
+**Deve dar:** 2.234 · 530 (23,7%) · **371 (16,6%)**. Dos 530 que voltam, 59 voltam em menos de 1 hora, 172 entre 1 e 6 horas, 125 entre 6 e 24 horas e 174 depois de mais de 1 dia. Ou seja, **o 23,7% inclui retornos no mesmo dia**; contando só outro dia, o retorno é de 16,6%.
+
 ## 1.4 Conversas e conversas por pessoa
 **Na tela:** "11.621" e "4,6 por pessoa".
 ```sql
@@ -442,6 +459,29 @@ FROM w, t0, t1 GROUP BY t0.n, t0.v, t1.n, t1.v;
 ```
 **Passo a passo:** `x` conta, por mês e tema, as pessoas e quem voltou. Para cada tema, `w0` e `w1` são a sua parcela entre as pessoas de cada mês, e `r0` e `r1` o seu retorno. As três partes são: **mix** = Σ(w1 − w0) × r0, **taxa** = Σ w0 × (r1 − r0), **interação** = Σ(w1 − w0) × (r1 − r0). Elas somam exatamente a variação (a API confere isso com `soma_confere`).
 **Deve dar:** 282 → 185 pessoas · 22,34% → 21,08% · variação −1,26 pp = **mix +2,22 · taxa −2,02 · interação −1,47** (soma: −1,27, a diferença é só arredondamento). Com 282 e 185 pessoas, nenhuma das três partes se distingue do ruído: o retorno ficou praticamente estável.
+### Exemplo semanal (a semana de 20/11/2023)
+O PDF pede uma **semana**. O painel decompõe por mês porque uma semana tem poucas pessoas; a mesma conta, por semana, é esta:
+```sql
+-- Mesma decomposição, com a semana de chegada no lugar do mês. Troque as duas datas (sempre uma segunda-feira) para comparar outras semanas.
+WITH x AS (SELECT u.semana AS per, t.tema AS nivel, count(*) AS n, count(*) FILTER (WHERE u.voltou_7d) AS v
+           FROM silver.fato_usuario u JOIN silver.dim_tema t ON t.tema_id = u.tema_id
+           WHERE u.pais = 'Brazil' AND u.elegivel GROUP BY 1, 2),
+     p AS (SELECT DATE '2023-11-13' AS de, DATE '2023-11-20' AS para),
+     t0 AS (SELECT sum(n) AS n, sum(v) AS v FROM x, p WHERE per = p.de),
+     t1 AS (SELECT sum(n) AS n, sum(v) AS v FROM x, p WHERE per = p.para),
+     k AS (SELECT DISTINCT nivel FROM x, p WHERE per IN (p.de, p.para)),
+     w AS (SELECT k.nivel, coalesce(a.n, 0)::numeric / t0.n AS w0, coalesce(b.n, 0)::numeric / t1.n AS w1,
+                  CASE WHEN a.n > 0 THEN a.v::numeric / a.n ELSE t0.v::numeric / t0.n END AS r0,
+                  CASE WHEN b.n > 0 THEN b.v::numeric / b.n ELSE t1.v::numeric / t1.n END AS r1
+           FROM k CROSS JOIN t0 CROSS JOIN t1 CROSS JOIN p
+           LEFT JOIN x a ON a.nivel = k.nivel AND a.per = p.de LEFT JOIN x b ON b.nivel = k.nivel AND b.per = p.para)
+SELECT t0.n AS elegiveis_de, round(100.0 * t0.v / t0.n, 2) AS retorno_de, t1.n AS elegiveis_para, round(100.0 * t1.v / t1.n, 2) AS retorno_para,
+       round(100.0 * (t1.v::numeric / t1.n - t0.v::numeric / t0.n), 2) AS variacao_pp,
+       round(100 * sum((w1 - w0) * r0), 2) AS mix_pp, round(100 * sum(w0 * (r1 - r0)), 2) AS taxa_pp, round(100 * sum((w1 - w0) * (r1 - r0)), 2) AS interacao_pp,
+       round(100 * 1.96 * sqrt((t0.v::numeric / t0.n) * (1 - t0.v::numeric / t0.n) / t0.n + (t1.v::numeric / t1.n) * (1 - t1.v::numeric / t1.n) / t1.n), 1) AS margem_da_variacao_pp
+FROM w, t0, t1 GROUP BY t0.n, t0.v, t1.n, t1.v;
+```
+**Deve dar:** 55 → 68 pessoas · 29,09% → 20,59% · variação **−8,50 pp** = mix **−0,19** · taxa **−10,61** · interação **+2,30**, com margem de erro de **±15,4 pp**. Leitura: quase todo o movimento é "o retorno caiu **dentro** dos temas" (a taxa), e não "chegou gente diferente" (o mix é ≈ 0). Mas com 55 e 68 pessoas a margem (±15 pp) é maior que a queda: **não dá para distinguir de acaso**, e por isso o painel usa meses.
 
 ---
 

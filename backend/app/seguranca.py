@@ -2,11 +2,16 @@
 import hashlib
 import hmac
 import os
+import secrets
 import time
 
 import jwt
 
-SEGREDO = os.environ.get("SESSION_SECRET", "dev-troque-em-producao")
+# Sem SESSION_SECRET (ou com o valor antigo de exemplo), gera um segredo aleatorio a cada subida: nao existe chave padrao conhecida
+# que permita forjar uma sessao. Efeito: reiniciar a API encerra as sessoes. Em producao o segredo vem do Secrets Manager.
+SEGREDO = os.environ.get("SESSION_SECRET") or secrets.token_hex(32)
+if SEGREDO == "dev-troque-em-producao":
+    SEGREDO = secrets.token_hex(32)
 COOKIE = "sessao"
 EXPIRA_S = 8 * 3600
 COOKIE_SEGURO = os.environ.get("COOKIE_SECURE", "0") == "1"   # 1 atras de HTTPS (CloudFront/ALB)

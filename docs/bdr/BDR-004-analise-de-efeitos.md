@@ -59,7 +59,7 @@ isoladamente, mas não depois de corrigir por testar 16 coisas.
 ## O que a análise prova e o que não prova
 - Prova: a associação ajustada pelo que observamos (calendário, dispositivo, região, tema, pedido, idioma, modelo).
 - **Não prova causa.** Fica confusão não medida: o engajamento prévio da pessoa. Turnos e tamanho do pedido são em boa parte
-  *comportamento de quem já está engajado* (por isso são "perfil", não alavanca). O E-value (1,4 a 1,6) mostra que um
+  *comportamento de quem já está engajado* (por isso são "perfil", não alavanca). O E-value do limite do intervalo (1,4 a 1,6) mostra que um
   confundidor moderado basta para anular os quatro efeitos.
 - Só um experimento (teste A/B: mudar a resposta a saudações ou a política de recusa para metade dos usuários) separa causa.
 

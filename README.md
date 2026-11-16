@@ -63,6 +63,8 @@ docker compose logs etl | grep SENHA          # Linux e macOS
 ```
 Para usar o seu e-mail e senha: copie `.env.example` para `.env`, preencha `DASH_USERS` (`email|Nome|url-da-foto;email|Nome`; a foto é opcional) e `DASH_PASSWORD`, e suba de novo com `--build`. Se perder a senha gerada: `docker compose down -v` e suba de novo.
 
+A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as sessões); em produção ele vem de `SESSION_SECRET`. As portas 3000 e 8000 abrem só em `localhost`.
+
 **As 4 telas**
 - **Visão geral:** de onde vêm os dados, 6 cartões (pessoas novas, retorno em 7 dias, conversas, recusa, voltou em 24 h, concentração), a história em 8 passos, retorno por mês com intervalo, comparação de modelos, curva de retorno, mapa de calor dia × hora, GPT-4 por mês, concentração do uso e comparação de países.
 - **O que faz voltar:** efeitos de cada fator com intervalo, ordenados pelo tamanho; os 4 achados; turnos; dispositivo, sistema, navegador e idioma × navegador (exploratórios).
@@ -187,7 +189,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 4. Estima com **AIPW** (duplamente robusto) e validação cruzada em 5 partes: uma regressão logística estima a chance de ter o fator, outras duas a chance de voltar com e sem o fator, e o efeito é a média das correções. A chance de ter o fator é limitada a [2,5%; 97,5%].
 5. Guarda também o **efeito bruto** (diferença simples), a **sobreposição** entre os grupos e o **E-value**.
 
-**O que prova e o que não prova:** associação ajustada pelo que foi medido; **não prova causa** (o engajamento prévio não é medido; o E-value de 1,4 a 1,6 diz que um confundidor moderado anularia os efeitos). São 16 testes: com a correção de Bonferroni (p < 0,003), só **turnos** e **pedido longo** resistem; **saudação** e **recusa** são indícios. Turnos e tamanho do pedido são sinais de **perfil**, não alavancas. Método completo em [`BDR-004`](docs/bdr/BDR-004-analise-de-efeitos.md).
+**O que prova e o que não prova:** associação ajustada pelo que foi medido; **não prova causa** (o engajamento prévio não é medido; o E-value do limite do intervalo, de 1,4 a 1,6, diz que um confundidor moderado anularia os efeitos; o da estimativa vai de 1,9 a 2,7). São 16 testes: com a correção de Bonferroni (p < 0,003), só **turnos** e **pedido longo** resistem; **saudação** e **recusa** são indícios. Turnos e tamanho do pedido são sinais de **perfil**, não alavancas. Método completo em [`BDR-004`](docs/bdr/BDR-004-analise-de-efeitos.md).
 
 ### Auditoria
 `silver/auditoria.py` e `gold/auditoria.py` gravam, a cada carga, em `auditoria.*`: linhas por camada, **cada linha excluída com o motivo**, vazios antes e depois, exemplos antes/depois e o funil por país. Não guardam texto nem IP. As **66 conferências** de cada carga ficam em `ops.qa_resultado`:
@@ -217,7 +219,7 @@ As conferências garantem **coerência**, não **verdade**: não dizem se a defi
 - **Início da conversa:** a 1ª resposta do assistente. As mensagens do usuário **não têm horário** no WildChat (nenhuma, em nenhum país). O erro é de alguns segundos, irrelevante para um retorno medido em dias.
 - **Dia e semana:** no fuso do país (São Paulo para o Brasil).
 
-**Quanto cada premissa muda o resultado** (reproduzível: `python analise/05_sensibilidade_definicoes.py` com o compose ativo; tabela em [`docs/SENSIBILIDADE.md`](docs/SENSIBILIDADE.md)): o **gap da sessão é a que mais pesa** (15 min: 26,3%; 60 min: 21,3%; 120 min: 19,6%); janela de 3 ou 14 dias dá 20,8% ou 25,3%; o user-agent completo (com a versão) infla para 26,2%; a lavagem, o início da conversa e retirar os 10 usuários mais ativos mexem menos de 1,2 pp. **O 23,7% deve ser lido como "retorno com sessões de 30 min".** Detalhes e opções consideradas em [`BDR-001`](docs/bdr/BDR-001-usuario-sessao-retorno.md).
+**Quanto cada premissa muda o resultado** (reproduzível: `python analise/05_sensibilidade_definicoes.py` com o compose ativo; tabela em [`docs/SENSIBILIDADE.md`](docs/SENSIBILIDADE.md)): o **gap da sessão é a que mais pesa** (15 min: 26,3%; 60 min: 21,3%; 120 min: 19,6%); janela de 3 ou 14 dias dá 20,8% ou 25,3%; o user-agent completo (com a versão) infla para 26,2%; contando só retornos em **outro dia**, o retorno é 16,6% (o 23,7% inclui voltar no mesmo dia; consulta 1.3 de `docs/CONFERIR_NUMEROS.md`); a lavagem, o início da conversa e retirar os 10 usuários mais ativos mexem menos de 1,2 pp. **O 23,7% deve ser lido como "retorno com sessões de 30 min".** Detalhes e opções consideradas em [`BDR-001`](docs/bdr/BDR-001-usuario-sessao-retorno.md).
 
 **Limites a declarar:** pessoa aproximada; fuso único por país; tema e recusa por palavras (só onde há texto e regra para o idioma); retenção observacional (não prova causa).
 
@@ -240,7 +242,7 @@ O banco precisa estar de pé (`docker compose up`). Na prática, use sempre o `a
 | `auditoria` | linhagem e investigação: `camadas`, `fluxo_pais`, `registro_excluido`, `nulos`, `antes_depois`, `metrica`, `anomalia`, `verificacao` |
 
 ### Conferir qualquer número da tela
-O documento **[`docs/CONFERIR_NUMEROS.md`](docs/CONFERIR_NUMEROS.md)** tem **33 consultas comentadas**, organizadas por tela, que refazem cada número a partir da silver e o comparam com a gold (`bate_com_gold = t`). Para outro país, troque `'Brazil'` por `'Germany'` com localizar e substituir. O efeito ajustado (AIPW) não se refaz em SQL; o documento mostra o bruto e como ler o ajustado.
+O documento **[`docs/CONFERIR_NUMEROS.md`](docs/CONFERIR_NUMEROS.md)** tem **35 consultas comentadas**, organizadas por tela, que refazem cada número a partir da silver e o comparam com a gold (`bate_com_gold = t`). Para outro país, troque `'Brazil'` por `'Germany'` com localizar e substituir. O efeito ajustado (AIPW) não se refaz em SQL; o documento mostra o bruto e como ler o ajustado.
 
 ### Conferir as camadas entre si
 ```sql
@@ -461,7 +463,7 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 3. **AWS.** O Terraform é um esboço validado (`terraform validate`), sem `plan`/`apply`; o preço do RDS vem de fonte secundária.
 4. **Extensões descritas, não implementadas:** fuso de ~160 países, cache e SSO.
 5. **Fora do Brasil**, a semente só tem metadados: sem tema e recusa (as regras são em português) e sem efeitos; o painel mostra "indisponível".
-6. **Semana do incidente.** O PDF pede uma semana; o movimento está explicado por mês, porque uma semana tem poucas pessoas elegíveis.
+6. **Semana do incidente.** O PDF pede uma semana; o painel explica o movimento por mês, porque uma semana tem poucas pessoas elegíveis. A conta semanal existe (20/11/2023: 29,1% → 20,6%, quase tudo na taxa, margem ±15 pp) em `docs/CONFERIR_NUMEROS.md`, seção 2.2.
 
 ---
 
