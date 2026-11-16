@@ -3,7 +3,6 @@ import { CabecalhoPagina, Painel } from "@/components/Graficos";
 import { useApi } from "@/lib/api";
 import { num, pctFino } from "@/lib/formato";
 import { R, useI18n } from "@/lib/i18n";
-import { tQa } from "@/lib/traducao-dados";
 import type { Chave } from "@/lib/idiomas/pt";
 import type { Qualidade } from "@/lib/tipos";
 
@@ -11,10 +10,8 @@ const DEFINICOES = ["usuario", "retorno", "elegivel", "primeira", "inicio", "fus
 
 /** Ajuda: para que serve o painel, como ler, palavras e regras, privacidade e problemas de qualidade encontrados. */
 export default function Ajuda() {
-  const { t, idioma } = useI18n();
+  const { t } = useI18n();
   const q = useApi<Qualidade>("/qualidade");
-  const conferencias = q.dados?.verificacoes ?? [];
-  const passaram = conferencias.filter((c) => c.passou).length;
 
   return (
     <>
@@ -82,25 +79,6 @@ export default function Ajuda() {
         </div>
       </Painel>
 
-      {conferencias.length > 0 && (
-        <Painel className="bloco" titulo={t("gl.confTitulo")}>
-          <p>{t("gl.confResumo", { ok: num(passaram), n: num(conferencias.length) })}</p>
-          <details className="detalhe-efeito">
-            <summary>{t("gl.confVer")}</summary>
-            <div className="rolagem-x">
-              <table className="tabela tabela-q">
-                <thead><tr><th>{t("gl.conferencias")}</th><th>OK</th></tr></thead>
-                <tbody>{conferencias.map((c, i) => <tr key={i}><td>{tQa(c.verificacao, idioma)}</td><td>{c.passou ? "✓" : "✗"}</td></tr>)}</tbody>
-              </table>
-            </div>
-          </details>
-          <details className="detalhe-efeito">
-            <summary>{t("gl.origemVer")}</summary>
-            <p className="dica">{t("gl.origemCaption")}</p>
-            <ul>{(q.dados?.lotes ?? []).map((l) => <li key={l.arquivo}><code>{l.arquivo}</code> · {num(l.linhas)} · sha256 {l.sha256.slice(0, 12)}…</li>)}</ul>
-          </details>
-        </Painel>
-      )}
     </>
   );
 }

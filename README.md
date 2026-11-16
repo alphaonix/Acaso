@@ -404,7 +404,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | Depois da carga | se alguém alterou as camadas por fora | `auditoria.verificacao` | **trava de escrita** e **verificação de integridade** |
 | Cada execução | início, fim, status, versão do código, cada conferência | `ops.etl_execucao`, `ops.qa_resultado` | o portão |
 | API | log JSON por requisição (`request_id`, `carga_id`, versão da definição, rota, status, `duracao_ms`); os mesmos três identificadores vão nos cabeçalhos `X-Request-Id`, `X-Carga-Id` e `X-Versao-Definicao` | stdout / CloudWatch | alarmes de p95 |
-| Tela | o rodapé mostra o período dos dados e a data da carga; a aba Ajuda mostra as conferências da carga (66 de 66) e os arquivos de origem com sha256. **Desenho, não implementado:** registrar no navegador os erros de JavaScript e o tempo de carregamento de cada tela (RUM) | CloudWatch RUM | alarme de erros de tela |
+| Tela | o rodapé mostra o período dos dados e a data da carga; as conferências da carga (66 de 66) e os arquivos de origem com sha256 ficam na API (`/qualidade`) e nas consultas de `docs/CONFERIR_NUMEROS.md`. **Desenho, não implementado:** registrar no navegador os erros de JavaScript e o tempo de carregamento de cada tela (RUM) | CloudWatch RUM | alarme de erros de tela |
 
 "Impressão digital" é uma soma de hashes das linhas: se **uma única** pessoa, conversa ou linha de resumo mudar, a impressão muda.
 
@@ -473,7 +473,7 @@ docker compose --profile operacao run --rm simular-cenarios todos               
 | **Visão geral** | "Quanto voltam, e como o uso e o perfil se distribuem?" | cartões com margem de erro e definição; a história em 8 passos; linha com faixa de IC por mês (tendência e incerteza juntas); curva de retorno; mapa de calor dia × hora; comparação de modelos (barras com IC); concentração; barras de países em lista fixa |
 | **O que faz voltar** | "Quais fatores pesam e quanto é causa?" | gráfico de intervalos **ordenado pelo tamanho do efeito** (há um botão para ordenar por confiança; ponto = efeito, barra = IC; cruzar o zero = sem efeito detectável; o selo diz quanto confiar); barras de turnos × retorno; os achados com a decisão |
 | **Coortes semanais** | "O retorno mudou ao longo do tempo, e por quê?" | curva com marcos de 24 h, 7 e 30 dias; barras de pessoas novas por semana (cinza = amostra pequena); mapa de calor do retorno; decomposição em barras divergentes |
-| **Ajuda** | "Como entender os números e o que a base tem de estranho?" | palavras e regras, o que mostra e nunca mostra, tabela de problemas de qualidade e as **conferências da carga** (66 de 66, com os arquivos de origem e o sha256) |
+| **Ajuda** | "Como entender os números e o que a base tem de estranho?" | palavras e regras, o que mostra e nunca mostra, tabela de problemas de qualidade e como classificamos recusa, tema e idioma |
 
 O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o denominador, o período, a fonte e a amostra mínima** (o catálogo inteiro). Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, não achado*, *Hipótese, não achado*, *Cuidado*): o que o gráfico mostra e o limite do que ele prova. A definição, a fórmula, o denominador, o período e o **SQL de cada indicador** estão em [`docs/INDICADORES.md`](docs/INDICADORES.md) (gerado do catálogo que alimenta o botão "i"); abaixo de 30 pessoas a tela esconde a taxa e mostra "amostra pequena".
 
