@@ -1,6 +1,6 @@
 # Sobe tudo do zero:  docker compose up --build
 # Fluxo: db -> etl (migra, carrega, estima, confere) -> api -> web.   Tela: http://localhost:3000
-# Acesso (README): as contas de quem avalia vem da migracao 029 (so o hash da senha). Nao precisa de .env.
+# Acesso (README): as contas de quem avalia vem das migracoes 029 e 031 (so o hash da senha). Nao precisa de .env.
 services:
   db:
     image: postgres:16-alpine

@@ -85,8 +85,10 @@ Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há um
 |---|---|---|
 | Nathália Anjos | `nathalia.anjos@aca.so` | `acaso123` |
 | Daniele Cardoso | `daniele.cardoso@aca.so` | `acaso123` |
+| Edivaldo Bezerra | `edivaldo.bezerra@aca.so` | `acaso123` |
+| Tiago Moraes | `tiago.moraes@aca.so` | `acaso123` |
 
-Elas já nascem no banco pela migração `db/migrations/029_contas_avaliadoras.sql`, que guarda só o **hash** da senha (scrypt, sal próprio de cada conta). A base é pública (WildChat) e o painel roda na máquina de quem o sobe; por isso a senha pode ficar neste tutorial: o login demonstra autenticação, não protege dado sensível. Em produção seria um provedor de identidade (Amazon Cognito).
+Elas já nascem no banco pelas migrações `db/migrations/029_contas_avaliadoras.sql` e `031_contas_entrevista.sql`, que guardam só o **hash** da senha (scrypt, sal próprio de cada conta). A base é pública (WildChat) e o painel roda na máquina de quem o sobe; por isso a senha pode ficar neste tutorial: o login demonstra autenticação, não protege dado sensível. Em produção seria um provedor de identidade (Amazon Cognito).
 
 A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as sessões). As portas 3000 e 8000 abrem só em `localhost`.
 
@@ -548,7 +550,7 @@ O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o 
 | `db/migrations/` | Esquema da base analítica (bronze, silver, gold, ops, auditoria), papel somente leitura da API e trava de escrita |
 | `backend/` | API FastAPI (lê só a gold e o `ops`) e testes |
 | `frontend/` | Dashboard Next.js (React, Recharts), PT/EN, tema claro e escuro |
-| `analise/` | Scripts da análise: perfil, qualidade, sensibilidade (`05`), figuras da EDA (`06`), indicadores (`07`), recálculo independente (`08`), exportação para Power BI |
-| `docs/` | `DOCUMENTO.md` (entrega), `EDA.md` (com `figuras/`), `INDICADORES.md`, `SENSIBILIDADE.md`, `REGRAS_DE_TEXTO.md` (recusa, tema e idioma), `CONFERIR_NUMEROS.md`, `INCIDENTE.md`, `RISCOS.md`, `adr/` e `bdr/` |
+| `analise/` | Scripts da análise: perfil, qualidade, sensibilidade (`05`), indicadores (`07`), recálculo independente (`08`), exportação para Power BI |
+| `docs/` | `DOCUMENTO.md` (entrega), `EDA.md`, `INDICADORES.md`, `SENSIBILIDADE.md`, `REGRAS_DE_TEXTO.md` (recusa, tema e idioma), `CONFERIR_NUMEROS.md`, `INCIDENTE.md`, `RISCOS.md`, `adr/` e `bdr/` |
 | `infra/` | Implantação: opções (AWS simples, robusta e de escala; alternativa DigitalOcean), proteção, custos e esboço em Terraform |
 | `.github/workflows/ci.yml` | CI: testes e carga completa a cada push |

@@ -1,19 +1,17 @@
 # Análise exploratória: o que os dados mostram além do número principal
 
-Complemento do `docs/DOCUMENTO.md` (PDF, seção 3.1). **Cada figura sustenta uma conclusão** e termina com o que fazemos com ela. Base: conversas do Brasil (11.621 conversas, 2.530 pessoas, 2.234 elegíveis),
-09/04/2023 a 29/04/2024 (datas em UTC); dia e semana no fuso de São Paulo. As figuras são geradas por `python analise/06_eda_figuras.py` (com o `docker compose up` ativo).
+Complemento do `docs/DOCUMENTO.md` (PDF, seção 3.1). **Cada seção sustenta uma conclusão** e termina com o que fazemos com ela. Base: conversas do Brasil (11.621 conversas, 2.530 pessoas, 2.234 elegíveis),
+09/04/2023 a 29/04/2024 (datas em UTC); dia e semana no fuso de São Paulo. Os gráficos de cada seção estão no painel (tabela "Onde cada sugestão está no painel", no fim).
 
 > **Como ler os números.** Olhei cerca de 15 recortes. Os intervalos de confiança abaixo são os de cada comparação **isolada, sem ajuste e sem correção para múltiplos testes**: são **hipóteses**, não achados.
 > Os efeitos ajustados e corrigidos estão no `docs/bdr/BDR-004`. Quando uma conclusão muda um achado, está dito.
 
 ## 1. Quem volta, volta logo
-![curva de retorno](figuras/eda2_curva_de_retorno.png)
 **O que vemos** (cada ponto usa as pessoas que já tiveram esse tempo para voltar, no mínimo 7 dias: 2.234 até o ponto de 7 dias, 2.181 no de 14 e 2.039 no de 30): **15,9%** voltam em até 1 dia, 20,8% em 3, **23,7% em 7** (o mesmo número do cartão de retorno), 25,3% em 14 e 26,1% em 30. Entre as 2.039 pessoas com 30 dias completos, das que voltam em até 30 dias, **92% já voltou em 7** e metade volta em cerca de **15 horas** (mediana de 0,63 dia).
 **Conclusão:** a janela de 7 dias é adequada (14 dias muda o retorno em só +1,6 pp) e a decisão de voltar se dá **nas primeiras horas**.
 **O que fazemos:** sugerir o indicador **"voltou em 24 horas"** (15,9%) como sinal precoce no painel, e pensar qualquer ação de reengajamento dentro do primeiro dia.
 
 ## 2. O modelo mudou com o calendário, e "GPT-3.5" não é um bloco só
-![modelo no tempo](figuras/eda1_modelo_no_tempo.png)
 **O que vemos:** GPT-4 é 13 a 16% das conversas de abr a jun/2023, **0% de jul a out**, 15% em nov, 76% em dez e **91 a 94% de jan a abr/2024**. Dentro de cada família há versões muito diferentes:
 
 | Versão do modelo (Brasil) | Conversas | Recusa na 1ª resposta | Tamanho médio da resposta |
@@ -29,27 +27,23 @@ Complemento do `docs/DOCUMENTO.md` (PDF, seção 3.1). **Cada figura sustenta um
 **O que fazemos:** manter o aviso sobre o modelo no documento e sugerir a **taxa de recusa por versão do modelo** como indicador.
 
 ## 3. Poucas pessoas fazem muito do volume
-![concentração](figuras/eda3_concentracao.png)
 **O que vemos:** 59,9% das pessoas têm **uma** conversa (13% do volume); **20 pessoas (0,8%) fazem 39,2%** das conversas e 150 (5,9%) fazem 60,4%. A pessoa mais ativa tem 1.556 conversas em 129 dias de atividade, com **89% de pedidos distintos** (parece uso humano intenso).
 A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e mediana de 2 minutos entre conversas (**repetitivo e rápido, compatível com automação**; não dá para afirmar). Os dias de pico são dela e de poucas outras: em 25 a 39% das conversas dos quatro dias mais cheios, o autor é a pessoa mais ativa do dia.
 **Conclusão:** **volume não é gente.** O "uso diário" por conversas engana; por pessoas é mais estável. O retorno quase não muda sem os 10 mais ativos (−0,3 pp), então a métrica principal está protegida.
 **O que fazemos:** sugerir **"pessoas ativas" no lugar de conversas** no gráfico de uso e um **alerta de uso concentrado ou possivelmente automatizado**.
 
 ## 4. Quando usam: diurno e começo da noite, sem diferença no fim de semana
-![quando usam](figuras/eda4_quando_usam.png)
 **O que vemos:** a comparação certa é com o uso **uniforme** (igual em todas as horas da semana). O expediente (seg a sex, 9h às 18h) é 45 das 168 horas (26,8%) e tem **35,5%** das conversas: **acima** do esperado. A madrugada (22h às 6h) é 8 de 24 horas (33,3%) e tem **20,1%**: **abaixo**. O fim de semana tem **29,0%** (esperado 28,6%): **sem diferença**. O pico é das 18h às 20h (6,5 a 6,8% por hora).
 **Conclusão:** o uso é **diurno e do começo da noite**, sem deslocamento para o fim de semana. O efeito de "noite" ou "fim de semana" sobre o retorno é inconclusivo (BDR-004: fim de semana +1,8 pp [−2,9; +6,5]).
 **O que fazemos:** a tela **"Quando usam"** (hora × dia, no fuso do país) compara cada faixa com o esperado. Para o cliente: escolher o horário de mensagens pelo pico real do mapa.
 
 ## 5. Dispositivo: mobile e desktop voltam igual, a Apple volta menos (e pode ser a medida)
-![dispositivo](figuras/eda5_dispositivo.png)
 **O que vemos:** mobile 24,0% (n=734) e desktop 23,6% (n=1.500): **+0,4 pp [−3,4; +4,1]**, sem diferença. Já iOS e Mac juntos têm **14,9%** (n=195) contra 24,6% do resto: **−9,7 pp [−15,0; −4,4]**. Por navegador: Firefox 34,4% (n=180) e Safari 13,9% (n=122).
 **Cuidado:** a "pessoa" é IP + navegador. O Safari e o iPhone costumam sair por redes móveis ou por serviços que trocam o IP (como o Private Relay da Apple): **a mesma pessoa pode parecer várias**, e isso **derruba o retorno medido sem que o comportamento mude**. Não dá para separar medida de comportamento com estes dados.
 **Conclusão:** não agir sobre a diferença da Apple; ela reforça o risco nº 1 do `docs/RISCOS.md` (falta um ID de usuário estável).
 **O que fazemos:** sugerir uma tela **"Dispositivo e navegador"**, **com esse aviso**, e pedir ao cliente um identificador persistente.
 
 ## 6. A saudação pesa nos dois modelos; a recusa tem sinal mais nítido no GPT-4
-![efeitos por modelo](figuras/eda6_efeitos_por_modelo.png)
 **O que vemos** (diferenças simples dentro de cada família):
 - **Saudação:** GPT-3.5 **−10,1 pp [−15,4; −4,8]** (n=237) e GPT-4 **−11,9 pp [−18,3; −5,6]** (n=149). Aparece igual nas duas famílias.
 - **Recusa:** GPT-4 **−14,1 pp [−21,3; −6,9]** (n=88), mas GPT-3.5 só −4,7 pp [−12,5; +3,0] (n=110), que **inclui zero**. Por versão: no 3.5-0301 não há diferença (−0,2 pp [−12,2; +11,7], só 59 recusas); no 3.5-0613 é −9,9 pp [−19,8; 0,0].
@@ -57,7 +51,6 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 **O que fazemos:** o `docs/DOCUMENTO.md` registra a saudação como o achado mais consistente (ainda um indício) e a recusa como **indício, com sinal mais nítido no GPT-4**; a decisão sobre recusas vale para os dois modelos.
 
 ## 7. Idioma do pedido contra o idioma do navegador
-![idioma](figuras/eda7_idioma.png)
 **O que vemos:** 22,5% das pessoas (570 de 2.530) escrevem o primeiro pedido em outro idioma que não o português, mesmo com o navegador em português. Quem escreve **em inglês** volta como o resto (27,2%, n=283, sem diferença). Quem escreve em **outro idioma** (nem português nem inglês) volta **16,1%** (n=211): **−8,5 pp [−14,0; −3,1]** contra navegador e pedido em português (24,6%, n=1.409).
 **Cuidado:** o idioma da conversa é **inferido** pelo WildChat e erra (há 88 conversas do Brasil marcadas como "latim"). Pode ser ruído de detecção, ou tradução e estudo de idiomas.
 **Conclusão:** hipótese a verificar, não achado. **O que fazemos:** sugerir o cruzamento **idioma do pedido × idioma do navegador** como indicador, com validação da detecção de idioma antes de agir.

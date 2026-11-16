@@ -18,13 +18,9 @@ menos (com sinal mais nítido no GPT-4). **Trocar de modelo ou alongar a respost
   diferentes (mantidas: são conversas distintas), 24.192 sem navegador, 163.178 sem estado, e 826.368 sem texto fora do Brasil.
 
 ## 3. O que os dados mostram (exploração)
-Sete conclusões, cada uma com figura, intervalo e o que fazer, em [`docs/EDA.md`](EDA.md). As principais:
+Sete conclusões, cada uma com intervalo e o que fazer, em [`docs/EDA.md`](EDA.md). As principais:
 - **Quem volta, volta logo.** 15,9% voltam em 1 dia, 23,7% em 7 e 26,1% em 30: **92% dos retornos de 30 dias já ocorrem em 7**, e metade em cerca de 15 horas. A janela de 7 dias é adequada.
-
-  ![curva de retorno](figuras/eda2_curva_de_retorno.png)
 - **O modelo muda com o calendário.** GPT-4 é 13 a 16% das conversas em abr a jun/2023, **zero de jul a out** e mais de 90% em 2024; e o "GPT-3.5" tem versões muito diferentes (recusa de 2,5% a 13,1%). "GPT-4 contra GPT-3.5" mistura modelo com época.
-
-  ![modelo no tempo](figuras/eda1_modelo_no_tempo.png)
 - **O uso é raso e concentrado.** 56% das conversas têm 1 turno e 60% das pessoas têm uma só conversa; o retorno vai de 20,2% (1 turno) a **43,0% (7 ou mais)**. **20 pessoas (0,8%) fazem 39% das conversas:** volume não é gente, e retirá-las mexe só 0,3 pp no retorno.
 - **Quando e onde.** O expediente (seg a sex, 9h às 18h) concentra 35,5% das conversas, acima dos 26,8% esperados se o uso fosse uniforme; a madrugada tem 20,1% (esperado 33,3%) e o fim de semana 29,0% (esperado 28,6%): o uso é diurno e do começo da noite. Mobile e desktop voltam igual (24,0% e 23,6%); o ecossistema Apple volta menos, mas **pode ser efeito da medida** (IP e navegador), e não agimos sobre isso.
 - **Idioma:** 75,7% das conversas em português e 16,1% em inglês; quem escreve em um terceiro idioma, com o navegador em português, volta menos (hipótese a verificar, a detecção de idioma erra).

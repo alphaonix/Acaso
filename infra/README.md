@@ -117,7 +117,7 @@ flowchart TB
 ## 8. Como colocar no ar (opção A; esboço, não testado numa conta real)
 1. **Máquina:** Lightsail, Ubuntu LTS, 4 GB. IP fixo. Firewall: 80 e 443 abertos; 22 só do IP do time. Instalar Docker e Compose.
 2. **Código:** `git clone` com uma *deploy key* só de leitura (se o repositório for privado; sendo público, basta `git clone`).
-3. **Segredos:** criar `.env` (permissão 600) com `SESSION_SECRET` (valor longo aleatório) e `COOKIE_SECURE=1`. As contas de acesso já vêm da migração 029.
+3. **Segredos:** criar `.env` (permissão 600) com `SESSION_SECRET` (valor longo aleatório) e `COOKIE_SECURE=1`. As contas de acesso já vêm das migrações 029 e 031.
 4. **Subir:** `docker compose up -d --build`. A primeira carga leva de 3 a 4 minutos.
 5. **Proxy e TLS:** um Caddy na frente do painel (a porta 3000 já fica só em `localhost`), recusando quem não traz o cabeçalho secreto da borda.
 6. **Borda:** criar a distribuição do CloudFront (plano Free) apontando para o domínio da máquina, com o cabeçalho secreto; apontar o domínio do painel para ela.
