@@ -222,8 +222,10 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 | `convs_1a_sessao`, `convs_total` | conversas na 1ª sessão e no total | contagem; `convs_total` é consequência do retorno, não explica |
 | `voltou_7d`, `voltou_24h`, `dias_ate_voltar` | retorno | nova sessão (gap de 30 min) em até 7 dias / 24 h; dias até a volta |
 | `elegivel`, `janela_30d` | entra na taxa? | 1ª vez após 30 dias do início e 7 dias antes do fim dos dados; `janela_30d` (ponto de 30 dias da curva) exige 1ª vez a mais de 30 dias do início e do fim |
-**Conferências (27):** bronze = silver + excluídas; soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez recalculados a partir das conversas = os da silver; `voltou_24h` implica `voltou_7d`; **recálculo independente em Python a partir da bronze**; 10 números do Brasil validados à mão.
-**Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras (regras em [docs/REGRAS_DE_TEXTO.md](docs/REGRAS_DE_TEXTO.md)) erram para os dois lados (na conferência manual de 30 casos marcados como recusa, **8 (27%) eram recusa no sentido estrito**; a precisão do tema não foi medida); fuso único por país.
+
+**Conferências (27):** bronze = silver + excluídas; soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez recalculados a partir das conversas = os da silver; `voltou_24h` implica `voltou_7d`; **recálculo independente em Python a partir da bronze**; 10 números do Brasil conferidos contra valores fixos.
+
+**Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras (regras em [docs/REGRAS_DE_TEXTO.md](docs/REGRAS_DE_TEXTO.md)) erram para os dois lados e a precisão do tema não foi medida; fuso único por país.
 
 ### Gold: os resumos que a tela lê
 É a **única** camada que a API enxerga. Tudo em SQL, lendo só a silver; taxa e intervalo de Wilson (95%) só aparecem com **30 ou mais pessoas**; abaixo disso ficam vazios e a tela avisa. Só `agg_retorno_semana` e `agg_retorno_fator` guardam a taxa pronta; as demais guardam contagens e a API calcula a taxa (função `_com_taxa`, com `gold.wilson_lo/hi`).
