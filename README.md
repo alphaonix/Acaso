@@ -77,7 +77,14 @@ Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há um
 | `api` | FastAPI somente leitura; **só sobe se o ETL terminou bem** | não |
 | `web` | Dashboard Next.js; fala com a API pelo mesmo domínio (`/api/*`) | não |
 
-**Acesso.** O painel pede e-mail e senha. As contas de quem avalia o desafio (Nathália Anjos e Daniele Cardoso) já nascem no banco pela migração `db/migrations/029_contas_avaliadoras.sql`, que guarda só o **hash** da senha (scrypt, sal próprio de cada conta); **nenhuma senha em texto fica no repositório** e não é preciso criar `.env`. A senha foi enviada na entrega. Como a base é pública (WildChat) e o painel roda na máquina de quem o sobe, o login serve para demonstrar autenticação, não para proteger dado sensível; em produção seria um provedor de identidade (Amazon Cognito).
+**Acesso.** O painel pede e-mail e senha. Entre com uma das contas abaixo (não é preciso criar `.env`):
+
+| Pessoa | E-mail | Senha |
+|---|---|---|
+| Nathália Anjos | `nathalia.anjos@aca.so` | `acaso123` |
+| Daniele Cardoso | `daniele.cardoso@aca.so` | `acaso123` |
+
+Elas já nascem no banco pela migração `db/migrations/029_contas_avaliadoras.sql`, que guarda só o **hash** da senha (scrypt, sal próprio de cada conta). A base é pública (WildChat) e o painel roda na máquina de quem o sobe; por isso a senha pode ficar neste tutorial: o login demonstra autenticação, não protege dado sensível. Em produção seria um provedor de identidade (Amazon Cognito).
 
 Para usar **outras contas ou outra senha**: copie `.env.example` para `.env`, preencha `DASH_USERS` (`email|Nome|url-da-foto;email|Nome`; a foto é opcional) e `DASH_PASSWORD`, e suba de novo com `--build` (as contas fora da lista saem do banco). Se o banco não tiver nenhuma conta, o ETL cria `avaliacao@exemplo.com` com **senha aleatória mostrada uma vez no log** (`docker compose logs etl | findstr SENHA` no Windows, `grep SENHA` em Linux e macOS).
 
