@@ -457,13 +457,12 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 
 ## 13. O que ainda está aberto
 1. **Precisão de tema e recusa** (regras de palavras): faltam a conferência manual da amostra e o cálculo da precisão; afeta os achados 1 e 2 (BDR-003).
-2. **Horas do parágrafo de IA** em `docs/DOCUMENTO.md` (§8).
-3. **Proteção do branch `main`** no GitHub (exigir os dois jobs do CI).
-4. **AWS:** o Terraform é esboço (`validate` ok, sem `plan`/`apply`); o preço do RDS vem de fonte secundária.
-5. **Fuso** de ~160 países, **cache** e **SSO** são extensões, descritas e não implementadas.
-6. **Tema e recusa fora do Brasil:** a semente só tem o texto do Brasil, e as regras são em português.
-7. **Efeitos só para o Brasil**; o painel mostra "indisponível" nos demais.
-8. **Semana do incidente:** o PDF pede uma semana; o movimento está explicado por mês (amostra de uma semana é pequena).
+2. **Proteção do branch `main`** no GitHub (exigir os dois jobs do CI).
+3. **AWS:** o Terraform é esboço (`validate` ok, sem `plan`/`apply`); o preço do RDS vem de fonte secundária.
+4. **Fuso** de ~160 países, **cache** e **SSO** são extensões, descritas e não implementadas.
+5. **Tema e recusa fora do Brasil:** a semente só tem o texto do Brasil, e as regras são em português.
+6. **Efeitos só para o Brasil**; o painel mostra "indisponível" nos demais.
+7. **Semana do incidente:** o PDF pede uma semana; o movimento está explicado por mês (amostra de uma semana é pequena).
 
 ---
 
