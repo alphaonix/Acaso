@@ -49,7 +49,7 @@ Para a **semana de 20/11/2023** (a do PDF): de 29,1% (55 pessoas) para 20,6% (68
 Uso mês e não semana porque uma semana tem só 40 a 90 elegíveis; o mês tem de 87 a 295 elegíveis, então ainda há ruído (o painel avisa).
 
 **O que a análise prova e o que não prova.** Prova associação ajustada por calendário, dispositivo, região, tema, pedido, idioma e modelo. **Não prova causa:** o engajamento prévio da pessoa não é medido (o E-value do limite do intervalo, de 1,4 a 1,6, mostra que um confundidor moderado anularia os efeitos; o da estimativa vai de 1,9 a 2,7).
-**Ressalva:** tema e recusa vêm de regras de palavras, e a precisão delas não foi medida contra uma amostra rotulada (amostras em `exports/`); os achados 1 e 2 dependem delas e por isso são tratados como indícios.
+**Ressalva:** tema e recusa vêm de regras de palavras. Conferi à mão 30 respostas marcadas como recusa (`exports/amostra_validacao_recusa.csv`): **8 (27%) são recusa no sentido estrito** (o assistente declina o pedido). Nas outras 22, o assistente pede desculpa por não poder fazer algo (acessar um link, criar imagem, dar informação atual), pede mais informação ou apenas avisa que é uma IA e responde normalmente. **A variável deve ser lida como "recusa ou ressalva de IA"**, e o achado 2 é só indício. A precisão do tema não foi medida.
 **O que os dados não permitem medir e o que falta:** avaliação da resposta pela própria pessoa, custo e latência, identidade estável e o motivo de não voltar.
 
 ## 5. Sugestões (saíram dos dados; detalhe em `docs/EDA.md`)
@@ -71,4 +71,4 @@ Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação de 
 ## 8. Uso de IA
 Usei o Claude (Claude Code) como assistente ao longo de **todo** o trabalho: discovery e leitura do enunciado, análise estatística (desenho do ajuste AIPW, sensibilidade), código do ETL, da API, do front e dos testes, e a redação dos documentos.
 **O que conferi, corrigi ou descartei:** refiz à mão, em Power BI e DBeaver, os números principais (usuários, elegíveis, retorno, recusa, estados) e só os adotei depois de bater; corrigi uma versão em que o efeito mudava a cada carga (a validação cruzada dependia da ordem das linhas) e rebaixei duas conclusões que não resistiram à correção para múltiplos testes;
-descartei uma nuvem de palavras-chave, e números ilustrativos de um protótipo, por não ter como garantir a precisão. O que **não consegui medir**: a precisão de tema e recusa contra uma amostra rotulada. Dediquei cerca de **34 horas** ao desafio.
+descartei uma nuvem de palavras-chave, e números ilustrativos de um protótipo, por não ter como garantir a precisão. O que **medi à mão**: a precisão da recusa (8 de 30, 27%, no sentido estrito); a do tema ficou sem medição. Dediquei cerca de **34 horas** ao desafio.

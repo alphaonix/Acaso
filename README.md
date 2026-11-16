@@ -160,7 +160,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 5. **Gravar** `fato_conversa` (guarda `bronze_id`, que liga cada conversa à sua linha na bronze) e `fato_usuario`. **Não guarda** texto nem IP.
 
 **Conferências (27):** bronze = silver + excluídas; soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez recalculados a partir das conversas = os da silver; `voltou_24h` implica `voltou_7d`; **recálculo independente em Python a partir da bronze**; 10 números do Brasil validados à mão.
-**Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras erram para os dois lados e **a precisão não foi medida contra uma amostra rotulada**; fuso único por país.
+**Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras erram para os dois lados (na conferência manual de 30 casos marcados como recusa, **8 (27%) eram recusa no sentido estrito**; a precisão do tema não foi medida); fuso único por país.
 
 ### Gold: os resumos que a tela lê
 É a **única** camada que a API enxerga. Tudo em SQL, lendo só a silver; taxa e intervalo de Wilson (95%) só aparecem com **30 ou mais pessoas**; abaixo disso ficam vazios e a tela avisa. Só `agg_retorno_semana` e `agg_retorno_fator` guardam a taxa pronta; as demais guardam contagens e a API calcula a taxa (função `_com_taxa`, com `gold.wilson_lo/hi`).
@@ -319,7 +319,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios) |
 
 **Prova de que os testes pegam o erro (mutação).** Alterei a definição de propósito e rodei a suíte; cada alteração foi detectada e depois revertida: gap de 30 → 45 min (2 testes quebraram); janela de 7 → 14 dias (3); usuário com user-agent **bruto**, o erro do incidente (15); início = último turno (4).
-**Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; isso vem da amostra manual.
+**Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
 1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 189 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
@@ -458,7 +458,7 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 ---
 
 ## 13. Limites conhecidos e extensões
-1. **Precisão de tema e recusa.** São regras de palavras; os testes fixam o comportamento, mas a precisão não foi medida contra uma amostra rotulada. Os achados 1 e 2 herdam esse limite e por isso são apresentados como indícios (BDR-003).
+1. **Precisão de tema e recusa.** São regras de palavras. Na conferência manual de 30 casos marcados como recusa, **8 (27%) são recusa no sentido estrito**; o resto é desculpa, pedido de informação ou aviso de IA com resposta normal. A variável deve ser lida como **"recusa ou ressalva de IA"** e o achado 2 é só indício. A precisão do tema não foi medida (BDR-003).
 2. **Proteção do branch `main`.** Exigir os dois jobs do CI é a configuração recomendada; em repositório privado depende do plano do GitHub.
 3. **AWS.** O Terraform é um esboço validado (`terraform validate`), sem `plan`/`apply`; o preço do RDS vem de fonte secundária.
 4. **Extensões descritas, não implementadas:** fuso de ~160 países, cache e SSO.

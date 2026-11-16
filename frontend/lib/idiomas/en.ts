@@ -240,7 +240,7 @@ export const en: Record<Chave, string> = {
   "vg.retornoDica": "People who had a new conversation within 7 days ÷ eligible people (those who already had a full 7 days to come back).",
   "vg.conversas": "Conversations", "vg.conversasSub": "{n} per person", "vg.conversasDica": "Unique conversations, after removing exact duplicates.",
   "vg.turnos": "Average turns", "vg.turnosSub": "median {m}", "vg.turnosDica": "Average turns in each user's 1st conversation.",
-  "vg.recusaDica": "1st response that opens with a refusal or apology (keyword rules, only where there is text).",
+  "vg.recusaDica": "1st response that opens with a refusal or apology (keyword rules, only where there is text). The rule also catches notices like \"as an AI…\": read it as refusal or caveat, not only a real refusal.",
   "vg.gpt4": "GPT-4 use", "vg.gpt4Sub": "of the 1st conversations", "vg.gpt4Dica": "Share of GPT-4 models in each user's 1st conversation.",
   "fa.eyebrow": "Statistical analysis", "fa.h1a": "What", "fa.h1b": "makes someone come back?",
   "fa.desc": "What, in the first conversation, raises or lowers the chance that a person comes back. Each line compares similar groups.",

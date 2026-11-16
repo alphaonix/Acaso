@@ -1,6 +1,6 @@
 # BDR-003: classificação do tema da primeira conversa
 
-Status: aceita como premissa de trabalho; precisão não medida contra uma amostra rotulada (amostras em `exports/amostra_validacao_*.csv`; ver README, seção 13).
+Status: aceita como premissa de trabalho. Recusa: conferida à mão em 30 casos (8, ou 27%, são recusa no sentido estrito). Tema: precisão não medida (amostra em `exports/amostra_validacao_tema.csv`).
 
 ## Contexto
 O PDF pede o tema como variável da primeira experiência e que, se usarmos IA para classificar, expliquemos como
@@ -38,3 +38,8 @@ descritivos: não controlam confusão e não têm intervalo de confiança.
 - Temas pequenos (Prompt de imagem 16 usuários, Adulto 21) terão intervalos largos; o dashboard mostra o aviso.
 - Classificar só a primeira conversa ignora o que a pessoa fez depois (decisão coerente com "primeira experiência").
 - Se a taxa de acerto na validação for baixa, subir para a opção 2 em amostra para medir o erro da heurística.
+
+## Conferência manual da recusa (30 casos)
+Conferi à mão 30 respostas marcadas como recusa (`exports/amostra_validacao_recusa.csv`): **8 (27%) são recusa no sentido estrito** (o assistente declina o pedido). Nas outras 22, o assistente pede desculpa por não poder fazer algo (acessar um link, criar imagem, dar informação atual), pede mais informação ou apenas avisa que é uma IA e responde normalmente. Em vários desses 22 casos a regra pega expressões como "As an AI language model" ou "como uma IA" mesmo quando a resposta segue normalmente.
+**Consequências:** (1) ler a variável como **"recusa ou ressalva de IA"**, não como recusa estrita; (2) o efeito de −9,6 pp (achado 2) é uma associação com esse conjunto mais amplo e por isso é só indício; (3) para estreitar a medida, tirar "as an ai" e "modelo de linguagem" soltos da regra (muda os 198 casos, o 8,9% e as conferências validadas) ou classificar em lote com um LLM no Bedrock e conferir contra a mesma amostra. A amostra de 30 não marcadas não permite estimar a cobertura (quantas recusas a regra deixa passar).
+

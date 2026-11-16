@@ -65,7 +65,7 @@ isoladamente, mas não depois de corrigir por testar 16 coisas.
 
 ## Limites
 Amostra pequena (poder baixo); "usuário" = navegador em uma rede (BDR-001, viés em ambos os sentidos); tema e recusa são
-heurísticas com precisão não medida (BDR-003); sobreposição de 67% para o modelo (as versões do GPT mudam no tempo);
+heurísticas (recusa com precisão estrita de 27% em 30 casos; tema sem medição; BDR-003); sobreposição de 67% para o modelo (as versões do GPT mudam no tempo);
 a recusa é medida só na abertura da 1ª resposta.
 
 ## Achados candidatos para o cliente (a validar com o autor antes de entrar no documento)

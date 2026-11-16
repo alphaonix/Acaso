@@ -238,7 +238,7 @@ export const pt = {
   "vg.retornoDica": "Quem fez uma nova conversa em até 7 dias ÷ pessoas elegíveis (as que já tiveram 7 dias completos para voltar).",
   "vg.conversas": "Conversas", "vg.conversasSub": "{n} por pessoa", "vg.conversasDica": "Conversas únicas, depois de excluir as duplicatas exatas.",
   "vg.turnos": "Turnos médios", "vg.turnosSub": "mediana {m}", "vg.turnosDica": "Média dos turnos da 1ª conversa de cada pessoa.",
-  "vg.recusaDica": "1ª resposta que abre com recusa ou desculpa (regras de palavras, só onde há texto).",
+  "vg.recusaDica": "1ª resposta que abre com recusa ou desculpa (regras de palavras, só onde há texto). A regra também pega avisos como \"como uma IA…\": leia como recusa ou ressalva, não só recusa de fato.",
   "vg.gpt4": "Uso de GPT-4", "vg.gpt4Sub": "das 1ªs conversas", "vg.gpt4Dica": "Participação de modelos GPT-4 na 1ª conversa de cada pessoa.",
   "fa.eyebrow": "Análise estatística", "fa.h1a": "O que", "fa.h1b": "faz alguém voltar?",
   "fa.desc": "O que, na primeira conversa, aumenta ou diminui a chance de a pessoa voltar. Cada linha compara grupos parecidos.",
