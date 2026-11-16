@@ -87,7 +87,7 @@ export default function VisaoGeral() {
         <p style={{ marginTop: "0.6rem" }}><Link href="/ajuda"><R texto={t("vg.dadosMais")} /></Link></p>
       </Painel>
 
-      <div className="kpis kpis3">
+      <div className="kpis kpis3" style={{ marginTop: "1rem" }}>
         <Kpi rotulo={t("vg.novos")} defId="usuarios_novos" valor={r ? num(r.novos) : "…"}
           delta={paisAtual?.primeira_data && paisAtual.ultima_data ? t("vg.periodo", { a: dataLonga(paisAtual.primeira_data), b: dataLonga(paisAtual.ultima_data) }) : ""} dica={t("vg.novosDica")} />
         <Kpi rotulo={t("vg.retorno")} defId="retorno_7d" valor={r ? pct(r.taxa) : "…"}
