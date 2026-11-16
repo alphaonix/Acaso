@@ -34,6 +34,10 @@ jobs:
         run: docker compose --profile test run --rm testes-integracao
       - name: Integridade (as camadas estao como a carga deixou e a trava de escrita esta ligada)
         run: docker compose --profile operacao run --rm verificar-integridade
+      - name: Segundo up nao recarrega (o banco guarda os dados)
+        run: |
+          docker compose run --rm etl 2>&1 | tee etl2.log
+          grep -q "nada a fazer" etl2.log
       - name: Mostra o log do ETL se algo falhar
         if: failure()
         run: docker compose logs etl | tail -n 120

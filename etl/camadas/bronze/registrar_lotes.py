@@ -9,12 +9,22 @@ import duckdb
 from .carregar import DESTINOS
 
 
-def registrar_lotes(ops, con: duckdb.DuckDBPyConnection, exec_id: int, semente: Path) -> None:
-    for nome, tabela in DESTINOS.items():
+def impressao_da_semente(semente: Path) -> dict[str, str]:
+    """sha256 de cada arquivo da semente (nome -> impressao digital). Serve para saber se a semente mudou desde a ultima carga."""
+    saida = {}
+    for nome in DESTINOS:
         arq = semente / nome
         if not arq.exists():
-            sys.exit(f"ETL: semente ausente: {arq} (rode python etl/semente/make_seed.py)")
-        sha = hashlib.sha256(arq.read_bytes()).hexdigest()
+            sys.exit(f"ETL: semente ausente: {arq} (gere com: docker compose --profile base run --rm baixar-base)")
+        saida[nome] = hashlib.sha256(arq.read_bytes()).hexdigest()
+    return saida
+
+
+def registrar_lotes(ops, con: duckdb.DuckDBPyConnection, exec_id: int, semente: Path) -> None:
+    digitais = impressao_da_semente(semente)
+    for nome, tabela in DESTINOS.items():
+        arq = semente / nome
+        sha = digitais[nome]
         linhas = con.execute(f"SELECT count(*) FROM read_parquet('{arq.as_posix()}')").fetchone()[0]
         ops.execute("""INSERT INTO ops.bronze_lote (execucao_id, arquivo, sha256, linhas, tamanho_bytes, tabela_destino)
                        VALUES (%s, %s, %s, %s, %s, %s)""", (exec_id, nome, sha, linhas, arq.stat().st_size, tabela))

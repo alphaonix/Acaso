@@ -80,7 +80,7 @@ horário em **0** conversas e a mensagem 2 (assistente) em **todas** (Brasil 11.
 nenhuma mensagem de usuário com horário em toda a base. Então não é uma particularidade do Brasil.
 
 **Regra do início (`inicio_utc`), igual para todos os países:** o início é `primeira_resposta_ts`, o horário da mensagem 2 (a 1ª
-resposta do assistente). A coluna é calculada em um lugar só, ao gerar a semente (`make_seed.py`), do mesmo jeito para o arquivo
+resposta do assistente). A coluna é calculada em um lugar só, ao gerar a semente (`etl/semente/baixar_base.py`), do mesmo jeito para o arquivo
 do Brasil e para o dos demais países, e vem preenchida nas 837.989 linhas da bronze. A silver só lê essa coluna.
 - A mensagem 1 foi **examinada e descartada** porque é vazia em 100% das conversas (linha `msg_usuario_horario`, ação `ignorado`, na
   tabela `auditoria.nulos`). Não é uma segunda opção: é uma coluna sem dado.

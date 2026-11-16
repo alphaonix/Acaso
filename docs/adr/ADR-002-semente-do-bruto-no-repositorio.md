@@ -17,8 +17,15 @@ Brasil completo 22,2 MB; outros países sem texto 35,3 MB (826.368 linhas, inclu
 caracteres de texto por conversa seriam 190 MB (não cabe). Total 11.621 + 826.368 = 837.989, igual à base.
 
 ## Decisão
-Opção 3. `etl/semente/make_seed.py` gera `data/seed/*.parquet` a partir da base completa (`data/raw/`, fora do Git).
-`docker compose up` lê a semente. O download completo continua disponível em `etl/semente/download_full.py`.
+Opção 3. `docker compose up` lê a semente versionada em `data/seed/`. O caminho do dado bruto até a semente é um **comando oficial e opcional**:
+`docker compose --profile base run --rm baixar-base` (`etl/semente/baixar_base.py`) baixa o WildChat-1M do Hugging Face, gera a semente e confere as contagens.
+
+## Atualização (16/11/2026): a opção 1 voltou a ser possível, mas continua sendo a segunda escolha
+- A base **não exige mais login**: a página do dataset no Hugging Face está pública (`gated: false`), então o motivo "exige aceitar termos e token" caiu. O script fixa a revisão do dataset (`7d6490e4…`) para o download ser sempre o mesmo.
+- **Medido:** baixar 1 dos 14 arquivos (231 MB) levou **533 s** nesta máquina; os 14 levariam cerca de 2 horas. Para quem avalia, o primeiro `up` dependeria da internet e do Hugging Face; hoje ele leva 2 a 3 minutos e não depende de nada externo para os dados.
+- **Verificado:** a semente regenerada a partir do arquivo bruto completo é **idêntica byte a byte** (sha256) à do repositório; lida em vários arquivos, o conteúdo e a ordem são os mesmos (a divisão interna em blocos pode mudar os bytes, e então o ETL recarrega, sem mudar nenhum número).
+- **Decisão:** a semente continua no repositório como padrão (rápido e à prova de falha de rede); o `baixar-base` prova que ela é reproduzível a partir da fonte.
+- **O banco guarda os dados** entre um `up` e outro: o ETL só roda se o banco estiver vazio, se a semente mudou (sha256) ou sob `--recarregar`.
 
 ## Consequências
 - Países além do Brasil não têm tema, recusa nem tamanhos (sem texto): a tela diz "indisponível".

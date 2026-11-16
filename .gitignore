@@ -26,3 +26,4 @@ Thumbs.db
 
 # sementes adulteradas geradas pela simulacao de cenarios (reproduziveis; nao versionar)
 data/cenarios/
+data/teste_baixar/

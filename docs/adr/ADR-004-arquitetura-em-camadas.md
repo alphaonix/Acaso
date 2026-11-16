@@ -44,7 +44,7 @@ Opção 2, em Python + SQL, sem orquestrador. **Tudo no Postgres** e numa única
 - O banco cresceu de ~335 MB para ~830 MB (`bronze.wildchat` ocupa ~510 MB, incluindo os índices por hash e por país) e a carga leva
   ~80 s (bronze 14 s, silver 58 s). É o preço de ter o bruto consultável.
 - A bronze é uma **cópia da semente**, não do bruto completo: os demais países vêm sem texto (ADR-002), e a coluna
-  `primeira_resposta_ts` (início da conversa) foi extraída na geração da semente (`make_seed.py`), igual para todos.
+  `primeira_resposta_ts` (início da conversa) foi extraída na geração da semente (`etl/semente/baixar_base.py`), igual para todos.
 - A reescrita da silver (DuckDB para SQL do Postgres) foi validada pelo próprio portão: todos os números, a distribuição por tema e
   os 16 efeitos da análise ficaram idênticos aos da versão anterior.
 - Os valores esperados do portão estão no código: mudar uma definição de propósito exige atualizá-los junto, num commit revisável.

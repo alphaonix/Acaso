@@ -45,14 +45,19 @@ docker compose up --build
 ```
 Tela: http://localhost:3000 · API (documentação): http://localhost:8000/docs · banco: `localhost:5433`.
 A carga leva de 2 a 3 minutos na primeira vez (inclui o build). Se uma conferência falhar, a carga é revertida e nada é publicado.
-**Depois de mudar o código, use sempre `--build`**; sem ele o Compose reaproveita as imagens antigas. Para derrubar e apagar o banco: `docker compose down -v`.
+**Os dados ficam guardados no banco** (volume `pgdata`). Nas vezes seguintes o `docker compose up` **não recarrega nada**: o ETL vê que o banco já está carregado e sai na hora, e a tela sobe em segundos. O ETL só roda de novo se o banco estiver vazio, se a semente mudou ou se você pedir:
+```bash
+docker compose run --rm etl python main.py --recarregar     # refaz a carga (2 a 3 minutos); use depois de mudar o ETL ou as migrações
+docker compose down -v                                       # derruba e apaga o banco; o próximo up carrega do zero
+```
+**Depois de mudar o código, use sempre `--build`**; sem ele o Compose reaproveita as imagens antigas.
 
 **O que o `docker compose up` executa, em ordem**
 
 | Serviço | O que faz | Termina? |
 |---|---|---|
 | `db` | Postgres 16 vazio; espera ficar saudável | não |
-| `etl` | Roda `etl/main.py`: migra o banco, carrega a semente (bronze), limpa e deriva (silver), resume e estima efeitos (gold), confere tudo e publica | **sim** (código 0 = ok, 1 = portão falhou) |
+| `etl` | Roda `etl/main.py`: migra o banco e, **só se ele estiver vazio** (ou a semente mudou), carrega a semente (bronze), limpa e deriva (silver), resume e estima efeitos (gold), confere tudo e publica | **sim** (código 0 = ok ou nada a fazer, 1 = portão falhou) |
 | `api` | FastAPI somente leitura; **só sobe se o ETL terminou bem** | não |
 | `web` | Dashboard Next.js; fala com a API pelo mesmo domínio (`/api/*`) | não |
 
@@ -81,21 +86,17 @@ Para incluir outro idioma: crie `frontend/lib/idiomas/<codigo>.ts` com as mesmas
 ## 3. Como o projeto funciona de ponta a ponta
 ```mermaid
 flowchart TB
-  subgraph PREP["① Preparação (uma vez)"]
-    direction LR
-    HF["WildChat-1M<br/>Hugging Face"] --> RAW["Base completa<br/>3 GB · fora do Git"] --> SEED["Semente no repositório<br/>data/seed · 57 MB"]
-  end
+  HF["WildChat-1M<br/>Hugging Face · 3,3 GB"] -->|"comando baixar-base<br/>(opcional)"| SEED["Semente no repositório<br/>data/seed · 57 MB"]
 
-  PREP -->|"docker compose up:<br/>o ETL lê e carrega"| BR
+  SEED -->|"docker compose up: o ETL carrega<br/>(só se o banco estiver vazio)"| BR
 
-  subgraph PG["② Postgres: 3 camadas"]
+  subgraph PG["Postgres: 3 camadas"]
     direction TB
     BR["<b>BRONZE</b><br/>bronze.wildchat<br/>o dado como veio"]
     SI["<b>SILVER</b><br/>fato_conversa · fato_usuario<br/>limpa, define a pessoa,<br/>o retorno e a elegibilidade"]
     GO["<b>GOLD</b><br/>resumos por país, semana e fator<br/>e os efeitos (AIPW)<br/>é o que a tela lê"]
     BR -->|SQL| SI -->|"SQL + Python"| GO
   end
-
   GO --> PORTAO{{"<b>Portão de qualidade</b><br/>66 conferências a cada carga<br/>falhou: ROLLBACK e nada é publicado"}}
   PORTAO -->|"③ passou: a API sobe<br/>(usuário somente leitura)"| API["<b>API FastAPI</b><br/>lê só a gold"]
   API -->|JSON| WEB["<b>Painel Next.js</b><br/>localhost:3000"]
@@ -112,9 +113,9 @@ flowchart TB
   class GO gold
   class API,WEB,PESSOA app
   class PORTAO gate
-  class HF,RAW,SEED prep
+  class HF,SEED prep
 ```
-O ETL (`etl/main.py`) é uma "receita" que roda **uma vez** a cada `docker compose up`. As três camadas são **reconstruídas por inteiro, numa única transação**: a API nunca vê um estado pela metade e, se uma conferência falha, nada é publicado e o painel continua com os dados anteriores.
+O ETL (`etl/main.py`) é uma "receita" que roda **quando o banco está vazio**, quando a semente muda ou sob `--recarregar` (nos demais `docker compose up` ele sai na hora, porque o banco guarda os dados). As três camadas são **reconstruídas por inteiro, numa única transação**: a API nunca vê um estado pela metade e, se uma conferência falha, nada é publicado e o painel continua com os dados anteriores.
 
 | # | Passo | O que acontece |
 |---|---|---|
@@ -152,12 +153,19 @@ Cada intervalo passa de 30 min, então cada conversa abre uma sessão nova. A co
 ## 4. As camadas: Bronze, Silver, Gold e Efeitos
 
 ### Antes do ETL: a semente
-- **`etl/semente/download_full.py`** baixa o WildChat-1M do Hugging Face (3 GB, 837.989 conversas) e **`make_seed.py`** o separa em dois Parquet (zstd), uma vez, à mão (não roda no Docker):
-  - `wildchat_brasil.parquet`: o Brasil **completo, com o texto** (11.621 linhas, 22 MB);
-  - `wildchat_outros_paises.parquet`: os demais países **sem texto** (826.368 linhas, 35 MB; inclui as 1.060 linhas sem país).
-  - Nos dois acrescenta `primeira_resposta_ts`: o horário da 2ª mensagem (a 1ª resposta do assistente).
-- *Por quê:* subir com um comando, sem baixar 3 GB (ADR-002). *Limites:* é uma foto fixa; só o Brasil tem texto, então tema, recusa e efeitos só existem para ele; o texto do Brasil está no repositório, que por isso deve ser **privado**.
+A **semente** são dois arquivos Parquet em `data/seed/` (57 MB), gerados do WildChat-1M completo:
+- `wildchat_brasil.parquet`: o Brasil **completo, com o texto** (11.621 linhas, 22 MB);
+- `wildchat_outros_paises.parquet`: os demais países **sem texto** (826.368 linhas, 35 MB; inclui as 1.060 linhas sem país);
+- nos dois, a coluna `primeira_resposta_ts`: o horário da 2ª mensagem (a 1ª resposta do assistente).
 
+**Refazer a semente a partir da fonte (opcional).** Um comando baixa o WildChat-1M do Hugging Face (público, sem login, revisão fixada), gera a semente e confere as contagens (837.989 e 11.621):
+```bash
+docker compose --profile base run --rm baixar-base                 # baixa e gera (data/raw e data/seed)
+docker compose --profile base run --rm baixar-base --so-semente   # refaz só a semente, a partir de data/raw
+docker compose run --rm etl python main.py --recarregar            # o banco passa a usar a semente nova
+```
+O código é [`etl/semente/baixar_base.py`](etl/semente/baixar_base.py) (só biblioteca padrão e DuckDB). **Verificado:** a partir do arquivo bruto completo, a semente regenerada é **idêntica byte a byte** à do repositório (sha256 `e81720c4…` e `77ee2c15…`); lida em vários arquivos, o conteúdo e a ordem são os mesmos (só a divisão interna em blocos muda os bytes). O download foi testado com um arquivo: **levou 9 minutos nesta máquina** (231 MB); os 14 arquivos (3,3 GB) levariam cerca de 2 horas, e por isso a semente fica no Git e é o padrão (ADR-002).
+- *Por quê:* subir com um comando, sem baixar 3 GB. *Limites:* é uma foto fixa; só o Brasil tem texto, então tema, recusa e efeitos só existem para ele; o texto do Brasil está no repositório, que por isso deve ser **privado**.
 ### Bronze: o dado como veio
 | | |
 |---|---|
@@ -318,9 +326,9 @@ docker compose run --rm --no-deps -v "${PWD}/analise/08_recalculo_independente.p
 ---
 
 ## 7. Testes automáticos
-Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **189 testes**: 140 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco carregado, **só leem**).
+Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **195 testes**: 146 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco carregado, **só leem**).
 ```bash
-docker compose --profile test run --rm --build testes-etl          # 140 testes
+docker compose --profile test run --rm --build testes-etl          # 146 testes
 docker compose --profile test run --rm --build testes-api          # 29 testes: decomposição mix × taxa
 docker compose --profile test run --rm --build testes-integracao  # 20 testes: API × Gold (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo     # gera exports/fluxo_dos_dados.html (caminho do dado e todas as conferências)
@@ -338,6 +346,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | `test_prevencao.py` | o recálculo independente bate com a silver e **pega um erro plantado**; contrato da semente; deriva |
 | `test_integridade.py` | UPDATE, DELETE, INSERT e TRUNCATE nas camadas fora da carga são recusados; alteração por fora muda a impressão digital |
 | `test_anomalia.py`, `test_anomalia_semanal.py`, `test_simulacao.py` | a taxa que salta e a camada de origem; o pico de uma semana; o catálogo dos cenários e o PDF |
+| `test_recarga.py` | **o banco guarda os dados**: o ETL só recarrega se o banco estiver vazio, se a semente mudou ou sob `--recarregar`; uma carga que falhou não conta |
 | `test_acesso.py` | nenhuma conta ou senha real no repositório; senha aleatória na primeira subida |
 | `backend/tests/test_api_x_gold.py` | **a API devolve o que a gold tem**: 401 conferências em 6 países; um erro plantado é detectado |
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios) |
@@ -346,7 +355,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 189 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 195 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.

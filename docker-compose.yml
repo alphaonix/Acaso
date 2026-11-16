@@ -52,6 +52,15 @@ services:
     ports:
       - "127.0.0.1:3000:3000"   # so a sua maquina acessa
 
+  baixar-base:               # OPCIONAL: baixa o WildChat-1M do Hugging Face (publico, ~3,3 GB) e refaz a semente em data/seed; depois: docker compose run --rm etl python main.py --recarregar
+    profiles: ["base"]
+    build: ./etl
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data                            # data/raw recebe o download; data/seed recebe a semente
+    entrypoint: ["python", "semente/baixar_base.py"]
+
   verificar-integridade:     # confere sob demanda se bronze/silver/gold ainda estao como a ultima carga deixou (sai com erro se nao)
     profiles: ["operacao"]
     build: ./etl

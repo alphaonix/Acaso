@@ -10,10 +10,10 @@ from .carregar import TABELA, carregar
 from .contrato import ContratoQuebrado, exigir_contrato, verificar_contrato
 from .diagnosticar import diagnosticar_bronze
 from .limpar import limpar_bronze
-from .registrar_lotes import registrar_lotes
+from .registrar_lotes import impressao_da_semente, registrar_lotes
 from .validar import validar_bronze
 
-__all__ = ["construir_bronze", "validar_bronze", "diagnosticar_bronze", "limpar_bronze", "carregar", "registrar_lotes", "TABELA",
+__all__ = ["construir_bronze", "validar_bronze", "diagnosticar_bronze", "limpar_bronze", "carregar", "registrar_lotes", "impressao_da_semente", "TABELA",
            "verificar_contrato", "exigir_contrato", "ContratoQuebrado"]
 
 

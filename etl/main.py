@@ -2,7 +2,8 @@
 
 A receita esta na funcao `carga` (leia-a de cima para baixo):
 
-  preparar   migra o banco, cria as contas de acesso e abre o registro da execucao
+  preparar   migra o banco, cria as contas de acesso, decide se precisa carregar (carga_necessaria) e abre o registro da execucao
+  decidir    so carrega se o banco esta vazio, se a semente mudou ou se pediram --recarregar; senao sai na hora (o banco guarda os dados)
   BRONZE     construir_bronze  ->  validar_bronze  ->  medir    (o dado como veio; confere o contrato da semente antes)
   SILVER     construir_silver  ->  auditar_silver  ->  validar_silver  ->  medir   (limpeza, pessoa, visitas, retorno, elegibilidade)
   GOLD       construir_gold  ->  construir_efeitos  ->  auditar_gold  ->  validar_gold  ->  medir   (resumos que a tela le)
@@ -15,6 +16,7 @@ falhar (modo estrito) nada e publicado. Cada camada tem a sua pasta em camadas/ 
 """
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -45,6 +47,21 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
     graves = [r for r in falhas if r.transicao not in ("deriva", "integridade", "anomalia", "anomalia_semanal") or (r.transicao == "deriva" and DERIVA_ESTRITA)]
     if graves and ESTRITO:
         raise PortaoFalhou(f"{len(graves)} verificacao(oes) da camada {camada} falharam")
+
+
+def carga_necessaria(ops, semente: Path, forcar: bool = False) -> tuple[bool, str]:
+    """Decide se a carga precisa rodar. O banco guarda os dados entre um `docker compose up` e outro, entao so recarrega quando:
+    a recarga foi pedida (`python main.py --recarregar`), nunca houve carga bem-sucedida, ou a semente mudou desde a ultima carga.
+    Devolve (precisa, motivo)."""
+    if forcar:
+        return True, "recarga pedida"
+    ultima = ops.execute("SELECT id FROM ops.etl_execucao WHERE status IN ('ok', 'alerta') ORDER BY id DESC LIMIT 1").fetchone()
+    if ultima is None:
+        return True, "o banco ainda nao tem carga"
+    gravadas = dict(ops.execute("SELECT arquivo, sha256 FROM ops.bronze_lote WHERE execucao_id = %s", (ultima[0],)).fetchall())
+    if gravadas != bronze.impressao_da_semente(semente):
+        return True, "a semente mudou desde a ultima carga"
+    return False, f"o banco ja esta carregado (execucao {ultima[0]})"
 
 
 def medir(ops, exec_id: int, camada: str, metricas: list) -> list[qualidade.Resultado]:
@@ -100,6 +117,12 @@ def main() -> int:
     banco.migrar(ops)
     acesso.garantir_conta_avaliacao(ops)
     ops.execute("SELECT auditoria.proteger_camadas()")      # liga a trava de escrita nas tabelas das camadas (so cria onde falta)
+    forcar = "--recarregar" in sys.argv or os.environ.get("ETL_RECARREGAR") == "1"
+    precisa, motivo = carga_necessaria(ops, SEMENTE, forcar)
+    if not precisa:
+        print(f"ETL: nada a fazer, {motivo}. Para recarregar: docker compose run --rm etl python main.py --recarregar", flush=True)
+        return 0
+    print(f"ETL: carregando ({motivo}).", flush=True)
     exec_id = banco.abrir_execucao(ops, VERSAO)
     dw = None
     estado: dict = {}
