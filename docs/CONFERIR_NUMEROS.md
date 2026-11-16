@@ -478,15 +478,15 @@ WITH b AS (SELECT u.voltou_7d::int AS y, u.modelo, u.idioma, u.turnos, u.prompt1
        UNION ALL SELECT 'Tema do primeiro pedido', tt.tema || ' em vez de Conhecimento/pergunta', b.tema = tt.tema, y
          FROM b JOIN (SELECT DISTINCT tema FROM b WHERE tema <> 'Conhecimento/pergunta') tt ON b.tema IN (tt.tema, 'Conhecimento/pergunta')),
      g AS (SELECT fator, contraste, count(*) FILTER (WHERE tratado) AS n1, count(*) FILTER (WHERE NOT tratado) AS n0,
-                  avg(y) FILTER (WHERE tratado) AS p1, avg(y) FILTER (WHERE NOT tratado) AS p0 FROM x GROUP BY 1, 2),
+                  avg(y) FILTER (WHERE tratado) AS p1, avg(y) FILTER (WHERE NOT tratado) AS p0 FROM x GROUP BY 1, 2
+           HAVING count(*) FILTER (WHERE tratado) >= 30 AND count(*) FILTER (WHERE NOT tratado) >= 30),   -- grupos pequenos não são estimados
      d AS (SELECT fator, contraste, n1, n0, p0, 100 * (p1 - p0) AS dif, 100 * 1.96 * sqrt(p1*(1-p1)/n1 + p0*(1-p0)/n0) AS margem FROM g)
 SELECT d.fator, d.contraste, d.n1 AS n_grupo, d.n0 AS n_comparacao, round(d.p0, 4) AS retorno_comparacao,
        round(d.dif, 2) AS bruto_pp, round(d.dif - d.margem, 2) AS bruto_ic_lo, round(d.dif + d.margem, 2) AS bruto_ic_hi,
        (d.n1 = e.n_tratados AND d.n0 = e.n_controle AND round(d.dif, 2) = e.efeito_bruto_pp
         AND round(d.dif - d.margem, 2) = e.bruto_ic_lo AND round(d.dif + d.margem, 2) = e.bruto_ic_hi) AS bate_com_gold
 FROM d LEFT JOIN gold.efeito_fator e ON e.pais = 'Brazil' AND e.fator = d.fator AND e.contraste = d.contraste
-WHERE d.n1 >= 30 AND d.n0 >= 30
-ORDER BY e.efeito_pp DESC;
+ORDER BY d.dif DESC;
 ```
 **Passo a passo:**
 1. `b` pega cada pessoa elegível com as características que definem os grupos (`y` = voltou em 7 dias, 1 ou 0).
@@ -494,7 +494,8 @@ ORDER BY e.efeito_pp DESC;
 3. `x` empilha, para cada fator, a lista de pessoas com `tratado` = "tem o fator" (ex.: 2 ou mais turnos). Os temas são comparados, um por vez, com "Conhecimento/pergunta".
 4. `g` calcula o retorno de cada grupo (`p1` com o fator, `p0` sem) e quantas pessoas há em cada um.
 5. `d` faz a diferença `p1 − p0` em pontos percentuais e a margem de erro de 95% (`1,96 × erro-padrão`).
-6. O final compara com `gold.efeito_fator`. Grupos com menos de 30 pessoas não são estimados (`WHERE d.n1 >= 30 AND d.n0 >= 30`), por isso há 16 linhas, não 18.
+6. O final compara com `gold.efeito_fator`. Grupos com menos de 30 pessoas não são estimados (o `HAVING` dentro de `g`, que também evita divisão por zero), por isso há 16 linhas, não 18. A ordem é do maior efeito bruto para o menor.
+**Outros países:** a consulta roda (Alemanha: 4 linhas, só os fatores que não dependem de texto), mas `bate_com_gold` fica **vazio**, porque a gold só estima efeitos para o Brasil (o desafio pede o Brasil). Vale o mesmo para as seções 3.2 a 3.4.
 
 **Deve dar:** 16 linhas, todas `t`. Exemplos: Turnos (2 ou mais em vez de 1): 1.200 · 1.034 · 0,2021 · +6,54 [+3,04; +10,04]. Saudação em vez de Conhecimento/pergunta: 386 · 531 · 0,2561 · −10,85 [−15,97; −5,72] (a tela mostra n = 917, que é 386 + 531). Recusa: 198 · 2.036 · 0,2451 · −8,85 [−14,25; −3,46]. Pedido longo: 1.119 · 1.115 · 0,2000 · +7,44 [+3,92; +10,95]. Modelo (GPT-4 em vez de GPT-3.5): 956 · 1.278 · 0,2340 · +0,77.
 
