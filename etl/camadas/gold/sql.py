@@ -127,12 +127,18 @@ SELECT * FROM (
 ) q
 """
 # ---- analise ampliada (migracao 018): curva de retorno, estratos por modelo, recusa por versao, concentracao, uso por hora, modelo no tempo
+# Base de cada ponto: pessoas com janela completa de max(d, 7) dias (1a vez a 30+ dias do inicio dos dados e a max(d, 7) dias do fim).
+# Ate 7 dias e exatamente a base dos cartoes (elegivel); no ponto de 30 dias e a janela_30d. voltaram_janela30 serve so a nota da 1a semana.
 SQL_CURVA = """
-INSERT INTO gold.agg_curva_retorno (pais, dias, usuarios, voltaram)
-SELECT u.pais, g.d, count(*), count(*) FILTER (WHERE u.dias_ate_voltar IS NOT NULL AND u.dias_ate_voltar <= g.d)
-FROM silver.fato_usuario u
+INSERT INTO gold.agg_curva_retorno (pais, dias, usuarios, voltaram, voltaram_janela30)
+WITH lim AS (SELECT pais, min(inicio_utc) AS mn, max(inicio_utc) AS mx FROM silver.fato_conversa GROUP BY pais)
+SELECT u.pais, g.d, count(*),
+       count(*) FILTER (WHERE u.dias_ate_voltar IS NOT NULL AND u.dias_ate_voltar <= g.d),
+       count(*) FILTER (WHERE u.janela_30d AND u.dias_ate_voltar IS NOT NULL AND u.dias_ate_voltar <= g.d)
+FROM silver.fato_usuario u JOIN lim l USING (pais)
 CROSS JOIN (VALUES (0.0), (0.25), (0.5), (1.0), (2.0), (3.0), (4.0), (5.0), (6.0), (7.0), (10.0), (14.0), (21.0), (30.0)) AS g(d)
-WHERE u.janela_30d GROUP BY 1, 2
+WHERE u.primeira_vez_utc >= l.mn + INTERVAL '30 days' AND u.primeira_vez_utc <= l.mx - greatest(g.d, 7.0) * INTERVAL '1 day'
+GROUP BY 1, 2
 """
 
 SQL_ESTRATO = """

@@ -266,12 +266,17 @@ def _com_taxa(r: dict, num: str, den: str) -> dict:
 
 @app.get("/api/retencao/curva", dependencies=[Depends(usuario_atual)])
 def curva(pais: str = Depends(pais_valido)) -> dict:
-    """Curva de retorno: % de usuarios que voltaram em ate d dias, entre quem tem 30 dias de janela completa (gold.agg_curva_retorno).
-    `voltou_24h` = ponto d = 1; `voltou_7d` = d = 7 (nesta base, por isso difere do indicador principal)."""
-    pontos = [_com_taxa(r, "voltaram", "usuarios") for r in
-              consulta("SELECT dias::float AS dias, usuarios, voltaram FROM gold.agg_curva_retorno WHERE pais = %s ORDER BY dias", (pais,))]
+    """Curva de retorno: % de pessoas que voltaram em ate d dias, entre quem tem janela completa de max(d, 7) dias (gold.agg_curva_retorno).
+    Ate 7 dias a base e a dos cartoes (elegiveis), entao `voltou_24h` (d = 1) e `voltou_7d` (d = 7) batem com eles; `voltou_30d` usa
+    quem tem 30 dias completos. `semana1` = das pessoas com 30 dias completos que voltaram em ate 30 dias, a fracao que voltou em ate 7."""
+    linhas = consulta("SELECT dias::float AS dias, usuarios, voltaram, voltaram_janela30 FROM gold.agg_curva_retorno WHERE pais = %s ORDER BY dias", (pais,))
+    pontos = [_com_taxa({k: v for k, v in r.items() if k != "voltaram_janela30"}, "voltaram", "usuarios") for r in linhas]
     por_dia = {p["dias"]: p for p in pontos}
-    return {"pontos": pontos, "voltou_24h": por_dia.get(1.0), "voltou_7d": por_dia.get(7.0), "voltou_30d": por_dia.get(30.0)}
+    base30 = {r["dias"]: r for r in linhas}
+    v7, v30 = base30.get(7.0), base30.get(30.0)
+    semana1 = ({"usuarios": v30["usuarios"], "voltaram_7d": v7["voltaram_janela30"], "voltaram_30d": v30["voltaram_janela30"]}
+               if v7 and v30 and v30["voltaram_janela30"] > 0 else None)
+    return {"pontos": pontos, "voltou_24h": por_dia.get(1.0), "voltou_7d": por_dia.get(7.0), "voltou_30d": por_dia.get(30.0), "semana1": semana1}
 
 
 @app.get("/api/retencao/estratos", dependencies=[Depends(usuario_atual)])

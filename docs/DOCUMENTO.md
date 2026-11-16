@@ -19,7 +19,7 @@ menos (com sinal mais nítido no GPT-4). **Trocar de modelo ou alongar a respost
 
 ## 3. O que os dados mostram (exploração)
 Sete conclusões, cada uma com figura, intervalo e o que fazer, em [`docs/EDA.md`](EDA.md). As principais:
-- **Quem volta, volta logo.** 16,0% voltam em 1 dia, 24,0% em 7 e 26,1% em 30: **92% dos retornos de 30 dias já ocorrem em 7**, e metade em cerca de 14 horas. A janela de 7 dias é adequada.
+- **Quem volta, volta logo.** 15,9% voltam em 1 dia, 23,7% em 7 e 26,1% em 30: **92% dos retornos de 30 dias já ocorrem em 7**, e metade em cerca de 14 horas. A janela de 7 dias é adequada.
 
   ![curva de retorno](figuras/eda2_curva_de_retorno.png)
 - **O modelo muda com o calendário.** GPT-4 é 13 a 16% das conversas em abr a jun/2023, **zero de jul a out** e mais de 90% em 2024; e o "GPT-3.5" tem versões muito diferentes (recusa de 2,5% a 13,1%). "GPT-4 contra GPT-3.5" mistura modelo com época.

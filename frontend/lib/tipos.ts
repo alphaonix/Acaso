@@ -47,7 +47,7 @@ export type Comparacao = { paises: (LinhaComparacao & { pais: string })[]; geral
 
 
 export type PontoCurva = { dias: number; usuarios: number; voltaram: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
-export type Curva = { pontos: PontoCurva[]; voltou_24h: PontoCurva | null; voltou_7d: PontoCurva | null; voltou_30d: PontoCurva | null };
+export type Curva = { pontos: PontoCurva[]; voltou_24h: PontoCurva | null; voltou_7d: PontoCurva | null; voltou_30d: PontoCurva | null; semana1: { usuarios: number; voltaram_7d: number; voltaram_30d: number } | null };
 export type TaxaGrupo = { nivel: string; elegiveis: number; voltaram: number; taxa: number | null; ic_lo: number | null; ic_hi: number | null; amostra_pequena: boolean };
 export type Estrato = { fator: "recusa" | "saudacao"; familia: "GPT-4" | "GPT-3.5"; tratado: TaxaGrupo | null; comparacao: TaxaGrupo | null; diferenca: { pp: number; ic_lo: number; ic_hi: number } | null };
 export type Concentracao = {

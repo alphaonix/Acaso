@@ -32,14 +32,16 @@ def test_janela_de_30_dias_completa(dw):
     assert (usuario(dw, "cedo")["janela_30d"], usuario(dw, "meio")["janela_30d"], usuario(dw, "tarde")["janela_30d"]) == (False, True, False)
 
 
-def test_curva_de_retorno_e_monotonica_e_usa_so_quem_tem_janela(dw):
+def test_curva_de_retorno_usa_a_base_dos_cartoes_ate_7_dias_e_a_janela_do_ponto_depois(dw):
     convs = [C("a", BASE), C("a", BASE + timedelta(hours=12)), C("b", BASE), C("b", BASE + timedelta(days=2)),
              C("c", BASE), C("d", BASE), C("d", BASE + timedelta(days=10)), C("tarde", t("2023-12-10 10:00"))]
     rodar(dw, convs, com_gold=True)
     curva = {float(d): (n, v) for d, n, v in linhas(dw, "SELECT dias, usuarios, voltaram FROM gold.agg_curva_retorno WHERE pais = 'Brazil'")}
-    assert curva[0.5] == (4, 1) and curva[2.0] == (4, 2) and curva[7.0] == (4, 2) and curva[10.0] == (4, 3) and curva[30.0] == (4, 3)
-    voltaram = [v for _, (_, v) in sorted(curva.items())]
-    assert voltaram == sorted(voltaram)
+    # "tarde" (10/12) tem janela de 7 e de 14 dias, mas nao de 21 nem de 30: entra nos pontos ate 14 dias
+    assert curva[0.5] == (5, 1) and curva[2.0] == (5, 2) and curva[7.0] == (5, 2) and curva[10.0] == (5, 3) and curva[30.0] == (4, 3)
+    assert curva[7.0][0] == linhas(dw, "SELECT count(*) FROM silver.fato_usuario WHERE elegivel")[0][0]      # o ponto de 7 dias e a base dos cartoes
+    ate7 = [v for d, (_, v) in sorted(curva.items()) if d <= 7]
+    assert ate7 == sorted(ate7)
 
 
 def test_idioma_do_navegador(dw):

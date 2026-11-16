@@ -221,7 +221,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 | `recusa`, `tema_id` | recusa na 1ª resposta e tema do 1º pedido | regras por palavras, só Brasil (heurística) |
 | `convs_1a_sessao`, `convs_total` | conversas na 1ª sessão e no total | contagem; `convs_total` é consequência do retorno, não explica |
 | `voltou_7d`, `voltou_24h`, `dias_ate_voltar` | retorno | nova sessão (gap de 30 min) em até 7 dias / 24 h; dias até a volta |
-| `elegivel`, `janela_30d` | entra na taxa? | 1ª vez após 30 dias do início e 7 dias antes do fim dos dados; `janela_30d` (curva de retorno) exige 1ª vez a mais de 30 dias do início e do fim |
+| `elegivel`, `janela_30d` | entra na taxa? | 1ª vez após 30 dias do início e 7 dias antes do fim dos dados; `janela_30d` (ponto de 30 dias da curva) exige 1ª vez a mais de 30 dias do início e do fim |
 **Conferências (27):** bronze = silver + excluídas; soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez recalculados a partir das conversas = os da silver; `voltou_24h` implica `voltou_7d`; **recálculo independente em Python a partir da bronze**; 10 números do Brasil validados à mão.
 **Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras (regras em [docs/REGRAS_DE_TEXTO.md](docs/REGRAS_DE_TEXTO.md)) erram para os dois lados (na conferência manual de 30 casos marcados como recusa, **8 (27%) eram recusa no sentido estrito**; a precisão do tema não foi medida); fuso único por país.
 
@@ -234,7 +234,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 | `agg_retorno_semana` | país × semana | novos, elegíveis, voltaram em 7 dias, taxa e IC |
 | `agg_retorno_fator` | país × fator × nível | retorno por 13 fatores (modelo, idioma, período, dia, turnos, tema, recusa, tamanhos, sistema, navegador, dispositivo, idioma × navegador) |
 | `agg_retorno_mes_fator` | país × mês × fator × nível | base da decomposição mix × taxa |
-| `agg_curva_retorno` | país × 14 pontos (0 a 30 dias) | quem tem 30 dias de janela e voltou até `d` dias |
+| `agg_curva_retorno` | país × 14 pontos (0 a 30 dias) | quem voltou até `d` dias, entre as pessoas com janela completa de max(`d`, 7) dias (até 7 dias, as mesmas elegíveis dos cartões; no ponto de 30 dias, as com 30 dias completos) |
 | `agg_estrato` | família de modelo × fator | saudação e recusa dentro de GPT-4 e GPT-3.5 (só Brasil) |
 | `agg_recusa_modelo` | país × versão do modelo | conversas, com recusa, elegíveis, voltaram |
 | `agg_concentracao` | país × faixa (1, 2-3, 4-10, 11+) | pessoas e conversas por faixa |

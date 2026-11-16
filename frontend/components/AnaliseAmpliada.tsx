@@ -41,7 +41,7 @@ export function CurvaRetorno({ curva, marcos = false }: { curva: Curva; marcos?:
       {marcos && curva.voltou_24h?.taxa != null && curva.voltou_7d?.taxa != null && curva.voltou_30d?.taxa != null && (
         <p style={{ textAlign: "center", marginTop: "0.5rem" }}><R texto={t("co.curvaMarcos", { a: pct(curva.voltou_24h.taxa), b: pct(curva.voltou_7d.taxa), c: pct(curva.voltou_30d.taxa) })} /></p>
       )}
-      {v7 && v30 && v30.voltaram > 0 && <p className="dica" style={{ marginTop: "0.4rem" }}><R texto={t("co.curvaNota", { n: num(v30.usuarios), p: pct(v7.voltaram / v30.voltaram) })} /></p>}
+      <p className="dica" style={{ marginTop: "0.4rem" }}><R texto={t("co.curvaBase")} />{curva.semana1 && curva.semana1.voltaram_30d > 0 && <> <R texto={t("co.curvaNota", { n: num(curva.semana1.usuarios), p: pct(curva.semana1.voltaram_7d / curva.semana1.voltaram_30d) })} /></>}</p>
     </div>
   );
 }

@@ -188,10 +188,10 @@ Cada passo é um número grande + uma frase gerada a partir dos números das out
 | 8 | 10 mais ativas = 32,3% e 59,9% das pessoas têm uma só conversa | 1.7 e 1.14 |
 
 ```sql
--- Passo 2: dos que voltam em até 30 dias, que parte já voltou em até 7?
-SELECT max(voltaram) FILTER (WHERE dias = 7)  AS voltaram_ate_7d,
-       max(voltaram) FILTER (WHERE dias = 30) AS voltaram_ate_30d,
-       round(max(voltaram) FILTER (WHERE dias = 7)::numeric / max(voltaram) FILTER (WHERE dias = 30), 4) AS parcela_que_volta_em_7d
+-- Passo 2: entre as pessoas com 30 dias completos, dos que voltam em até 30 dias, que parte já voltou em até 7?
+SELECT max(voltaram_janela30) FILTER (WHERE dias = 7)  AS voltaram_ate_7d,
+       max(voltaram_janela30) FILTER (WHERE dias = 30) AS voltaram_ate_30d,
+       round(max(voltaram_janela30) FILTER (WHERE dias = 7)::numeric / max(voltaram_janela30) FILTER (WHERE dias = 30), 4) AS parcela_que_volta_em_7d
 FROM gold.agg_curva_retorno WHERE pais = 'Brazil' AND dias IN (7, 30);
 ```
 **Deve dar:** 489 · 533 · 0,9174 (os "92%" da tela).
@@ -285,23 +285,25 @@ ORDER BY u.el DESC;
 **Deve dar:** seis versões, todas `t`. Exemplos: `gpt-3.5-turbo-0613`: 894 · 0,2304 · recusa 0,0381; `gpt-4-1106-preview`: 433 · 0,2794 · 0,0760; `gpt-3.5-turbo-0301`: 343 · 0,2391 · 0,1312. A "faixa de recusa por versão" do passo 6 é de 2,5% a 13,1%. Na Alemanha a recusa fica vazia (sem texto).
 
 ## 1.11 Curva de retorno (24 horas, 7 dias, 30 dias)
-**Na tela:** os pontos "16,0% em 1 dia, 24,0% em 7, 26,1% em 30" (Visão geral e Coortes).
+**Na tela:** os pontos "15,9% em 1 dia, 23,7% em 7, 26,1% em 30" (Visão geral). O de 7 dias é o mesmo número do cartão de retorno.
 ```sql
--- Para cada prazo (1, 7 e 30 dias), quantas pessoas com 30 dias de janela completa voltaram até ali.
-WITH s AS (SELECT g.d AS dias, count(*) AS usuarios,
+-- Para cada prazo (1, 7 e 30 dias): pessoas que já tiveram max(prazo, 7) dias para voltar (e 30+ dias depois do início dos dados) e quantas voltaram.
+WITH lim AS (SELECT min(inicio_utc) AS mn, max(inicio_utc) AS mx FROM silver.fato_conversa WHERE pais = 'Brazil'),
+     s AS (SELECT g.d AS dias, count(*) AS usuarios,
                   count(*) FILTER (WHERE u.dias_ate_voltar <= g.d) AS voltaram
-           FROM silver.fato_usuario u CROSS JOIN (VALUES (1.0), (7.0), (30.0)) AS g(d)
-           WHERE u.pais = 'Brazil' AND u.janela_30d
+           FROM silver.fato_usuario u CROSS JOIN lim l CROSS JOIN (VALUES (1.0), (7.0), (30.0)) AS g(d)
+           WHERE u.pais = 'Brazil'
+             AND u.primeira_vez_utc >= l.mn + INTERVAL '30 days'
+             AND u.primeira_vez_utc <= l.mx - greatest(g.d, 7.0) * INTERVAL '1 day'
            GROUP BY g.d)
 SELECT s.dias, s.usuarios, s.voltaram, round(s.voltaram::numeric / s.usuarios, 4) AS taxa,
        (s.usuarios = c.usuarios AND s.voltaram = c.voltaram) AS bate_com_gold
 FROM s JOIN gold.agg_curva_retorno c ON c.pais = 'Brazil' AND c.dias = s.dias
 ORDER BY s.dias;
 ```
-**Passo a passo:** `dias_ate_voltar` é o tempo entre a primeira vez e a volta. `VALUES` repete a mesma conta para três prazos. A curva inteira (14 pontos) usa a mesma regra.
-**Deve dar:** 2.039 pessoas em todas as linhas; voltaram 326, 489 e 533; taxas 0,1599, 0,2398 e 0,2614; tudo `t`.
-**Por que 24,0% e não 23,7% aos 7 dias:** a curva usa só quem tem **30 dias** de janela (2.039 pessoas); o cartão usa a janela de **7 dias** (2.234). São bases diferentes, e a tela avisa.
-
+**Passo a passo:** `dias_ate_voltar` é o tempo entre a primeira vez e a volta. `VALUES` repete a mesma conta para três prazos. Cada prazo usa quem já teve esse tempo para voltar, com no mínimo 7 dias: por isso os pontos de 24 horas e de 7 dias usam as **mesmas 2.234 pessoas elegíveis** dos cartões, e o de 30 dias usa as 2.039 com 30 dias completos. A curva inteira (14 pontos) usa a mesma regra.
+**Deve dar:** 2.234 pessoas nas linhas de 1 e 7 dias e 2.039 na de 30; voltaram 356, 530 e 533; taxas 0,1594, 0,2372 e 0,2614; tudo `t`.
+**Confere com os cartões:** 0,2372 é o "23,7%" do retorno em 7 dias (consulta 1.2) e 356 de 2.234 é o "voltou em 24 horas" (15,9%).
 ## 1.12 Uso por dia e hora (mapa de calor)
 **Na tela:** o mapa, "pico às 18h", "35,5% no expediente", "20,1% na madrugada", "29,0% no fim de semana".
 ```sql

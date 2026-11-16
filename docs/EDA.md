@@ -8,7 +8,7 @@ Complemento do `docs/DOCUMENTO.md` (PDF, seção 3.1). **Cada figura sustenta um
 
 ## 1. Quem volta, volta logo
 ![curva de retorno](figuras/eda2_curva_de_retorno.png)
-**O que vemos** (2.039 pessoas com 30 dias de janela completa): **16,0%** voltam em até 1 dia, 20,9% em 3, **24,0% em 7**, 25,4% em 14 e 26,1% em 30. Entre quem volta em até 30 dias, **92% já voltou em 7** e metade volta em cerca de **14 horas** (mediana de 0,6 dia).
+**O que vemos** (cada ponto usa as pessoas que já tiveram esse tempo para voltar, no mínimo 7 dias: 2.234 até o ponto de 7 dias, 2.181 no de 14 e 2.039 no de 30): **15,9%** voltam em até 1 dia, 20,8% em 3, **23,7% em 7** (o mesmo número do cartão de retorno), 25,3% em 14 e 26,1% em 30. Entre as 2.039 pessoas com 30 dias completos, das que voltam em até 30 dias, **92% já voltou em 7** e metade volta em cerca de **14 horas** (mediana de 0,6 dia).
 **Conclusão:** a janela de 7 dias é adequada (14 dias muda o retorno em só +1,6 pp) e a decisão de voltar se dá **nas primeiras horas**.
 **O que fazemos:** sugerir o indicador **"voltou em 24 horas"** (16,0%) como sinal precoce no painel, e pensar qualquer ação de reengajamento dentro do primeiro dia.
 
@@ -104,7 +104,7 @@ Um detalhe mecânico: quem teve **1 conversa no total** tem retorno de 0% por de
 ## Onde cada sugestão está no painel
 | Sugestão | Onde | Observação |
 |---|---|---|
-| Voltou em 24 horas e a curva de retorno | **Coortes** (a curva, com os marcos de 24 h, 7 e 30 dias) | base: 2.039 pessoas com 30 dias de janela completa, por isso o 7 dias da curva (24,0%) difere do indicador principal (23,7%) |
+| Voltou em 24 horas e a curva de retorno | **Coortes** (a curva, com os marcos de 24 h, 7 e 30 dias) | cada ponto usa as pessoas que já tiveram esse tempo para voltar (no mínimo 7 dias), então o ponto de 7 dias (23,7%) é o mesmo do indicador principal |
 | Pessoas ativas no lugar de conversas, alerta de uso concentrado | **Visão geral** (bloco de concentração) | o alerta dispara quando as 10 pessoas mais ativas passam de 25% das conversas (hoje: 32,3%) |
 | Quando usam | **Visão geral** (mapa de calor dia × hora, fuso do país) | expediente 35,5% (esperado 26,8%), madrugada 20,1% (esperado 33,3%), fim de semana 29,0% (esperado 28,6%) |
 | Dispositivo e navegador, com aviso | **O que faz voltar** (fim da tela) | o aviso de medida (IP + navegador) vem junto do gráfico |

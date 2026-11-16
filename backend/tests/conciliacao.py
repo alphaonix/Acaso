@@ -178,6 +178,9 @@ class Conciliador:
         for nome, d in (("voltou_24h", 1.0), ("voltou_7d", 7.0), ("voltou_30d", 30.0)):
             esp = por.get(d)
             self.ver("curva", pais, f"destaque {nome} = ponto de {int(d)} dia(s) da gold", esp["voltaram"] if esp else None, (a[nome] or {}).get("voltaram"))
+        s = self.gold("SELECT sum(elegiveis)::int AS el, sum(voltaram_7d)::int AS v FROM gold.agg_retorno_semana WHERE pais = %s", (pais,))[0]
+        if por.get(7.0):
+            self.ver("curva", pais, "ponto de 7 dias da curva = cartao do retorno em 7 dias (pessoas elegiveis e quem voltou)", (s["el"], s["v"]), (por[7.0]["usuarios"], por[7.0]["voltaram"]))
         taxas = [r["taxa"] for r in sorted(a["pontos"], key=lambda r: r["dias"]) if r["taxa"] is not None]
         self.ver("curva", pais, "a curva nunca decresce", True, all(x <= y + 1e-12 for x, y in zip(taxas, taxas[1:])))
 

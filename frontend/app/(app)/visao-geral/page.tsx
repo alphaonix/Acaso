@@ -27,7 +27,6 @@ export default function VisaoGeral() {
   const modTempo = useApi<ModelosTempo>(`/explorar/modelos?${q}`);
   const efeitos = useApi<Efeito[]>(`/efeitos?${q}`);
   const carregando = <p className="carregando" role="status">{t("comum.carregando")}</p>;
-  const c24 = curva.dados?.voltou_24h, c7 = curva.dados?.voltou_7d, c30 = curva.dados?.voltou_30d;
   const ef = (fator: string, inicio?: string) => efeitos.dados?.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta");
   const nEfeitos = efeitos.dados?.length ?? 0;
@@ -60,7 +59,8 @@ export default function VisaoGeral() {
   const totalConversas = paises.reduce((s, p) => s + p.conversas, 0);
   const historia: { big: string; t: string; d: string }[] = [];
   if (r?.taxa != null) historia.push({ big: pct(r.taxa), t: t("vg.h1.t", { n100: x100(r.taxa) }), d: t("vg.h1.d", { n100: x100(r.taxa), tend: tendCurto }) });
-  if (r?.voltou_24h?.taxa != null && c7 && c30 && c30.voltaram > 0) historia.push({ big: pct(r.voltou_24h.taxa), t: t("vg.h2.t"), d: t("vg.h2.d", { a: pct(r.voltou_24h.taxa), c: pct(c7.voltaram / c30.voltaram) }) });
+  const s1 = curva.dados?.semana1;
+  if (r?.voltou_24h?.taxa != null && s1 && s1.voltaram_30d > 0) historia.push({ big: pct(r.voltou_24h.taxa), t: t("vg.h2.t"), d: t("vg.h2.d", { a: pct(r.voltou_24h.taxa), c: pct(s1.voltaram_7d / s1.voltaram_30d) }) });
   if (sa) historia.push({ big: pp(sa.efeito_pp), t: t("vg.h3.t"), d: t("vg.h3.d", { e: pts(sa.efeito_pp), nota: notaEf(sa) }) });
   if (re) historia.push({ big: pp(re.efeito_pp), t: t("vg.h4.t"), d: t("vg.h4.d", { e: pts(re.efeito_pp), nota: notaEf(re) }) });
   if (impacto) historia.push({ big: `+${impacto.t} pp`, t: t("vg.h5.t"), d: t("vg.h5.d", { t: impacto.t, lo: impacto.lo, hi: impacto.hi }) });
