@@ -60,6 +60,7 @@ def plantar(cenario: str) -> None:
 
 
 if __name__ == "__main__":
+    os.environ["ETL_SEM_PDF"] = "1"                    # o relatorio da simulacao e o de cenarios.py, nao o da carga
     os.environ["ETL_APROVAR_ANOMALIAS"] = "1"      # a simulacao precisa ir ate o fim (as duas verificacoes); ela mesma desfaz a carga no final
     plantar(sys.argv[1])
     import main

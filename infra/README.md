@@ -125,7 +125,7 @@ flowchart TB
 Para a opção B, no passo 3 basta apontar a `DATABASE_URL` para o banco gerenciado e remover o serviço `db`.
 
 ## 9. Como uma mudança chega à produção
-1. **PR:** roda os 205 testes (README, seção 7) e o `tsc` do front. Sem verde, sem merge.
+1. **PR:** roda os 210 testes (README, seção 7) e o `tsc` do front. Sem verde, sem merge.
 2. **Build e deploy:** nas opções A e B, `git pull && docker compose up -d --build` na máquina (ou GitHub Actions por SSH); na C, imagens no ECR e `update-service`. A etiqueta do commit (`CODE_VERSION`) fica em `ops.etl_execucao`.
 3. **Migrações** (`db/migrations/`, numeradas e nunca editadas depois de aplicadas) são aplicadas pelo próprio ETL, antes da carga.
 4. **Portão de qualidade:** o ETL compara os números novos com os validados; só se passar a carga é publicada. Uma **anomalia retém a carga** até alguém aprovar, e o painel continua com os números anteriores.

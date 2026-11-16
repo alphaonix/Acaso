@@ -27,6 +27,7 @@ services:
     volumes:
       - ./data/seed:/data/seed:ro
       - ./db/migrations:/migrations:ro
+      - ./exports:/saida                        # so recebe arquivo quando ha anomalia: exports/relatorio_anomalia_carga_<id>.pdf
     restart: "no"
 
   api:                       # FastAPI; usuario somente leitura; so le gold e ops

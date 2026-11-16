@@ -25,7 +25,7 @@ import duckdb
 
 from camadas import bronze, gold, silver
 import verificacao
-from comum import anomalia, anomalia_semanal, banco, deriva, diagnostico, qualidade
+from comum import anomalia, anomalia_semanal, banco, deriva, diagnostico, qualidade, relatorio_anomalia
 
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
 ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"           # conferencia falhou: desfaz a carga
@@ -69,6 +69,19 @@ def conferir(ops, exec_id: int, camada: str, resultados: list[qualidade.Resultad
     anomalias = [r for r in falhas if r.transicao in TRANSICOES_QUE_RETEM]
     if anomalias and not anomalias_aprovadas():
         raise CargaRetida(anomalias)
+
+
+def relatorio_pdf(ops, dw, exec_id: int, situacao: str) -> None:
+    """So quando ha anomalia: gera exports/relatorio_anomalia_carga_<id>.pdf (carga normal nao gera arquivo). Falha ao gerar o PDF nunca derruba a carga."""
+    if os.environ.get("ETL_SEM_PDF") == "1":             # a simulacao de cenarios faz o seu proprio relatorio
+        return
+    try:
+        caminho = relatorio_anomalia.gerar(ops, dw, exec_id, situacao)
+    except Exception as e:                                # noqa: BLE001
+        print(f"ETL: nao foi possivel gerar o relatorio em PDF ({e}).", flush=True)
+        return
+    if caminho:
+        print(f"ETL: relatorio da anomalia em PDF: exports/{os.path.basename(caminho)}", flush=True)
 
 
 MENSAGEM_RETIDA = ("     Para ver o que mudou:     docker compose --profile operacao run --rm investigar-anomalias\n"
@@ -166,6 +179,7 @@ def main() -> int:
         aprovadas = [r.verificacao for r in alertas if r.transicao in TRANSICOES_QUE_RETEM]
         if aprovadas:
             estado["anomalias_aprovadas"] = aprovadas
+            relatorio_pdf(ops, dw, exec_id, "publicada com aprovação de quem operou")
             print(f"ETL: {len(aprovadas)} anomalia(s) APROVADA(S) por quem operou; a carga foi publicada.", flush=True)
         dw.commit()
         banco.finalizar_execucao(ops, exec_id, "alerta" if alertas else "ok", estado["lidas"], estado["carregadas"],
@@ -173,6 +187,7 @@ def main() -> int:
         print(f"ETL concluido ({'com alertas' if alertas else 'ok'}).", flush=True)
         return 0
     except CargaRetida as e:
+        relatorio_pdf(ops, dw, exec_id, "retida: nada foi publicado, aguardando aprovação")      # antes do rollback: a amostra de pessoas le a carga recem-construida
         dw.rollback()
         publicada = ops.execute("SELECT max(id) FROM ops.etl_execucao WHERE status IN ('ok', 'alerta')").fetchone()[0]
         resumo = " | ".join(r.verificacao[:90] for r in e.anomalias)

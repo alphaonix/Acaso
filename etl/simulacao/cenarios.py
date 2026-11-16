@@ -107,10 +107,13 @@ def main(argv: list[str]) -> int:
               + (f" | taxa {a['taxa_ref'] * 100:.1f}% -> {a['taxa_atual'] * 100:.1f}% ({a['tipo']})" if a else "")
               + (f" | semanal esperado: {c.esperada_semanal or 'nenhum'}, apontado: {', '.join(sorted({s['diagnostico'] for s in r['semanais']})) or 'nenhum'}" if c.avaliar_semanal else "")
               + f" | {'OK' if r['ok'] else 'ERRADO'}", flush=True)
-    os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
-    relatorio_pdf.gerar(resultados, SAIDA)
     adm.execute(f"DROP DATABASE IF EXISTS {BANCO} WITH (FORCE)")
-    print(f"\nRelatorio em PDF: {SAIDA} (no seu computador: exports/relatorio_anomalias.pdf)")
+    if any(r["achado"] or r["semanais"] or r["gate_n"] for r in resultados):          # PDF so quando algum cenario produziu anomalia ou falha de conferencia
+        os.makedirs(os.path.dirname(SAIDA), exist_ok=True)
+        relatorio_pdf.gerar(resultados, SAIDA)
+        print(f"\nRelatorio em PDF: {SAIDA} (no seu computador: exports/relatorio_anomalias.pdf)")
+    else:
+        print("\nNenhum cenario produziu anomalia: nao ha relatorio em PDF para gerar.")
     print("RESULTADO:", "todos os cenarios conferem" if all(r["ok"] for r in resultados) else "HA CENARIOS QUE NAO CONFEREM")
     return 0 if all(r["ok"] for r in resultados) else 1
 

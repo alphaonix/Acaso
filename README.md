@@ -57,8 +57,8 @@ docker compose down -v                                       # derruba e apaga o
 | Situação | O que acontece | Status em `ops.etl_execucao` |
 |---|---|---|
 | Uma conferência de conservação falha (ou um dos números do Brasil conferidos à mão) | a carga é desfeita (rollback); os dados anteriores ficam | `falhou` |
-| O detector acha anomalia | a carga é **retida** (também desfeita) e espera a sua decisão | `retida` |
-| Você aprova a anomalia | a carga é refeita e publicada, com o registro do que foi aprovado | `alerta` |
+| O detector acha anomalia | a carga é **retida** (também desfeita), um **PDF** da anomalia é gerado e a carga espera a sua decisão | `retida` |
+| Você aprova a anomalia | a carga é refeita e publicada, com o registro do que foi aprovado e um PDF da anomalia | `alerta` |
 | Nada de estranho | a carga é publicada | `ok` |
 
 ```bash
@@ -66,6 +66,8 @@ docker compose --profile operacao run --rm investigar-anomalias            # o q
 docker compose run --rm etl python main.py --aprovar-anomalias             # é mudança real: refaz a carga e publica
 docker compose run --rm etl python main.py --recarregar                    # era defeito: corrija a causa e refaça, sem aprovar
 ```
+**O PDF só existe quando há anomalia** (carga normal não gera arquivo): `exports/relatorio_anomalia_carga_<número>.pdf`, com o que mudou (antes e agora), a **camada provável** (bronze, silver, gold ou código), o país ou a semana, uma amostra de pessoas (só códigos anônimos) e os comandos acima. O mesmo vale para a simulação de cenários: sem nenhuma anomalia, não há PDF.
+
 Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há uma carga retida aguardando aprovação"); uma semente nova, `--recarregar` ou `--aprovar-anomalias` refazem a tentativa. `GET /api/saude` devolve a carga publicada (`ultima_execucao_etl`) e, se houver, a retida (`carga_retida`). A **primeira** carga de um banco vazio nunca é retida (não há com o que comparar). O ETL sai com código 0 mesmo retida, para o painel continuar de pé com os números anteriores; no desenho da AWS, um alarme sobre o status `retida` avisaria o time (não implementado).
 
 **O que o `docker compose up` executa, em ordem**
@@ -357,9 +359,9 @@ docker compose run --rm --no-deps -v "${PWD}/analise/08_recalculo_independente.p
 ---
 
 ## 7. Testes automáticos
-Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **205 testes**: 155 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
+Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **210 testes**: 160 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
 ```bash
-docker compose --profile test run --rm --build testes-etl          # 155 testes
+docker compose --profile test run --rm --build testes-etl          # 160 testes
 docker compose --profile test run --rm --build testes-api          # 29 testes: decomposição mix × taxa
 docker compose --profile test run --rm --build testes-integracao  # 21 testes: API × Gold (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo     # gera exports/fluxo_dos_dados.html (caminho do dado e todas as conferências)
@@ -376,7 +378,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | `test_analise_ampliada.py` | voltou em 24 h, janela de 30 dias, curva, concentração, uso por hora no fuso do país, recusa e retorno por versão |
 | `test_prevencao.py` | o recálculo independente bate com a silver e **pega um erro plantado**; contrato da semente; deriva |
 | `test_integridade.py` | UPDATE, DELETE, INSERT e TRUNCATE nas camadas fora da carga são recusados; alteração por fora muda a impressão digital |
-| `test_anomalia.py`, `test_anomalia_semanal.py`, `test_simulacao.py` | a taxa que salta e a camada de origem; o pico de uma semana; o catálogo dos cenários e o PDF |
+| `test_anomalia.py`, `test_anomalia_semanal.py`, `test_simulacao.py`, `test_relatorio_anomalia.py` | a taxa que salta e a camada de origem; o pico de uma semana; o catálogo dos cenários; o PDF só existe com anomalia |
 | `test_recarga.py` | **o banco guarda os dados**: o ETL só recarrega se o banco estiver vazio, se a semente mudou ou sob `--recarregar`; uma carga que falhou não conta |
 | `test_retencao.py` | **anomalia retém a carga**: sem aprovação nada é publicado; com `--aprovar-anomalias` publica e registra o que foi aprovado; deriva e integridade continuam só alertando; uma carga retida não se repete a cada `up` |
 | `test_contas.py` | contas de acesso vêm da migração só com hash (scrypt, sal próprio); foto só em https |
@@ -387,7 +389,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 205 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 210 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).
