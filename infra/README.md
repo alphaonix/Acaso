@@ -89,11 +89,11 @@ Como é uma carga única, e não recorrente, o impacto no mensal é pequeno; o q
 ## Infraestrutura como código
 `infra/terraform/` tem um **esboço** em Terraform da pilha acima (VPC, ECR, S3, RDS, Secrets Manager, ECS Fargate com ALB, agendamento do ETL, CloudFront e alarmes).
 **Estado:** `terraform fmt` e `terraform validate` (provedor AWS 5.x) passam; **`plan` e `apply` não foram executados** (não há conta AWS neste projeto). Ponto de partida, não entrega pronta.
-**Pendências conhecidas do esboço:**
+**Limites conhecidos do esboço:**
 1. A migração `002` cria o papel `api_ro` com a senha padrão do compose; em produção o ETL deve **ajustá-la a partir do segredo** (`ALTER ROLE api_ro PASSWORD ...`).
 2. O ETL lê a semente de uma pasta (`SEED_DIR`); na AWS ela viria do S3 (`aws s3 sync` no início da tarefa, ou DuckDB lendo `s3://`).
 3. O CloudFront está com cache desligado (dados dinâmicos); cachear os arquivos estáticos do front (`/_next/static`) é uma melhoria.
-4. Falta o pipeline de deploy (GitHub Actions com OIDC) e o domínio/certificados, que entram como variáveis.
+4. O pipeline de deploy (GitHub Actions com OIDC) e o domínio/certificados não estão incluídos; entram como variáveis.
 ## Fontes dos preços
 [Fargate e ECS, São Paulo](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonECS/current/sa-east-1/index.json) ·
 [ALB, São Paulo](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSELB/current/sa-east-1/index.json) ·

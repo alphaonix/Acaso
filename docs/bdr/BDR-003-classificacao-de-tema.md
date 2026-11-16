@@ -1,6 +1,6 @@
 # BDR-003: classificação do tema da primeira conversa
 
-Status: aceita como premissa de trabalho; pendente de validação manual (amostras em `exports/amostra_validacao_*.csv`; ver README, seção 13).
+Status: aceita como premissa de trabalho; precisão não medida contra uma amostra rotulada (amostras em `exports/amostra_validacao_*.csv`; ver README, seção 13).
 
 ## Contexto
 O PDF pede o tema como variável da primeira experiência e que, se usarmos IA para classificar, expliquemos como

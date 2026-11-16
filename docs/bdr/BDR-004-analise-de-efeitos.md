@@ -1,6 +1,6 @@
 # BDR-004: análise dos efeitos no retorno em 7 dias (causa x seleção)
 
-Status: resultados estáveis (reprodutíveis entre cargas); validação independente pendente (o efeito bruto se confere em SQL: `docs/CONFERIR_NUMEROS.md`, seção 3).
+Status: resultados estáveis (reprodutíveis entre cargas); o efeito bruto se confere em SQL (`docs/CONFERIR_NUMEROS.md`, seção 3).
 Código: `etl/camadas/gold/efeitos.py` (grava `gold.efeito_fator`) e `analise/04_sensibilidade.py`.
 
 > **Correção de uma versão anterior deste documento.** A primeira versão trazia números que mudavam a cada carga
@@ -65,7 +65,7 @@ isoladamente, mas não depois de corrigir por testar 16 coisas.
 
 ## Limites
 Amostra pequena (poder baixo); "usuário" = navegador em uma rede (BDR-001, viés em ambos os sentidos); tema e recusa são
-heurísticas ainda não validadas à mão (BDR-003); sobreposição de 67% para o modelo (as versões do GPT mudam no tempo);
+heurísticas com precisão não medida (BDR-003); sobreposição de 67% para o modelo (as versões do GPT mudam no tempo);
 a recusa é medida só na abertura da 1ª resposta.
 
 ## Achados candidatos para o cliente (a validar com o autor antes de entrar no documento)

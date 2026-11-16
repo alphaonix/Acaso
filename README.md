@@ -21,13 +21,13 @@ Este README é o guia único do projeto, na ordem em que você vai precisar dele
 10. [Decisões registradas](#10-decisões-registradas)
 11. [Incidente, riscos e AWS](#11-incidente-riscos-e-aws)
 12. [Dados, licença, privacidade e uso de IA](#12-dados-licença-privacidade-e-uso-de-ia)
-13. [O que ainda está aberto](#13-o-que-ainda-está-aberto)
+13. [Limites conhecidos e extensões](#13-limites-conhecidos-e-extensões)
 14. [Estrutura do repositório](#14-estrutura-do-repositório)
 
 ---
 
 ## 1. As armadilhas do enunciado e como foram tratadas
-O PDF esconde seis cuidados que mudam o número. O que está pendente fica na [seção 13](#13-o-que-ainda-está-aberto).
+O PDF esconde seis cuidados que mudam o número. Os limites do que foi feito estão na [seção 13](#13-limites-conhecidos-e-extensões).
 
 1. **`timestamp` é o último turno, não o início:** o início é a 1ª resposta do assistente (`primeira_resposta_ts`); testado em `test_incidente.py`.
 2. **`conversation_hash` não é chave única:** só a cópia exata (hash + IP + início) é removida; o mesmo hash com IP ou início diferente é outra conversa.
@@ -158,7 +158,7 @@ Todo o trabalho é SQL **dentro do Postgres** (o Python só envia os comandos), 
 5. **Gravar** `fato_conversa` (guarda `bronze_id`, que liga cada conversa à sua linha na bronze) e `fato_usuario`. **Não guarda** texto nem IP.
 
 **Conferências (27):** bronze = silver + excluídas; soma de `convs_total` = conversas; nenhuma pessoa em dois países; retorno, elegibilidade e 1ª vez recalculados a partir das conversas = os da silver; `voltou_24h` implica `voltou_7d`; **recálculo independente em Python a partir da bronze**; 10 números do Brasil validados à mão.
-**Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras erram para os dois lados e **a precisão ainda não foi medida em amostra manual**; fuso único por país.
+**Limites:** "pessoa" é aproximada; o início real é um pouco antes da 1ª resposta; tema e recusa por palavras erram para os dois lados e **a precisão não foi medida contra uma amostra rotulada**; fuso único por país.
 
 ### Gold: os resumos que a tela lê
 É a **única** camada que a API enxerga. Tudo em SQL, lendo só a silver; taxa e intervalo de Wilson (95%) só aparecem com **30 ou mais pessoas**; abaixo disso ficam vazios e a tela avisa. Só `agg_retorno_semana` e `agg_retorno_fator` guardam a taxa pronta; as demais guardam contagens e a API calcula a taxa (função `_com_taxa`, com `gold.wilson_lo/hi`).
@@ -320,7 +320,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; isso vem da amostra manual.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 189 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). Falta, no GitHub, exigir os dois jobs na proteção do `main` (em repositório privado exige o plano pago).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 189 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** imagem nova (ECR) → ECS Fargate; o ETL roda primeiro (migra, carrega, confere); a API só sobe se o portão passar.
@@ -443,7 +443,7 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 ## 11. Incidente, riscos e AWS
 - **Incidente 4.2** ("o retorno caiu de 31% para 18%"): [`docs/INCIDENTE.md`](docs/INCIDENTE.md). É um **erro de medição**: o `usuario_id` usa o user-agent bruto, e uma atualização de navegador fez ~860 pessoas virarem "novas" (os "novos" da semana dobraram, os que voltaram não). O documento traz por onde começar, a camada da falha, a consulta de confirmação, a correção, a prevenção e o que dizer à gerente de produto. O teste dourado está em `etl/tests/test_incidente.py`.
 - **Riscos e decisões em aberto (4.3):** [`docs/RISCOS.md`](docs/RISCOS.md) (ID de usuário, privacidade e licença, A/B, amostra, validação de tema e recusa, operação na AWS).
-- **AWS (2.2 e 3.3):** [`infra/README.md`](infra/README.md) tem o diagrama, a rede, a segurança, o **custo (≈ US$ 136 por mês em São Paulo; ≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade)** e o esboço em Terraform. CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário agendado, RDS PostgreSQL, S3 para o bruto e Secrets Manager. **Não há LLM.** O Terraform passa em `validate`, mas não foi aplicado.
+- **AWS (2.2 e 3.3):** [`infra/README.md`](infra/README.md) tem o diagrama, a rede, a segurança, o **custo (≈ US$ 136 por mês em São Paulo; ≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade)** e o esboço em Terraform. CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário agendado, RDS PostgreSQL, S3 para o bruto e Secrets Manager. **Não há LLM.** O Terraform é um esboço validado (`validate`), não aplicado.
 
 ---
 
@@ -455,14 +455,13 @@ Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, nã
 
 ---
 
-## 13. O que ainda está aberto
-1. **Precisão de tema e recusa** (regras de palavras): faltam a conferência manual da amostra e o cálculo da precisão; afeta os achados 1 e 2 (BDR-003).
-2. **Proteção do branch `main`** no GitHub (exigir os dois jobs do CI).
-3. **AWS:** o Terraform é esboço (`validate` ok, sem `plan`/`apply`); o preço do RDS vem de fonte secundária.
-4. **Fuso** de ~160 países, **cache** e **SSO** são extensões, descritas e não implementadas.
-5. **Tema e recusa fora do Brasil:** a semente só tem o texto do Brasil, e as regras são em português.
-6. **Efeitos só para o Brasil**; o painel mostra "indisponível" nos demais.
-7. **Semana do incidente:** o PDF pede uma semana; o movimento está explicado por mês (amostra de uma semana é pequena).
+## 13. Limites conhecidos e extensões
+1. **Precisão de tema e recusa.** São regras de palavras; os testes fixam o comportamento, mas a precisão não foi medida contra uma amostra rotulada. Os achados 1 e 2 herdam esse limite e por isso são apresentados como indícios (BDR-003).
+2. **Proteção do branch `main`.** Exigir os dois jobs do CI é a configuração recomendada; em repositório privado depende do plano do GitHub.
+3. **AWS.** O Terraform é um esboço validado (`terraform validate`), sem `plan`/`apply`; o preço do RDS vem de fonte secundária.
+4. **Extensões descritas, não implementadas:** fuso de ~160 países, cache e SSO.
+5. **Fora do Brasil**, a semente só tem metadados: sem tema e recusa (as regras são em português) e sem efeitos; o painel mostra "indisponível".
+6. **Semana do incidente.** O PDF pede uma semana; o movimento está explicado por mês, porque uma semana tem poucas pessoas elegíveis.
 
 ---
 

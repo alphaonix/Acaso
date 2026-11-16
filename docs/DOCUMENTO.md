@@ -49,7 +49,7 @@ Escolhi esse par, e não o de maior variação, porque o par de maior variação
 Uso mês e não semana porque uma semana tem só 40 a 90 elegíveis; o mês tem de 87 a 295 elegíveis, então ainda há ruído (o painel avisa).
 
 **O que a análise prova e o que não prova.** Prova associação ajustada por calendário, dispositivo, região, tema, pedido, idioma e modelo. **Não prova causa:** o engajamento prévio da pessoa não é medido (o E-value de 1,4 a 1,6 mostra que um confundidor moderado anularia os efeitos).
-**Ressalva:** tema e recusa vêm de regras de palavras e **ainda dependem da conferência manual** da amostra (`exports/`), de que os achados 1 e 2 dependem.
+**Ressalva:** tema e recusa vêm de regras de palavras, e a precisão delas não foi medida contra uma amostra rotulada (amostras em `exports/`); os achados 1 e 2 dependem delas e por isso são tratados como indícios.
 **O que os dados não permitem medir e o que falta:** avaliação da resposta pela própria pessoa, custo e latência, identidade estável e o motivo de não voltar.
 
 ## 5. Sugestões (saíram dos dados; detalhe em `docs/EDA.md`)
@@ -61,7 +61,7 @@ Quatro telas para pessoas de negócio, cada uma com a pergunta que responde, cad
 Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação de todos os países com 30 ou mais elegíveis, em lista fixa, e a média geral (Brasil 23,7% contra 21,5%).
 **O painel mostra:** contagens e taxas agregadas, com intervalo, e efeitos. **Nunca mostra:** texto das conversas, IP (nem com hash), user-agent nem identificador de usuário. Não mostra a taxa de grupos com menos de 30 pessoas por um motivo estatístico, não de privacidade: com tão poucas pessoas a taxa varia demais para ser confiável.
 **Fluxo:** semente do bruto → ETL (bronze, silver e gold no Postgres, numa só transação) → API somente leitura (lê só a gold) → Next.js. Sobe com `docker compose up --build` (diagrama, endpoints e telas no `README.md`; implantação na AWS em `infra/README.md`).
-**AWS:** CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário como tarefa agendada, RDS PostgreSQL na base analítica, S3 para o bruto e Secrets Manager; região de São Paulo (LGPD). **Custo estimado: ≈ US$ 136 por mês** (≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade), com RDS, Fargate e ALB somando 98%; **não há LLM** (tema e recusa por regras). Os preços unitários vêm das listas oficiais da AWS, menos o RDS (fonte secundária); o esboço em Terraform passa em `validate`, mas não foi aplicado.
+**AWS:** CloudFront e ALB na frente de duas tarefas ECS Fargate (API e front), ETL diário como tarefa agendada, RDS PostgreSQL na base analítica, S3 para o bruto e Secrets Manager; região de São Paulo (LGPD). **Custo estimado: ≈ US$ 136 por mês** (≈ US$ 111 no mínimo, ≈ US$ 190 com alta disponibilidade), com RDS, Fargate e ALB somando 98%; **não há LLM** (tema e recusa por regras). Os preços unitários vêm das listas oficiais da AWS, menos o RDS (fonte secundária); o esboço em Terraform foi validado (`validate`) e não aplicado.
 
 ## 7. Sustentação
 189 testes automatizados fixam cada regra de borda da definição e reproduzem o incidente da seção 4.2; um portão de 66 conferências a cada carga reverte a publicação se algo divergir
@@ -71,4 +71,4 @@ Há seletor de país (202), idioma PT/EN, tema claro e escuro e comparação de 
 ## 8. Uso de IA
 Usei o Claude (Claude Code) como assistente ao longo de **todo** o trabalho: discovery e leitura do enunciado, análise estatística (desenho do ajuste AIPW, sensibilidade), código do ETL, da API, do front e dos testes, e a redação dos documentos.
 **O que conferi, corrigi ou descartei:** refiz à mão, em Power BI e DBeaver, os números principais (usuários, elegíveis, retorno, recusa, estados) e só os adotei depois de bater; corrigi uma versão em que o efeito mudava a cada carga (a validação cruzada dependia da ordem das linhas) e rebaixei duas conclusões que não resistiram à correção para múltiplos testes;
-descartei uma nuvem de palavras-chave, e números ilustrativos de um protótipo, por não ter como garantir a precisão. O que **ainda falta conferir**: a precisão de tema e recusa na amostra manual. Dediquei cerca de **34 horas** ao desafio.
+descartei uma nuvem de palavras-chave, e números ilustrativos de um protótipo, por não ter como garantir a precisão. O que **não consegui medir**: a precisão de tema e recusa contra uma amostra rotulada. Dediquei cerca de **34 horas** ao desafio.

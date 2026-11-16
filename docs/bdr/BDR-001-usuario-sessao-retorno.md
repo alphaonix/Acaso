@@ -63,7 +63,7 @@ Os vieses têm sentidos opostos; a direção líquida não é conhecida só pela
   "decisões em aberto" com o cliente (seção 4.3).
 - Verificação sugerida: fração de IPs com mais de um navegador normalizado (referência: 11,3% dos IPs têm mais de um user-agent bruto).
 
-## Pendências derivadas
+## Próximos passos derivados
 - Medir o efeito do IP gigante (1.557 conversas): rodar com e sem ele.
 - Amostra pequena: ~2,1 mil usuários elegíveis; os intervalos serão largos para fatores raros, e a tela deve avisar.
 
