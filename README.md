@@ -77,7 +77,7 @@ Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há um
 | `api` | FastAPI somente leitura; **só sobe se o ETL terminou bem** | não |
 | `web` | Dashboard Next.js; fala com a API pelo mesmo domínio (`/api/*`) | não |
 
-**Acesso.** O painel pede e-mail e senha. Entre com uma das contas abaixo (não é preciso criar `.env`):
+**Acesso.** O painel pede e-mail e senha. Entre com uma das contas abaixo (não é preciso configurar nada):
 
 | Pessoa | E-mail | Senha |
 |---|---|---|
@@ -86,9 +86,9 @@ Com uma carga retida, o `docker compose up` não a repete ("nada a fazer, há um
 
 Elas já nascem no banco pela migração `db/migrations/029_contas_avaliadoras.sql`, que guarda só o **hash** da senha (scrypt, sal próprio de cada conta). A base é pública (WildChat) e o painel roda na máquina de quem o sobe; por isso a senha pode ficar neste tutorial: o login demonstra autenticação, não protege dado sensível. Em produção seria um provedor de identidade (Amazon Cognito).
 
-Para usar **outras contas ou outra senha**: copie `.env.example` para `.env`, preencha `DASH_USERS` (`email|Nome|url-da-foto;email|Nome`; a foto é opcional) e `DASH_PASSWORD`, e suba de novo com `--build` (as contas fora da lista saem do banco). Se o banco não tiver nenhuma conta, o ETL cria `avaliacao@exemplo.com` com **senha aleatória mostrada uma vez no log** (`docker compose logs etl | findstr SENHA` no Windows, `grep SENHA` em Linux e macOS).
+Para trocar uma conta ou uma senha, crie uma nova migração em `db/migrations/` com o hash novo (formato `scrypt$N$r$p$sal$hash`, gerado com `hashlib.scrypt` do Python) e rode `docker compose down -v` para recriar o banco.
 
-A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as sessões); em produção ele vem de `SESSION_SECRET`. As portas 3000 e 8000 abrem só em `localhost`.
+A API gera um segredo de sessão aleatório a cada subida (reiniciar encerra as sessões). As portas 3000 e 8000 abrem só em `localhost`.
 
 **As 4 telas**
 - **Visão geral:** de onde vêm os dados, 6 cartões (pessoas novas, retorno em 7 dias, conversas, recusa, voltou em 24 h, concentração), a história em 8 passos, retorno por mês com intervalo, comparação de modelos, curva de retorno, mapa de calor dia × hora, GPT-4 por mês, concentração do uso e comparação de países.
@@ -139,7 +139,7 @@ O ETL (`etl/main.py`) é uma "receita" que roda **quando o banco está vazio**, 
 
 | # | Passo | O que acontece |
 |---|---|---|
-| 0 | Preparar | aplica as migrações de `db/migrations/` (só as que faltam), cria as contas de acesso, liga a trava de escrita e abre o registro da execução em `ops.etl_execucao` |
+| 0 | Preparar | aplica as migrações de `db/migrations/` (só as que faltam, inclusive a das contas de acesso), liga a trava de escrita e abre o registro da execução em `ops.etl_execucao` |
 | 0b | Integridade | **antes de reconstruir**, confere se o que está publicado é idêntico ao que a carga anterior deixou (ninguém alterou por fora); só alerta |
 | 1 | Bronze | confere o contrato da semente (colunas e tipos), registra os arquivos (sha256) e carrega os Parquet em `bronze.wildchat`; valida |
 | 2 | Silver | limpa, define a pessoa, as visitas, o retorno e a elegibilidade; registra o que excluiu; valida |
@@ -357,9 +357,9 @@ docker compose run --rm --no-deps -v "${PWD}/analise/08_recalculo_independente.p
 ---
 
 ## 7. Testes automáticos
-Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **208 testes**: 158 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
+Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **205 testes**: 155 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
 ```bash
-docker compose --profile test run --rm --build testes-etl          # 158 testes
+docker compose --profile test run --rm --build testes-etl          # 155 testes
 docker compose --profile test run --rm --build testes-api          # 29 testes: decomposição mix × taxa
 docker compose --profile test run --rm --build testes-integracao  # 21 testes: API × Gold (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo     # gera exports/fluxo_dos_dados.html (caminho do dado e todas as conferências)
@@ -379,7 +379,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | `test_anomalia.py`, `test_anomalia_semanal.py`, `test_simulacao.py` | a taxa que salta e a camada de origem; o pico de uma semana; o catálogo dos cenários e o PDF |
 | `test_recarga.py` | **o banco guarda os dados**: o ETL só recarrega se o banco estiver vazio, se a semente mudou ou sob `--recarregar`; uma carga que falhou não conta |
 | `test_retencao.py` | **anomalia retém a carga**: sem aprovação nada é publicado; com `--aprovar-anomalias` publica e registra o que foi aprovado; deriva e integridade continuam só alertando; uma carga retida não se repete a cada `up` |
-| `test_acesso.py` | contas de quem avalia vêm da migração só com hash; contas do `.env` substituem a lista; sem nenhuma conta, senha aleatória |
+| `test_contas.py` | contas de acesso vêm da migração só com hash (scrypt, sal próprio); foto só em https |
 | `backend/tests/test_api_x_gold.py` | **a API devolve o que a gold tem**: 401 conferências em 6 países; um erro plantado é detectado |
 | `backend/tests/test_decomposicao.py` | mix + taxa + interação **soma exatamente** a variação (25 casos aleatórios) |
 
@@ -387,7 +387,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 208 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 205 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).

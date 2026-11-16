@@ -2,7 +2,7 @@
 
 A receita esta na funcao `carga` (leia-a de cima para baixo):
 
-  preparar   migra o banco, cria as contas de acesso, decide se precisa carregar (carga_necessaria) e abre o registro da execucao
+  preparar   migra o banco (inclui as contas de acesso), decide se precisa carregar (carga_necessaria) e abre o registro da execucao
   decidir    so carrega se o banco esta vazio, se a semente mudou ou se pediram --recarregar; senao sai na hora (o banco guarda os dados)
   BRONZE     construir_bronze  ->  validar_bronze  ->  medir    (o dado como veio; confere o contrato da semente antes)
   SILVER     construir_silver  ->  auditar_silver  ->  validar_silver  ->  medir   (limpeza, pessoa, visitas, retorno, elegibilidade)
@@ -25,7 +25,7 @@ import duckdb
 
 from camadas import bronze, gold, silver
 import verificacao
-from comum import acesso, anomalia, anomalia_semanal, banco, deriva, diagnostico, qualidade
+from comum import anomalia, anomalia_semanal, banco, deriva, diagnostico, qualidade
 
 SEMENTE = Path(os.environ.get("SEED_DIR", "/data/seed"))
 ESTRITO = os.environ.get("QA_ESTRITO", "1") == "1"           # conferencia falhou: desfaz a carga
@@ -147,7 +147,6 @@ def carga(ops, dw, con, exec_id: int, estado: dict) -> list:
 def main() -> int:
     ops = banco.conectar(autocommit=True)       # historico (execucao, lotes, conferencias): vale na hora, sobrevive a uma carga que falhe
     banco.migrar(ops)
-    acesso.garantir_conta_avaliacao(ops)
     ops.execute("SELECT auditoria.proteger_camadas()")      # liga a trava de escrita nas tabelas das camadas (so cria onde falta)
     forcar = "--recarregar" in sys.argv or os.environ.get("ETL_RECARREGAR") == "1" or anomalias_aprovadas()      # aprovar tambem refaz a carga
     precisa, motivo = carga_necessaria(ops, SEMENTE, forcar)

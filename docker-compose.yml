@@ -1,6 +1,6 @@
 # Sobe tudo do zero:  docker compose up --build
 # Fluxo: db -> etl (migra, carrega, estima, confere) -> api -> web.   Tela: http://localhost:3000
-# Acesso (README): as contas de quem avalia vem da migracao 029 (so o hash da senha); nao precisa de .env. Para outras contas: .env (DASH_USERS, DASH_PASSWORD).
+# Acesso (README): as contas de quem avalia vem da migracao 029 (so o hash da senha). Nao precisa de .env.
 services:
   db:
     image: postgres:16-alpine
@@ -24,8 +24,6 @@ services:
       db: { condition: service_healthy }
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-etl}:${POSTGRES_PASSWORD:-etl}@db:5432/${POSTGRES_DB:-retencao}
-      DASH_USERS: "${DASH_USERS:-}"
-      DASH_PASSWORD: "${DASH_PASSWORD:-}"
     volumes:
       - ./data/seed:/data/seed:ro
       - ./db/migrations:/migrations:ro

@@ -46,7 +46,7 @@ Se for preciso mais controle que o plano Pro, o **AWS WAF avulso** custa US$ 5 p
 **O que fazer além do WAF (vale para A, B e D):**
 1. **Esconder a origem:** a máquina só responde a quem passa pela borda. O proxy reverso (Caddy) recusa (403) a requisição que não traz um **cabeçalho secreto** que só o CloudFront (ou a Cloudflare) acrescenta. Na D, também se liberam no firewall só as faixas de IP da Cloudflare.
 2. **Firewall da máquina:** só 80 e 443 abertas ao mundo; **SSH (22) só por chave e só do IP do time**.
-3. **Segredos fora do código:** `.env` com permissão 600 na máquina (`SESSION_SECRET`, senhas), ou o **SSM Parameter Store** (gratuito no nível padrão). Nenhuma senha no repositório.
+3. **Segredos fora do código:** `.env` com permissão 600 na máquina (`SESSION_SECRET`), ou o **SSM Parameter Store** (gratuito no nível padrão). Nenhuma senha no repositório.
 4. **Atualizações automáticas** de segurança do sistema (`unattended-upgrades`) e imagens Docker reconstruídas a cada deploy.
 5. **O que a aplicação já traz:** login com limite de tentativas (5 falhas em 5 minutos), sessão em cookie HttpOnly, API somente leitura que só enxerga a gold, painel que nunca mostra texto, IP nem usuário.
 6. **Backup:** na A, **snapshot diário** da máquina (US$ 0,05 por GB por mês, ≈ US$ 1 no total); na B, backups automáticos do banco gerenciado e snapshot da máquina.
@@ -117,7 +117,7 @@ flowchart TB
 ## 8. Como colocar no ar (opção A; esboço, não testado numa conta real)
 1. **Máquina:** Lightsail, Ubuntu LTS, 4 GB. IP fixo. Firewall: 80 e 443 abertos; 22 só do IP do time. Instalar Docker e Compose.
 2. **Código:** `git clone` com uma *deploy key* só de leitura (o repositório é privado).
-3. **Segredos:** criar `.env` (permissão 600) com `SESSION_SECRET` (valor longo aleatório), `COOKIE_SECURE=1`, `DASH_USERS` e `DASH_PASSWORD`.
+3. **Segredos:** criar `.env` (permissão 600) com `SESSION_SECRET` (valor longo aleatório) e `COOKIE_SECURE=1`. As contas de acesso já vêm da migração 029.
 4. **Subir:** `docker compose up -d --build`. A primeira carga leva de 3 a 4 minutos.
 5. **Proxy e TLS:** um Caddy na frente do painel (a porta 3000 já fica só em `localhost`), recusando quem não traz o cabeçalho secreto da borda.
 6. **Borda:** criar a distribuição do CloudFront (plano Free) apontando para o domínio da máquina, com o cabeçalho secreto; apontar o domínio do painel para ela.
@@ -125,7 +125,7 @@ flowchart TB
 Para a opção B, no passo 3 basta apontar a `DATABASE_URL` para o banco gerenciado e remover o serviço `db`.
 
 ## 9. Como uma mudança chega à produção
-1. **PR:** roda os 208 testes (README, seção 7) e o `tsc` do front. Sem verde, sem merge.
+1. **PR:** roda os 205 testes (README, seção 7) e o `tsc` do front. Sem verde, sem merge.
 2. **Build e deploy:** nas opções A e B, `git pull && docker compose up -d --build` na máquina (ou GitHub Actions por SSH); na C, imagens no ECR e `update-service`. A etiqueta do commit (`CODE_VERSION`) fica em `ops.etl_execucao`.
 3. **Migrações** (`db/migrations/`, numeradas e nunca editadas depois de aplicadas) são aplicadas pelo próprio ETL, antes da carga.
 4. **Portão de qualidade:** o ETL compara os números novos com os validados; só se passar a carga é publicada. Uma **anomalia retém a carga** até alguém aprovar, e o painel continua com os números anteriores.
