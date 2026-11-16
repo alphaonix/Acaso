@@ -32,18 +32,17 @@ export default function Ajuda() {
       </Painel>
 
       <Painel className="bloco" titulo={t("rg.titulo")} pergunta={t("rg.pergunta")}>
-        <h4>{t("rg.recusaT")}</h4>
-        <p><R texto={t("rg.recusaP1")} /></p>
-        <p><R texto={t("rg.recusaP2")} /></p>
-        <h4>{t("rg.temaT")}</h4>
-        <p><R texto={t("rg.temaP1")} /></p>
-        <ol className="lista-dados">
-          {(["rg.t1", "rg.t2", "rg.t3", "rg.t4", "rg.t5", "rg.t6", "rg.t7", "rg.t8", "rg.t9", "rg.t10", "rg.t11"] as const).map((k) => <li key={k}><R texto={t(k)} /></li>)}
-        </ol>
-        <p style={{ marginTop: "0.8rem" }}><R texto={t("rg.temaP2")} /></p>
-        <h4>{t("rg.idiT")}</h4>
-        <p><R texto={t("rg.idiP1")} /></p>
-        <p><R texto={t("rg.idiP2")} /></p>
+        <dl className="def-lista def-duas">
+          <div><dt>{t("rg.recusaT")}</dt><dd><R texto={t("rg.recusaP1")} /> <R texto={t("rg.recusaP2")} /></dd></div>
+          <div><dt>{t("rg.temaT")}</dt><dd><R texto={t("rg.temaP1")} /> <R texto={t("rg.temaP2")} /></dd></div>
+          <div><dt>{t("rg.idiT")}</dt><dd><R texto={t("rg.idiP1")} /> <R texto={t("rg.idiP2")} /></dd></div>
+        </dl>
+        <dl className="def-lista def-duas" style={{ marginTop: "1rem" }}>
+          {(["rg.t1", "rg.t2", "rg.t3", "rg.t4", "rg.t5", "rg.t6", "rg.t7", "rg.t8", "rg.t9", "rg.t10", "rg.t11"] as const).map((k, n) => {
+            const m = /^\*\*(.+?):\*\*\s*(.*)$/.exec(t(k));
+            return <div key={k}><dt>{n + 1}. {m ? m[1] : ""}</dt><dd>{m ? m[2] : t(k)}</dd></div>;
+          })}
+        </dl>
       </Painel>
       <Painel className="bloco" titulo={t("gl.privTitulo")}>
         <div className="priv-grade priv-tres">
