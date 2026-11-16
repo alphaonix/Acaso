@@ -48,13 +48,13 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 **Conclusão:** não agir sobre a diferença da Apple; ela reforça o risco nº 1 do `docs/RISCOS.md` (falta um ID de usuário estável).
 **O que fazemos:** sugerir uma tela **"Dispositivo e navegador"**, **com esse aviso**, e pedir ao cliente um identificador persistente.
 
-## 6. A saudação pesa nos dois modelos; a recusa pesa sobretudo no GPT-4
+## 6. A saudação pesa nos dois modelos; a recusa tem sinal mais nítido no GPT-4
 ![efeitos por modelo](figuras/eda6_efeitos_por_modelo.png)
 **O que vemos** (diferenças simples dentro de cada família):
 - **Saudação:** GPT-3.5 **−10,1 pp [−15,4; −4,8]** (n=237) e GPT-4 **−11,9 pp [−18,3; −5,6]** (n=149). Aparece igual nas duas famílias.
 - **Recusa:** GPT-4 **−14,1 pp [−21,3; −6,9]** (n=88), mas GPT-3.5 só −4,7 pp [−12,5; +3,0] (n=110), que **inclui zero**. Por versão: no 3.5-0301 não há diferença (−0,2 pp [−12,2; +11,7], só 59 recusas); no 3.5-0613 é −9,9 pp [−19,8; 0,0].
-**Conclusão:** a **saudação é o achado mais robusto** (mesmo sinal, tamanho parecido e intervalo sem zero nos dois modelos). A **recusa é um indício que depende do modelo**: o −9,6 pp médio mistura um efeito forte no GPT-4 com um efeito fraco ou nulo no 3.5, e na versão mais antiga, que recusava mais (13,1%), as pessoas voltavam igual.
-**O que fazemos:** o `docs/DOCUMENTO.md` registra a saudação como achado firme e a recusa como **indício, concentrado no GPT-4**; a decisão sobre recusas começa pelo GPT-4.
+**Conclusão:** a **saudação é o achado mais robusto** (mesmo sinal, tamanho parecido e intervalo sem zero nos dois modelos). A **recusa é um indício**: o sinal é mais nítido no GPT-4 (−14,1 pp) do que no 3.5 (−4,7 pp, intervalo com zero), mas a **diferença entre os dois modelos (−9,4 pp) não se distingue de acaso** (p ≈ 0,08), e na versão mais antiga, que recusava mais (13,1%), as pessoas voltavam igual.
+**O que fazemos:** o `docs/DOCUMENTO.md` registra a saudação como o achado mais consistente (ainda um indício) e a recusa como **indício, com sinal mais nítido no GPT-4**; a decisão sobre recusas vale para os dois modelos.
 
 ## 7. Idioma do pedido contra o idioma do navegador
 ![idioma](figuras/eda7_idioma.png)
@@ -65,8 +65,8 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 ## Resumo: o que esta exploração muda nos achados
 | Achado | Antes | Depois da exploração |
 |---|---|---|
-| Saudação afasta | −8,1 pp (indício, não resiste à correção de 16 testes) | **mais firme:** aparece nos dois modelos, −10 a −12 pp |
-| Recusa afasta | −9,6 pp (indício) | **indício dependente do modelo:** forte no GPT-4 (−14 pp), fraco no GPT-3.5 |
+| Saudação afasta | −8,1 pp (indício, não resiste à correção de 16 testes) | **mais consistente:** aparece nos dois modelos, −10 a −12 pp |
+| Recusa afasta | −9,6 pp (indício) | **indício:** mais nítido no GPT-4 (−14 pp) que no GPT-3.5 (−5 pp), mas a diferença entre modelos não se distingue de acaso |
 | Modelo não ajuda | −0,6 pp | sem mudança; mas "GPT-3.5" tem versões muito diferentes (recusa de 2,5% a 13,1%) |
 | A janela de 7 dias | premissa | **sustentada:** 92% dos retornos de 30 dias ocorrem em 7 |
 | Volume de uso | conversas | **pessoas**: 0,8% das pessoas fazem 39% das conversas |
@@ -93,8 +93,8 @@ A segunda tem 646 conversas em 21 dias, com só **39% de pedidos distintos** e m
 7. **Avaliação da resposta pelo usuário** (curtir ou não curtir), quando existir: é o dado que falta.
 
 **Para o assistente:**
-1. **Onboarding na saudação** (o achado mais firme): responder a "oi" com exemplos do que o assistente faz, e testar por A/B.
-2. **Revisar recusas, começando pelo GPT-4**, e reduzir as falsas recusas.
+1. **Onboarding na saudação** (o achado mais consistente): responder a "oi" com exemplos do que o assistente faz, e testar por A/B.
+2. **Revisar recusas nos dois modelos**, e reduzir as falsas recusas.
 3. **Cuidar de quem escreve em outros idiomas** (detecção, resposta no idioma, tradução).
 4. **Pensar o reengajamento no primeiro dia**, já que metade de quem volta o faz em cerca de 14 horas.
 

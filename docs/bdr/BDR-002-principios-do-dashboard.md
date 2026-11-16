@@ -3,7 +3,17 @@
 Status: aceita. Origem: conferência no Power BI (cartões que pareciam divergir por unidade/denominador distintos) e
 critério do PDF: "cada tela se explica sozinha: cada número com definição e fonte, cada efeito com sua incerteza".
 
-## Decisões
+## Contexto
+O público do painel é de negócio, não técnico. Números parecidos com unidades diferentes (usuário x conversa x sessão)
+já pareceram divergir na conferência, e uma taxa sem intervalo de confiança leva a decisões sobre ruído.
+
+## Opções consideradas
+1. **Painel enxuto, sem texto de apoio:** menos trabalho, mas cada leitor interpreta o número do seu jeito.
+2. **Documentação à parte (wiki/PDF):** explica, mas se desatualiza e ninguém lê antes de olhar o gráfico.
+3. **Definição junto do número, vinda de um catálogo único (escolhida):** mais metadados por indicador, uma só fonte de verdade.
+
+## Decisão
+Opção 3, nos itens abaixo.
 
 ### 1. Todo cálculo tem a fórmula descrita
 Cada indicador exibe (no tooltip "i" e na página de glossário) e no código:

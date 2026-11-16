@@ -71,6 +71,15 @@ def test_numero_principal_do_brasil(client):
     assert round(a["taxa"] * 100, 2) == 23.72
 
 
+def test_resposta_traz_rastreio(client, db):
+    """Cada resposta diz de qual carga vem o numero e qual versao da definicao o calculou (investigar um numero errado depois)."""
+    r = client.get("/api/retencao/resumo", params={"pais": "Brazil"})
+    carga = db.execute("SELECT max(id) AS id FROM ops.etl_execucao WHERE status IN ('ok', 'alerta')").fetchone()["id"]
+    assert r.headers["X-Carga-Id"] == str(carga)
+    assert r.headers["X-Versao-Definicao"] == "retorno_7d@v1"
+    assert len(r.headers["X-Request-Id"]) == 8
+
+
 def test_erro_plantado_e_detectado(client, db):
     """Prova que a conciliacao nao e decorativa: um numero errado de proposito tem de aparecer como divergencia."""
     c = cc.Conciliador(client, db)

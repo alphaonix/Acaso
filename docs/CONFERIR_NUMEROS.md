@@ -282,7 +282,7 @@ FROM u JOIN c ON c.modelo = u.modelo
 JOIN gold.agg_recusa_modelo g ON g.pais = 'Brazil' AND g.modelo = u.modelo
 ORDER BY u.el DESC;
 ```
-**Deve dar:** seis versões, todas `t`. Exemplos: `gpt-3.5-turbo-0613`: 894 · 0,2304 · recusa 0,0381; `gpt-4-1106-preview`: 433 · 0,2794 · 0,0760; `gpt-3.5-turbo-0301`: 343 · 0,2391 · 0,1312. A "faixa de recusa por versão" do passo 6 é de 2,6% a 13,1%. Na Alemanha a recusa fica vazia (sem texto).
+**Deve dar:** seis versões, todas `t`. Exemplos: `gpt-3.5-turbo-0613`: 894 · 0,2304 · recusa 0,0381; `gpt-4-1106-preview`: 433 · 0,2794 · 0,0760; `gpt-3.5-turbo-0301`: 343 · 0,2391 · 0,1312. A "faixa de recusa por versão" do passo 6 é de 2,5% a 13,1%. Na Alemanha a recusa fica vazia (sem texto).
 
 ## 1.11 Curva de retorno (24 horas, 7 dias, 30 dias)
 **Na tela:** os pontos "16,0% em 1 dia, 24,0% em 7, 26,1% em 30" (Visão geral e Coortes).

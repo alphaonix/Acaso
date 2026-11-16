@@ -19,6 +19,23 @@ from . import seguranca
 from .decomposicao import decompor
 from .db import consulta
 
+VERSAO_DEFINICAO = "retorno_7d@v1"      # sobe quando a definicao do retorno mudar (gap, janela, lavagem); vai em todo cabecalho de resposta
+_carga = {"id": None, "ate": 0.0}
+
+
+def carga_publicada() -> int | None:
+    """Id da ultima carga PUBLICADA (ok ou alerta), com cache de 30 s: liga um numero da tela a carga que o gerou."""
+    agora = time.time()
+    if agora > _carga["ate"]:
+        try:
+            r = consulta("SELECT max(id) AS id FROM ops.etl_execucao WHERE status IN ('ok', 'alerta')")
+            _carga["id"] = r[0]["id"] if r else None
+        except Exception:      # o rastreio nunca derruba a resposta
+            pass
+        _carga["ate"] = agora + 30
+    return _carga["id"]
+
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
 log = logging.getLogger("api")
 app = FastAPI(title="Retenção do assistente: API", version="0.2.0")
@@ -34,8 +51,12 @@ async def registrar_requisicao(request: Request, call_next):
     """Um log JSON por requisicao (id, rota, status, duracao): base para investigar numero errado e medir p95 (secao 4.1)."""
     inicio, rid = time.perf_counter(), uuid.uuid4().hex[:8]
     resposta = await call_next(request)
+    carga = carga_publicada()
     resposta.headers["X-Request-Id"] = rid
-    evento(evento="requisicao", request_id=rid, metodo=request.method, caminho=request.url.path,
+    resposta.headers["X-Versao-Definicao"] = VERSAO_DEFINICAO
+    if carga is not None:
+        resposta.headers["X-Carga-Id"] = str(carga)
+    evento(evento="requisicao", request_id=rid, carga_id=carga, versao_definicao=VERSAO_DEFINICAO, metodo=request.method, caminho=request.url.path,
            consulta=str(request.url.query), status=resposta.status_code,
            duracao_ms=round((time.perf_counter() - inicio) * 1000, 1))
     return resposta

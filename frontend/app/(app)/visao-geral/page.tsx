@@ -89,7 +89,7 @@ export default function VisaoGeral() {
 
       <div className="kpis kpis3">
         <Kpi rotulo={t("vg.novos")} defId="usuarios_novos" valor={r ? num(r.novos) : "…"}
-          delta={r?.primeira_semana && r.ultima_semana ? t("vg.periodo", { a: dataLonga(r.primeira_semana), b: dataLonga(r.ultima_semana) }) : ""} dica={t("vg.novosDica")} />
+          delta={paisAtual?.primeira_data && paisAtual.ultima_data ? t("vg.periodo", { a: dataLonga(paisAtual.primeira_data), b: dataLonga(paisAtual.ultima_data) }) : ""} dica={t("vg.novosDica")} />
         <Kpi rotulo={t("vg.retorno")} defId="retorno_7d" valor={r ? pct(r.taxa) : "…"}
           delta={r && r.taxa != null ? t("vg.retornoSub", { x: x100(r.taxa), lo: pct(r.ic_lo), hi: pct(r.ic_hi), v: num(r.voltaram_7d), n: num(r.elegiveis) }) + (comp.dados ? t("vg.retornoMedia", { g: pct(comp.dados.geral.taxa) }) : "") : r ? t("vg.amostraPequena") : ""} dica={t("vg.retornoDica")} />
         <Kpi rotulo={t("vg.conversas")} defId="conversas" valor={r ? num(r.conversas) : "…"}

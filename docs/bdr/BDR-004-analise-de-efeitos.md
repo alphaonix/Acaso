@@ -9,6 +9,21 @@ Código: `etl/camadas/gold/efeitos.py` (grava `gold.efeito_fator`) e `analise/04
 > mudaram: recusa e tamanho do pedido NÃO são frágeis ao recorte (eram ruído), mas recusa e saudação NÃO sobrevivem
 > à correção para múltiplos testes. O ruído da divisão em dobras é de cerca de ±1 pp (ver sensibilidade).
 
+## Contexto
+A diferença simples de retorno entre grupos (ex.: quem recebeu resposta longa x curta) mistura efeito com seleção: quem
+escreve pedidos longos já é um tipo de usuário diferente. O cliente quer saber o que o produto pode mudar, então
+precisamos separar "alavanca" de "perfil" e dizer o quanto confiar em cada número.
+
+## Opções consideradas
+1. **Diferença bruta com IC:** simples de conferir em SQL, mas não ajusta nada (mantida como comparação).
+2. **Regressão logística única:** fácil de explicar, mas depende de um modelo só estar certo.
+3. **AIPW com validação cruzada (escolhida):** combina dois modelos e basta um estar certo; custa mais para explicar.
+4. **Pareamento por escore de propensão:** descarta dados e é mais instável com 2.234 usuários.
+
+## Decisão
+AIPW como estimativa principal, com o bruto ao lado, Bonferroni sobre os 16 contrastes, E-value e o rótulo
+"resiste à correção" x "indício". Nenhum efeito é apresentado como causa: a recomendação final é um teste A/B.
+
 ## Pergunta e estimando
 O que muda a chance de uma pessoa (usuário, BDR-001) voltar em até 7 dias? Para cada fator comparamos dois grupos de
 usuários elegíveis do Brasil (n = 2.234) e reportamos a **diferença de retorno em pontos percentuais (pp)** com IC de 95%.
@@ -31,8 +46,8 @@ usuários elegíveis do Brasil (n = 2.234) e reportamos a **diferença de retorn
 | Fator (contraste) | Tipo | Bruto | Ajustado [IC 95%] | E-value (IC) |
 |---|---|---|---|---|
 | Recusa na 1ª resposta (com x sem) | alavanca | -8,9 | **-9,6 [-17,3; -1,9]** | 1,38 |
-| Tema Saudação x Conhecimento/pergunta | perfil | -10,9 | **-8,1 [-14,3; -1,8]** | 1,37 |
 | Turnos na 1ª conversa (2+ x 1) | perfil | +6,5 | **+8,7 [+3,3; +14,1]** | 1,62 |
+| Tema Saudação x Conhecimento/pergunta | perfil | -10,9 | **-8,1 [-14,3; -1,8]** | 1,37 |
 | Tamanho do 1º pedido (longo x curto) | perfil | +7,4 | **+6,3 [+2,2; +10,5]** | 1,45 |
 | Demais temas (Vazio, Tarefa escolar, Persona, Ficção, Escrita, Tecnologia, Outro) x Conhecimento | perfil | -- | IC inclui zero, muito largos (até ±15 pp) | 1,0 |
 | Horário (noite), Dia (fim de semana), Idioma (inglês) | perfil | -- | IC inclui zero (±4 a 5 pp) | 1,0 |
@@ -79,6 +94,6 @@ a recusa é medida só na abertura da 1ª resposta.
 
 ## Atualização da exploração (12/11/2026, `docs/EDA.md`)
 Comparações simples **dentro de cada família de modelo** (sem ajuste, intervalos isolados) refinam os achados 1 e 2:
-- **Saudação** pesa nos dois modelos: GPT-3.5 −10,1 pp [−15,4; −4,8] (n=237) e GPT-4 −11,9 pp [−18,3; −5,6] (n=149). Fica **mais firme**.
-- **Recusa** depende do modelo: GPT-4 −14,1 pp [−21,3; −6,9] (n=88); GPT-3.5 −4,7 pp [−12,5; +3,0] (n=110, inclui zero); na versão 3.5-0301, −0,2 pp [−12,2; +11,7] (59 recusas). O −9,6 médio mistura os dois: é um **indício concentrado no GPT-4**.
+- **Saudação** pesa nos dois modelos: GPT-3.5 −10,1 pp [−15,4; −4,8] (n=237) e GPT-4 −11,9 pp [−18,3; −5,6] (n=149). Fica **mais consistente** (ainda um indício).
+- **Recusa**, com sinal mais nítido no GPT-4: GPT-4 −14,1 pp [−21,3; −6,9] (n=88); GPT-3.5 −4,7 pp [−12,5; +3,0] (n=110, inclui zero); na versão 3.5-0301, −0,2 pp [−12,2; +11,7] (59 recusas). O −9,6 médio mistura os dois; a **diferença entre os modelos (−9,4 pp) não se distingue de acaso** (p ≈ 0,08): é um **indício**, e não dá para dizer que é só do GPT-4.
 - A versão do modelo (não só a família) muda a taxa de recusa de 2,5% a 13,1%; o ajuste do AIPW usa a família e o mês de chegada, então a confusão com a versão **não está totalmente tratada**.

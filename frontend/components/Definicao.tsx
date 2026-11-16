@@ -4,7 +4,7 @@ import { useApp } from "@/lib/contexto";
 import { useI18n } from "@/lib/i18n";
 import { tIndicador } from "@/lib/traducao-dados";
 
-/** Botao "i" ao lado de cada indicador: nome, definicao e formula. Fecha ao clicar fora, ao apertar Esc ou ao abrir outro "i". */
+/** Botao "i" ao lado de cada indicador: nome, definicao, formula, unidade, denominador, periodo, fonte e amostra minima (o catalogo inteiro). Fecha ao clicar fora, ao apertar Esc ou ao abrir outro "i". */
 export function Definicao({ id }: { id: string }) {
   const { catalogo } = useApp();
   const { t, idioma } = useI18n();
@@ -32,6 +32,11 @@ export function Definicao({ id }: { id: string }) {
           <p>{ind.pergunta}</p>
           <dl>
             <dt>{t("df.formula")}</dt><dd>{ind.formula}</dd>
+            <dt>{t("df.unidade")}</dt><dd>{ind.unidade}</dd>
+            <dt>{t("df.denominador")}</dt><dd>{ind.denominador}</dd>
+            <dt>{t("df.periodo")}</dt><dd>{ind.periodo_referencia}</dd>
+            <dt>{t("df.fonte")}</dt><dd>{ind.fonte}</dd>
+            <dt>{t("df.amostra")}</dt><dd>{t("df.amostraTxt", { n: ind.amostra_minima })}</dd>
           </dl>
         </div>
       )}

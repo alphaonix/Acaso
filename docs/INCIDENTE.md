@@ -137,13 +137,13 @@ Esta correção **já está implementada e testada** neste projeto: `etl/camadas
 4. **Pós-incidente sem culpados** (linha do tempo, causa, o que detectou, o que atrasou).
 
 **Para não voltar a acontecer** (as quatro camadas do item 4.1):
-- **Teste que reproduz o incidente** (já escrito, `etl/tests/test_incidente.py`) e testes de contrato dos parâmetros da definição (gap 30 min, janela 7 dias, lavagem 30 dias). 206 testes (README, seção 7).
+- **Teste que reproduz o incidente** (já escrito, `etl/tests/test_incidente.py`) e testes de contrato dos parâmetros da definição (gap 30 min, janela 7 dias, lavagem 30 dias). 207 testes (README, seção 7).
 - **Reconciliação automática:** toda semana, calcular o retorno também por uma definição simples e estável (IP, como o relatório do time) direto da bruta e comparar com o dashboard.
   Alerta se a diferença passar de ~5 pontos ou se `novos` variar mais de 30% de uma semana para outra.
   **Implementado como alerta semanal** (`etl/comum/anomalia_semanal.py`, em toda carga): cada semana é comparada com as 6 anteriores (novos, taxa e a proporção de "novos" cujo endereço já tinha aparecido com outra pessoa) e o diagnóstico aponta a camada. Os limites foram **calibrados nos dados reais** (30% de variação gerava 406 alertas em 202 países, que era ruído; o alerta de hoje exige 50% de alta e desvio robusto ≥ 5). O erro do incidente é reproduzido pelo cenário `incidente_navegador` (e a correção, por `incidente_navegador_corrigido`) (README, seção 8). Uma semana com pico **novo retém a carga** até alguém aprovar: o cliente continua vendo os números anteriores enquanto a causa é investigada.
 - **Indicadores de saúde da identidade** no monitoramento: razão `usuario_id distintos ÷ hashed_ip distintos` por dia (na nossa base é 1,06 com a definição adotada e sobe para 1,21 se o user-agent bruto entrar na identidade; alerta acima de ~1,3) e a lista de user-agents novos. **Implementado por carga** como o sinal "pessoas por endereço" (sobe 10% ou mais em relação à carga anterior: alerta), em `etl/comum/anomalia.py`.
 - **Coorte com janela aberta aparece marcada** ("em andamento") e nunca entra na taxa.
-- **A resposta do endpoint traz a versão da definição** (`definicao: "retorno_7d@v1"`) e o `request_id`, para ligar um número da tela à carga que o gerou.
+- **Toda resposta da API traz, nos cabeçalhos HTTP, `X-Versao-Definicao` (`retorno_7d@v1`), `X-Carga-Id` (a carga publicada que gerou o número) e `X-Request-Id`**, e o log JSON de cada requisição guarda os três: dá para ligar um número da tela à carga e à versão da definição que o calcularam. **Implementado** (`backend/app/main.py`, testado em `test_api_x_gold.py`).
 - **Mudança de definição passa por revisão:** a definição vive num arquivo único, com testes; o portão do ETL compara os números novos com os validados antes de publicar.
 
 ## 5. O que eu diria à gerente de produto

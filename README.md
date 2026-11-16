@@ -342,11 +342,11 @@ docker compose run --rm --no-deps -v "${PWD}/analise/08_recalculo_independente.p
 ---
 
 ## 7. Testes automáticos
-Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **206 testes**: 157 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 20 de integração API × Gold (rodam contra o banco carregado, **só leem**).
+Objetivo (PDF 4.1): **a definição de um indicador não pode mudar sem ninguém perceber.** São **207 testes**: 157 do ETL e 29 da API (rodam em segundos, **não tocam o banco real**) e 21 de integração API × Gold (rodam contra o banco carregado, **só leem**).
 ```bash
 docker compose --profile test run --rm --build testes-etl          # 157 testes
 docker compose --profile test run --rm --build testes-api          # 29 testes: decomposição mix × taxa
-docker compose --profile test run --rm --build testes-integracao  # 20 testes: API × Gold (precisa do banco carregado)
+docker compose --profile test run --rm --build testes-integracao  # 21 testes: API × Gold (precisa do banco carregado)
 docker compose --profile test run --rm --build relatorio-fluxo     # gera exports/fluxo_dos_dados.html (caminho do dado e todas as conferências)
 ```
 O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um banco descartável (`retencao_teste`) no mesmo servidor, aplicam as migrações, inserem conversas **sintéticas** na bronze, rodam a silver e a gold de verdade e conferem o resultado; cada teste termina em `ROLLBACK` e o banco é apagado no fim.
@@ -372,7 +372,7 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 **Limite:** os testes de tema e recusa fixam o comportamento atual (regressão) e **não medem a precisão**; a da recusa foi medida à mão (8 de 30, 27%, no sentido estrito) e a do tema não.
 
 **Como uma mudança chega à produção (desenho)**
-1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 206 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
+1. **Pull request:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda os 207 testes e sobe a carga completa (o build do frontend confere os tipos; o último passo exige o recálculo independente sem divergência). Os dois jobs passam no GitHub (a carga completa leva ~8 min). A proteção do `main` exigindo os dois jobs é a configuração recomendada (em repositório privado depende do plano do GitHub).
 2. **Migrações:** arquivos numerados em `db/migrations/`, aplicados em ordem e registrados em `public.schema_migrations`; migração já aplicada **nunca é editada** (cria-se uma nova).
 3. **Ambientes:** `dev` (local), `staging` (cópia na AWS com a mesma semente, onde a deriva compara os números novos com os antigos antes de promover) e `prod`.
 4. **Deploy:** nas opções simples (A e B), `git pull && docker compose up -d --build` na máquina; na de escala (C), imagem nova no ECR e ECS Fargate. Em todas, o ETL roda primeiro (migra, carrega, confere) e a API só sobe se o portão passar. Detalhes em [`infra/README.md`](infra/README.md).
@@ -392,7 +392,8 @@ O perfil `test` não sobe com `docker compose up`. Os testes do ETL criam um ban
 | Entre cargas | o que mudou em relação à carga anterior | `auditoria.mudancas_entre_cargas` | **deriva** |
 | Depois da carga | se alguém alterou as camadas por fora | `auditoria.verificacao` | **trava de escrita** e **verificação de integridade** |
 | Cada execução | início, fim, status, versão do código, cada conferência | `ops.etl_execucao`, `ops.qa_resultado` | o portão |
-| API e tela | log JSON por requisição (`request_id`, rota, status, `duracao_ms`); versão da definição na resposta | stdout / CloudWatch | alarmes de p95 |
+| API | log JSON por requisição (`request_id`, `carga_id`, versão da definição, rota, status, `duracao_ms`); os mesmos três identificadores vão nos cabeçalhos `X-Request-Id`, `X-Carga-Id` e `X-Versao-Definicao` | stdout / CloudWatch | alarmes de p95 |
+| Tela | o rodapé mostra o período dos dados e a data da carga; a aba Ajuda mostra as conferências da carga (66 de 66) e os arquivos de origem com sha256. **Desenho, não implementado:** registrar no navegador os erros de JavaScript e o tempo de carregamento de cada tela (RUM) | CloudWatch RUM | alarme de erros de tela |
 
 "Impressão digital" é uma soma de hashes das linhas: se **uma única** pessoa, conversa ou linha de resumo mudar, a impressão muda.
 
@@ -459,11 +460,11 @@ docker compose --profile operacao run --rm simular-cenarios todos               
 | Tela | Pergunta | Gráficos e por que esse tipo |
 |---|---|---|
 | **Visão geral** | "Quanto voltam, e como o uso e o perfil se distribuem?" | cartões com margem de erro e definição; a história em 8 passos; linha com faixa de IC por mês (tendência e incerteza juntas); curva de retorno; mapa de calor dia × hora; comparação de modelos (barras com IC); concentração; barras de países em lista fixa |
-| **O que faz voltar** | "Quais fatores pesam e quanto é causa?" | gráfico de intervalos ordenado pelo tamanho do efeito (ponto = efeito, barra = IC; cruzar o zero = sem efeito detectável); barras de turnos × retorno; os achados com a decisão |
+| **O que faz voltar** | "Quais fatores pesam e quanto é causa?" | gráfico de intervalos **ordenado pelo tamanho do efeito** (há um botão para ordenar por confiança; ponto = efeito, barra = IC; cruzar o zero = sem efeito detectável; o selo diz quanto confiar); barras de turnos × retorno; os achados com a decisão |
 | **Coortes semanais** | "O retorno mudou ao longo do tempo, e por quê?" | curva com marcos de 24 h, 7 e 30 dias; barras de pessoas novas por semana (cinza = amostra pequena); mapa de calor do retorno; decomposição em barras divergentes |
-| **Ajuda** | "Como entender os números e o que a base tem de estranho?" | palavras e regras, o que mostra e nunca mostra, tabela de problemas de qualidade |
+| **Ajuda** | "Como entender os números e o que a base tem de estranho?" | palavras e regras, o que mostra e nunca mostra, tabela de problemas de qualidade e as **conferências da carga** (66 de 66, com os arquivos de origem e o sha256) |
 
-Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, não achado*, *Hipótese, não achado*, *Cuidado*): o que o gráfico mostra e o limite do que ele prova. A definição, a fórmula, o denominador, o período e o **SQL de cada indicador** estão em [`docs/INDICADORES.md`](docs/INDICADORES.md) (gerado do catálogo que alimenta o botão "i"); abaixo de 30 pessoas a tela esconde a taxa e mostra "amostra pequena".
+O botão **i** de cada cartão mostra a **definição, a fórmula, a unidade, o denominador, o período, a fonte e a amostra mínima** (o catálogo inteiro). Cada painel traz uma nota com rótulo (*Achado firme*, *Leitura*, *Indício, não achado*, *Hipótese, não achado*, *Cuidado*): o que o gráfico mostra e o limite do que ele prova. A definição, a fórmula, o denominador, o período e o **SQL de cada indicador** estão em [`docs/INDICADORES.md`](docs/INDICADORES.md) (gerado do catálogo que alimenta o botão "i"); abaixo de 30 pessoas a tela esconde a taxa e mostra "amostra pequena".
 
 ### Desempenho
 - **Pré-calculado na gold:** a API nunca varre as conversas; cada endpoint lê dezenas ou poucas centenas de linhas por índice (`pais`).

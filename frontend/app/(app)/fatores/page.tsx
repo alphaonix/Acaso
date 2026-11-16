@@ -23,14 +23,16 @@ export default function Fatores() {
   const resumo = useApi<{ elegiveis: number }>(`/retencao/resumo?pais=${encodeURIComponent(pais)}`);
   const estratos = useApi<Estrato[]>(`/retencao/estratos?pais=${encodeURIComponent(pais)}`);
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [ordem, setOrdem] = useState<"tamanho" | "confianca">("tamanho");   // o enunciado pede por tamanho do efeito; a confianca e a alternativa
   const [grupo, setGrupo] = useState<Grupo>("dispositivo");
   const disp = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=${grupo}`);
   const idi = useApi<FatorNivel[]>(`/retencao/fatores?pais=${encodeURIComponent(pais)}&fator=idioma_x_navegador`);
   const rotulo: Record<Grupo, string> = { dispositivo: t("ex.dispDispositivo"), sistema: t("ex.dispSistema"), navegador: t("ex.dispNavegador") };
   const todos = efeitos.dados ?? [];
-  // resistentes a correcao primeiro, depois indicios, depois inconclusivos; em cada grupo, pelo tamanho do efeito
+  // padrao: pelo tamanho do efeito (valor absoluto). Alternativa: resistentes a correcao, depois indicios, depois inconclusivos; em cada grupo, pelo tamanho
   const rank = (e: Efeito) => (resisteACorrecao(e, todos.length) ? 0 : e.ic_lo > 0 || e.ic_hi < 0 ? 1 : 2);
-  const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro).sort((a, b) => rank(a) - rank(b) || Math.abs(b.efeito_pp) - Math.abs(a.efeito_pp));
+  const porTamanho = (a: Efeito, b: Efeito) => Math.abs(b.efeito_pp) - Math.abs(a.efeito_pp);
+  const lista = todos.filter((e) => filtro === "todos" || e.tipo === filtro).sort((a, b) => (ordem === "confianca" ? rank(a) - rank(b) || porTamanho(a, b) : porTamanho(a, b)));
   const ef = (fator: string, inicio?: string) => todos.find((e) => e.fator === fator && (!inicio || e.contraste.startsWith(inicio)));
   const sa = ef("Tema do primeiro pedido", "Saudação"), re = ef("Recusa na primeira resposta"), mo = ef("Modelo"), lo = ef("Tamanho da primeira resposta");
   // impacto = parcela de pessoas com o fator x efeito (em pp); vale so se o efeito for causal
@@ -60,6 +62,9 @@ export default function Fatores() {
         <Painel titulo={t("fa.efeitoTitulo")} pergunta={t("fa.efeitoPergunta")}>
           <div className="pilulas" role="group" aria-label={t("fa.filtroAria")}>
             {opcoes.map(([k, texto]) => <button key={k} type="button" className="pilula" aria-pressed={filtro === k} onClick={() => setFiltro(k)}>{texto}</button>)}
+          </div>
+          <div className="pilulas" role="group" aria-label={t("fa.ordemAria")} style={{ marginTop: "0.5rem" }}>
+            {([["tamanho", t("fa.ordemTamanho")], ["confianca", t("fa.ordemConfianca")]] as const).map(([k, texto]) => <button key={k} type="button" className="pilula" aria-pressed={ordem === k} onClick={() => setOrdem(k)}>{texto}</button>)}
           </div>
           {efeitos.carregando ? <p className="carregando" role="status">{t("comum.carregando")}</p> : <Floresta efeitos={lista} total={todos.length} />}
         </Painel>

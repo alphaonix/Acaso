@@ -50,6 +50,7 @@ export function Floresta({ efeitos, total }: { efeitos: Efeito[]; total: number 
                 <dt>{t("fl.robustez")}</dt><dd>{e.e_value_ic <= 1 ? t("fl.robustezZero") : t("fl.robustezTxt", { ev: dec(e.e_value_ic) })}</dd>
                 <dt>{t("fl.ajustado")}</dt><dd>{tAjustado(e.ajustado_por, idioma)}</dd>
                 <dt>{t("fl.metodo")}</dt><dd>{tMetodo(e.metodo, idioma)}</dd>
+                <dt>{t("fl.fonte")}</dt><dd>{t("fl.fonteTxt")}</dd>
               </dl>
             </details>
           </div>
