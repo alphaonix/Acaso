@@ -355,7 +355,7 @@ export const pt = {
   "rg.titulo": "Como classificamos recusa, tema e idioma", "rg.pergunta": "Regras simples de palavras, sem IA. Podem errar: leia como aproximação.",
   "rg.recusaT": "Recusa na 1ª resposta",
   "rg.recusaP1": "Se o começo da 1ª resposta do assistente tem palavras como *desculpe*, *sinto muito*, *não posso*, *I'm sorry* ou *as an AI*, contamos como recusa. Só no Brasil (único país com texto).",
-  "rg.recusaP2": "**Quanto foi marcado:** 8,9% das pessoas (198 de 2.234). **Quanto disso é recusa de verdade:** numa amostra de 30 marcadas, só 8 (cerca de 1 em 4) eram recusa; nas outras, o assistente respondeu normalmente, explicou um limite ou pediu mais detalhes. Por isso leia como **recusa ou ressalva de IA**.",
+  "rg.recusaP2": "Marcamos **8,9% das pessoas** (198 de 2.234). Leia como **recusa ou ressalva de IA**, não só recusa de fato.",
   "rg.temaT": "Tema do 1º pedido",
   "rg.temaP1": "O começo do 1º pedido é testado contra 11 temas, em ordem, e **vale o primeiro que bater**. Só no Brasil. A precisão **não foi medida**.",
   "rg.t1": "**Vazio:** pedido em branco",

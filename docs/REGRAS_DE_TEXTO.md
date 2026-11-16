@@ -9,7 +9,6 @@ Tema e recusa só existem para o **Brasil**, o único país cuja semente traz o 
 - **Onde olha:** só os 300 primeiros caracteres da 1ª resposta do assistente, em minúsculas.
 - **Regra:** marca recusa se aparece qualquer uma destas expressões: `desculp`, `sinto muito`, `lamento`, `não posso`, `não sou capaz`, `não tenho como`, `modelo de linguagem`, `como um(a) IA`, `I'm sorry`, `I am sorry`, `I apologize`, `I cannot`, `I can't`, `I'm unable`, `as an AI`, `as a language model`.
 - **Quanto a regra marca:** 198 das 2.234 pessoas elegíveis (8,9%); em conversas, 911 de 11.621 (7,8%).
-- **Quanto do marcado é recusa de verdade (precisão):** conferi 30 casos marcados e **8 (27%, cerca de 1 em 4)** eram recusa no sentido estrito. São dois números diferentes: 8,9% é a fatia de pessoas que a regra marca; 27% é a fração dessas marcações que é recusa de fato. Os outros 22 eram desculpa por não poder abrir um link ou dar informação atual, pedido de mais detalhes, ou o aviso "como uma IA" seguido de resposta normal. Detalhes e amostra em [`BDR-003`](bdr/BDR-003-classificacao-de-tema.md).
 - **Como ler:** "**recusa ou ressalva de IA**", não "recusa estrita". Não medimos quantas recusas a regra deixa passar.
 - **Como estreitar:** tirar `as an ai` e `modelo de linguagem` soltos da regra, ou classificar em lote com um LLM na AWS e conferir contra a mesma amostra.
 

@@ -357,7 +357,7 @@ export const en: Record<Chave, string> = {
   "rg.titulo": "How we classify refusal, topic and language", "rg.pergunta": "Simple keyword rules, no AI. They can be wrong: read them as approximations.",
   "rg.recusaT": "Refusal in the 1st answer",
   "rg.recusaP1": "If the start of the assistant's 1st answer has words like *desculpe*, *sinto muito*, *não posso*, *I'm sorry* or *as an AI*, we count it as a refusal. Brazil only (the only country with text).",
-  "rg.recusaP2": "**How many were marked:** 8.9% of people (198 of 2,234). **How many of those are real refusals:** in a sample of 30 marked cases, only 8 (about 1 in 4) were refusals; in the others, the assistant answered normally, explained a limit or asked for more detail. So read it as **refusal or AI caveat**.",
+  "rg.recusaP2": "We marked **8.9% of people** (198 of 2,234). Read it as **refusal or AI caveat**, not only a real refusal.",
   "rg.temaT": "Topic of the 1st request",
   "rg.temaP1": "The start of the 1st request is tested against 11 topics, in order, and **the first match wins**. Brazil only. Precision was **not measured**.",
   "rg.t1": "**Empty:** blank request",
